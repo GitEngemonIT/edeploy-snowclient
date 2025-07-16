@@ -1,0 +1,30 @@
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PHP
+vendor/
+composer.lock
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+tmp/
+
+# Config files (if containing sensitive data)
+config/local.php
+
+# Backup files
+*.bak
+*.backup
+*.orig

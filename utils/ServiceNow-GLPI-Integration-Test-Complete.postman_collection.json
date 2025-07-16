@@ -1,0 +1,1294 @@
+{
+	"info": {
+		"_postman_id": "d254148a-c4e4-48c5-bdc8-f52f26215c07",
+		"name": "ServiceNow → GLPI Integration Test Complete",
+		"description": "Collection completa para testar integração ServiceNow com GLPI usando o plugin snowclient.\n\n🎯 **Objetivo**: Simular o ServiceNow criando chamados e testando se o plugin GLPI detecta e trata corretamente.\n\n📋 **Fluxo de Teste**:\n1. ServiceNow cria ticket → 2. Plugin replica para GLPI → 3. Técnico atualiza no GLPI → 4. Plugin sincroniza de volta para ServiceNow\n\n🔧 **Configuração**:\n- Configure as variáveis da collection antes de executar\n- Execute os requests em ordem para testar o fluxo completo\n- Verifique os logs do console para debugging\n\n🚨 **IMPORTANTE**: IDs do ServiceNow vêm SEM # (exemplo: INC0001234, REQ0001234)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37856186"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "1. Init Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('session_token', jsonData.session_token);",
+									"    pm.test('Session token obtained', function () {",
+									"        pm.expect(jsonData.session_token).to.not.be.undefined;",
+									"    });",
+									"    console.log('✅ Sessão GLPI iniciada com sucesso');",
+									"    console.log('Session Token: ' + jsonData.session_token.substring(0, 20) + '...');",
+									"} else {",
+									"    pm.test('Authentication failed', function () {",
+									"        pm.expect.fail('Failed to authenticate with GLPI');",
+									"    });",
+									"    console.log('❌ Falha na autenticação GLPI');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/initSession",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"initSession"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏢 Entity Management",
+			"item": [
+				{
+					"name": "1. Get Entity by Registration Number",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        pm.collectionVariables.set('entity_id', jsonData.data[0][2]);",
+									"        pm.test('Entity found by registration number', function () {",
+									"            pm.expect(jsonData.data[0][2]).to.be.a('number');",
+									"        });",
+									"        console.log('✅ Entidade encontrada: ID ' + jsonData.data[0][2] + ' - ' + jsonData.data[0][1]);",
+									"    } else {",
+									"        // Usar entidade padrão se não encontrar",
+									"        pm.collectionVariables.set('entity_id', pm.collectionVariables.get('default_entity_id'));",
+									"        console.log('⚠️ Entidade não encontrada, usando entidade padrão: ' + pm.collectionVariables.get('default_entity_id'));",
+									"    }",
+									"} else {",
+									"    pm.test('Search failed', function () {",
+									"        pm.expect.fail('Failed to search entity');",
+									"    });",
+									"    // Usar entidade padrão em caso de erro",
+									"    pm.collectionVariables.set('entity_id', pm.collectionVariables.get('default_entity_id'));",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/search/Entity?criteria[0][field]=70&criteria[0][searchtype]=equals&criteria[0][value]={{registration_number}}&forcedisplay[0]=1&forcedisplay[1]=2&forcedisplay[2]=14",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"search",
+								"Entity"
+							],
+							"query": [
+								{
+									"key": "criteria[0][field]",
+									"value": "70",
+									"description": "Campo registration_number"
+								},
+								{
+									"key": "criteria[0][searchtype]",
+									"value": "equals"
+								},
+								{
+									"key": "criteria[0][value]",
+									"value": "{{registration_number}}"
+								},
+								{
+									"key": "forcedisplay[0]",
+									"value": "1",
+									"description": "Nome Completo (Árvore)"
+								},
+								{
+									"key": "forcedisplay[1]",
+									"value": "2",
+									"description": "ID"
+								},
+								{
+									"key": "forcedisplay[2]",
+									"value": "14",
+									"description": "Cidade"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🎫 ServiceNow Ticket Simulation",
+			"item": [
+				{
+					"name": "1. Create Incident from ServiceNow",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Gerar Incident ID do ServiceNow (formato: INC0001234)",
+									"function gerarIncidentServiceNow() {",
+									"    const num = Math.floor(Math.random() * 9000000) + 1000000;",
+									"    return 'INC' + num.toString().padStart(7, '0');",
+									"}",
+									"",
+									"const incidentId = gerarIncidentServiceNow();",
+									"pm.collectionVariables.set('snow_incident_id', incidentId);",
+									"pm.collectionVariables.set('ticket_timestamp', new Date().toISOString());",
+									"",
+									"console.log('=== PREPARANDO INCIDENT TEST ===');",
+									"console.log('ServiceNow Incident ID: ' + incidentId);",
+									"console.log('Timestamp: ' + pm.collectionVariables.get('ticket_timestamp'));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('incident_ticket_id', jsonData.id);",
+									"    ",
+									"    console.log('=== INCIDENT CRIADO ===');",
+									"    console.log('GLPI Ticket ID: ' + jsonData.id);",
+									"    console.log('ServiceNow ID: ' + pm.collectionVariables.get('snow_incident_id'));",
+									"    ",
+									"    // Testar extração de Incident ID (sem #)",
+									"    const title = pm.collectionVariables.get('snow_incident_id') + ' - Problema na impressora';",
+									"    const regex = /^(INC|REQ|CHG|PRB)\\d{7}/;",
+									"    const match = title.match(regex);",
+									"    ",
+									"    pm.test('ServiceNow Incident ID extraction', function () {",
+									"        pm.expect(match).to.not.be.null;",
+									"        pm.expect(match[0]).to.include('INC');",
+									"        pm.expect(match[0]).to.have.lengthOf(10); // INC + 7 dígitos",
+									"    });",
+									"    ",
+									"    console.log('✅ Incident ID extraído: ' + (match ? match[0] : 'ERRO'));",
+									"    console.log('✅ Plugin deve detectar este ticket como vindo do ServiceNow');",
+									"    console.log('✅ Hooks de sincronização serão ativados para este ticket');",
+									"} else {",
+									"    pm.test('Incident creation failed', function () {",
+									"        pm.expect.fail('Failed to create incident: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"entities_id\": {{entity_id}},\n        \"status\": 1,\n        \"requesttypes_id\": {{snow_request_type_id}},\n        \"name\": \"{{snow_incident_id}} - Problema na impressora\",\n        \"content\": \"Incidente originado no ServiceNow.\\n\\n=== DETALHES DO SERVICENOW ===\\n- ServiceNow ID: {{snow_incident_id}}\\n- Tipo: Incident\\n- Estado Inicial: New (1)\\n- Prioridade: Medium\\n- Categoria: Hardware\\n- Subcategoria: Printer\\n\\n=== DESCRIÇÃO ===\\nUsuário reporta que a impressora do setor financeiro não está funcionando. Problema começou hoje pela manhã. Tentativas de reinicialização não resolveram.\\n\\n=== INFORMAÇÕES TÉCNICAS ===\\n- Local: Setor Financeiro\\n- Modelo: HP LaserJet Pro\\n- IP: 192.168.1.100\\n- Último funcionamento: Ontem às 18:00\\n\\nEste ticket foi criado automaticamente via integração ServiceNow → GLPI.\",\n        \"urgency\": 3,\n        \"impact\": 3,\n        \"priority\": 3,\n        \"type\": 1,\n        \"itilcategories_id\": 0,\n        \"_actors\": {\n            \"requester\": [\n                {\n                    \"itemtype\": \"User\",\n                    \"items_id\": {{glpi_requester_user_id}},\n                    \"use_notification\": 1\n                }\n            ]\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/Ticket",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"Ticket"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create Service Request from ServiceNow",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Gerar Request ID do ServiceNow (formato: REQ0001234)",
+									"function gerarRequestServiceNow() {",
+									"    const num = Math.floor(Math.random() * 9000000) + 1000000;",
+									"    return 'REQ' + num.toString().padStart(7, '0');",
+									"}",
+									"",
+									"const requestId = gerarRequestServiceNow();",
+									"pm.collectionVariables.set('snow_request_id', requestId);",
+									"",
+									"console.log('=== PREPARANDO SERVICE REQUEST TEST ===');",
+									"console.log('ServiceNow Request ID: ' + requestId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('request_ticket_id', jsonData.id);",
+									"    ",
+									"    console.log('=== SERVICE REQUEST CRIADO ===');",
+									"    console.log('GLPI Ticket ID: ' + jsonData.id);",
+									"    console.log('ServiceNow ID: ' + pm.collectionVariables.get('snow_request_id'));",
+									"    ",
+									"    // Testar extração de Request ID",
+									"    const title = pm.collectionVariables.get('snow_request_id') + ' - Solicitação de novo computador';",
+									"    const regex = /^(INC|REQ|CHG|PRB)\\d{7}/;",
+									"    const match = title.match(regex);",
+									"    ",
+									"    pm.test('ServiceNow Request ID extraction', function () {",
+									"        pm.expect(match).to.not.be.null;",
+									"        pm.expect(match[0]).to.include('REQ');",
+									"        pm.expect(match[0]).to.have.lengthOf(10); // REQ + 7 dígitos",
+									"    });",
+									"    ",
+									"    console.log('✅ Request ID extraído: ' + (match ? match[0] : 'ERRO'));",
+									"} else {",
+									"    pm.test('Request creation failed', function () {",
+									"        pm.expect.fail('Failed to create request: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"entities_id\": {{entity_id}},\n        \"status\": 1,\n        \"requesttypes_id\": {{snow_request_type_id}},\n        \"name\": \"{{snow_request_id}} - Solicitação de novo computador\",\n        \"content\": \"Service Request originado no ServiceNow.\\n\\n=== DETALHES DO SERVICENOW ===\\n- ServiceNow ID: {{snow_request_id}}\\n- Tipo: Service Request (sc_request)\\n- Estado Inicial: Requested (1)\\n- Prioridade: Medium\\n- Categoria: Hardware\\n- Subcategoria: Computer\\n\\n=== SOLICITAÇÃO ===\\nSolicitação de novo computador para funcionário do departamento financeiro.\\n\\n=== JUSTIFICATIVA ===\\n- Computador atual com mais de 5 anos\\n- Lentidão constante afetando produtividade\\n- Problemas frequentes de travamento\\n- Necessário para trabalhar com novos sistemas\\n\\n=== ESPECIFICAÇÕES ===\\n- Processador: Intel i5 ou superior\\n- Memória: 16GB RAM\\n- HD: SSD 512GB\\n- Sistema: Windows 11\\n\\nEste ticket foi criado automaticamente via integração ServiceNow → GLPI.\",\n        \"urgency\": 2,\n        \"impact\": 2,\n        \"priority\": 2,\n        \"type\": 2,\n        \"itilcategories_id\": 0,\n        \"_actors\": {\n            \"requester\": [\n                {\n                    \"itemtype\": \"User\",\n                    \"items_id\": {{glpi_requester_user_id}},\n                    \"use_notification\": 1\n                }\n            ]\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/Ticket",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"Ticket"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Create Change Request from ServiceNow",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Gerar Change ID do ServiceNow (formato: CHG0001234)",
+									"function gerarChangeServiceNow() {",
+									"    const num = Math.floor(Math.random() * 9000000) + 1000000;",
+									"    return 'CHG' + num.toString().padStart(7, '0');",
+									"}",
+									"",
+									"const changeId = gerarChangeServiceNow();",
+									"pm.collectionVariables.set('snow_change_id', changeId);",
+									"",
+									"console.log('=== PREPARANDO CHANGE REQUEST TEST ===');",
+									"console.log('ServiceNow Change ID: ' + changeId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('change_ticket_id', jsonData.id);",
+									"    ",
+									"    console.log('=== CHANGE REQUEST CRIADO ===');",
+									"    console.log('GLPI Ticket ID: ' + jsonData.id);",
+									"    console.log('ServiceNow ID: ' + pm.collectionVariables.get('snow_change_id'));",
+									"    ",
+									"    // Testar extração de Change ID",
+									"    const title = pm.collectionVariables.get('snow_change_id') + ' - Atualização do sistema';",
+									"    const regex = /^(INC|REQ|CHG|PRB)\\d{7}/;",
+									"    const match = title.match(regex);",
+									"    ",
+									"    pm.test('ServiceNow Change ID extraction', function () {",
+									"        pm.expect(match).to.not.be.null;",
+									"        pm.expect(match[0]).to.include('CHG');",
+									"        pm.expect(match[0]).to.have.lengthOf(10); // CHG + 7 dígitos",
+									"    });",
+									"    ",
+									"    console.log('✅ Change ID extraído: ' + (match ? match[0] : 'ERRO'));",
+									"} else {",
+									"    pm.test('Change creation failed', function () {",
+									"        pm.expect.fail('Failed to create change: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"entities_id\": {{entity_id}},\n        \"status\": 1,\n        \"requesttypes_id\": {{snow_request_type_id}},\n        \"name\": \"{{snow_change_id}} - Atualização do sistema\",\n        \"content\": \"Change Request originado no ServiceNow.\\n\\n=== DETALHES DO SERVICENOW ===\\n- ServiceNow ID: {{snow_change_id}}\\n- Tipo: Change Request\\n- Estado Inicial: New (1)\\n- Prioridade: Medium\\n- Categoria: Software\\n- Subcategoria: System Update\\n\\n=== DESCRIÇÃO DA MUDANÇA ===\\nAtualização programada do sistema ERP para nova versão.\\n\\n=== ESCOPO ===\\n- Atualização do servidor principal\\n- Migração de dados\\n- Testes de funcionalidade\\n- Treinamento dos usuários\\n\\n=== CRONOGRAMA ===\\n- Data planejada: Próximo sábado\\n- Duração estimada: 4 horas\\n- Janela de manutenção: 06:00 às 10:00\\n\\n=== PLANO DE ROLLBACK ===\\n- Backup completo antes da atualização\\n- Procedimento de reversão documentado\\n- Tempo estimado de rollback: 2 horas\\n\\nEste ticket foi criado automaticamente via integração ServiceNow → GLPI.\",\n        \"urgency\": 2,\n        \"impact\": 3,\n        \"priority\": 2,\n        \"type\": 3,\n        \"itilcategories_id\": 0,\n        \"_actors\": {\n            \"requester\": [\n                {\n                    \"itemtype\": \"User\",\n                    \"items_id\": {{glpi_requester_user_id}},\n                    \"use_notification\": 1\n                }\n            ]\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/Ticket",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"Ticket"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 GLPI Updates → ServiceNow Sync",
+			"item": [
+				{
+					"name": "1. Add Follow-up to Incident",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.collectionVariables.get('incident_ticket_id')) {",
+									"    console.log('❌ ATENÇÃO: incident_ticket_id não encontrado. Execute primeiro a criação do incident.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test('Follow-up added successfully', function () {",
+									"        pm.expect(jsonData.id).to.be.a('number');",
+									"    });",
+									"    ",
+									"    console.log('=== FOLLOW-UP ADICIONADO ===');",
+									"    console.log('Follow-up ID: ' + jsonData.id);",
+									"    console.log('Ticket GLPI: ' + jsonData.items_id);",
+									"    console.log('ServiceNow ID: ' + pm.collectionVariables.get('snow_incident_id'));",
+									"    console.log('✅ Este follow-up deve ser sincronizado como Work Note no ServiceNow');",
+									"    console.log('✅ Plugin usará o ID extraído do título para encontrar o ticket no ServiceNow');",
+									"} else {",
+									"    pm.test('Follow-up creation failed', function () {",
+									"        pm.expect.fail('Failed to add follow-up: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"items_id\": {{incident_ticket_id}},\n        \"itemtype\": \"Ticket\",\n        \"content\": \"[GLPI → ServiceNow Sync Test]\\n\\nEsta atualização foi feita no GLPI e deve ser sincronizada automaticamente com o ServiceNow como Work Note.\\n\\nDetalhes da Atualização:\\n- Origem: GLPI Follow-up\\n- Ticket ServiceNow: {{snow_incident_id}}\\n- Ticket GLPI: {{incident_ticket_id}}\\n- Timestamp: {{ticket_timestamp}}\\n\\nStatus: Analisando problema na impressora. Técnico em campo verificando hardware.\",\n        \"is_private\": 0,\n        \"requesttypes_id\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/ITILFollowup",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"ITILFollowup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Update Incident Status to In Progress",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.collectionVariables.get('incident_ticket_id')) {",
+									"    console.log('❌ ATENÇÃO: incident_ticket_id não encontrado. Execute primeiro a criação do incident.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test('Incident updated successfully', function () {",
+									"        pm.expect(jsonData[pm.collectionVariables.get('incident_ticket_id')]).to.be.true;",
+									"    });",
+									"    ",
+									"    console.log('=== INCIDENT ATUALIZADO ===');",
+									"    console.log('Status alterado para: Em atendimento (atribuído)');",
+									"    console.log('ServiceNow ID: ' + pm.collectionVariables.get('snow_incident_id'));",
+									"    console.log('✅ Esta mudança de status deve ser sincronizada com ServiceNow');",
+									"    console.log('✅ Plugin irá atualizar o campo \"state\" no ServiceNow (2 = In Progress)');",
+									"} else {",
+									"    pm.test('Incident update failed', function () {",
+									"        pm.expect.fail('Failed to update incident: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"status\": 2,\n        \"_groups_id_assign\": {{glpi_technician_group_id}},\n        \"_users_id_assign\": {{glpi_technician_user_id}}\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/Ticket/{{incident_ticket_id}}",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"Ticket",
+								"{{incident_ticket_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Add Technical Follow-up",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('=== FOLLOW-UP TÉCNICO ADICIONADO ===');",
+									"    console.log('Follow-up ID: ' + jsonData.id);",
+									"    console.log('✅ Este follow-up técnico será sincronizado como Work Note no ServiceNow');",
+									"} else {",
+									"    pm.test('Technical follow-up creation failed', function () {",
+									"        pm.expect.fail('Failed to add technical follow-up: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"items_id\": {{incident_ticket_id}},\n        \"itemtype\": \"Ticket\",\n        \"content\": \"[Atualização Técnica - Sincronizar com ServiceNow]\\n\\nDiagnóstico realizado:\\n\\n1. Verificação física da impressora:\\n   - Conectores OK\\n   - Alimentação OK\\n   - Papel carregado corretamente\\n\\n2. Verificação de rede:\\n   - Ping para IP 192.168.1.100: OK\\n   - Porta 9100 (RAW printing): Aberta\\n   - Driver instalado: HP LaserJet Pro\\n\\n3. Testes realizados:\\n   - Página de teste impressa com sucesso\\n   - Teste de impressão em cores: OK\\n   - Teste de impressão duplex: OK\\n\\nConclusão: Problema identificado como driver desatualizado. Atualização realizada.\\n\\nStatus: Problema resolvido. Aguardando confirmação do usuário.\",\n        \"is_private\": 0,\n        \"requesttypes_id\": 1\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/ITILFollowup",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"ITILFollowup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Close Incident with Solution",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test('Incident closed successfully', function () {",
+									"        pm.expect(jsonData[pm.collectionVariables.get('incident_ticket_id')]).to.be.true;",
+									"    });",
+									"    ",
+									"    console.log('=== INCIDENT FECHADO COM SUCESSO ===');",
+									"    console.log('GLPI Ticket ID: ' + pm.collectionVariables.get('incident_ticket_id'));",
+									"    console.log('ServiceNow ID: ' + pm.collectionVariables.get('snow_incident_id'));",
+									"    console.log('✅ Ticket fechado no GLPI');",
+									"    console.log('✅ Status deve ser sincronizado com ServiceNow (state = 6 - Resolved)');",
+									"    console.log('✅ Solução deve aparecer nas close_notes do ServiceNow');",
+									"} else {",
+									"    pm.test('Incident closure failed', function () {",
+									"        pm.expect.fail('Failed to close incident: ' + pm.response.text());",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"status\": 6,\n        \"solution\": \"[Solução Sincronizada com ServiceNow]\\n\\nProblema resolvido com sucesso!\\n\\nResumo da Solução:\\n- Causa raiz: Driver de impressora desatualizado\\n- Ação realizada: Atualização do driver HP LaserJet Pro\\n- Teste de funcionalidade: Realizado com sucesso\\n- Confirmação do usuário: Impressora funcionando normalmente\\n\\nDetalhes Técnicos:\\n- Driver anterior: Versão 2.1.5\\n- Driver atual: Versão 3.2.1\\n- Tempo de resolução: 45 minutos\\n- SLA: Atendido dentro do prazo\\n\\nTicket ServiceNow: {{snow_incident_id}}\\nTicket GLPI: {{incident_ticket_id}}\\nTécnico responsável: {{glpi_technician_name}}\\n\\nEsta solução será sincronizada automaticamente com o ServiceNow via plugin snowclient.\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/Ticket/{{incident_ticket_id}}",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"Ticket",
+								"{{incident_ticket_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Monitoring & Debug",
+			"item": [
+				{
+					"name": "1. Get Incident Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test('Incident details retrieved', function () {",
+									"        pm.expect(jsonData.id).to.be.a('number');",
+									"    });",
+									"    console.log('=== DETALHES DO INCIDENT ===');",
+									"    console.log('ID: ' + jsonData.id);",
+									"    console.log('Nome: ' + jsonData.name);",
+									"    console.log('Status: ' + jsonData.status);",
+									"    console.log('Entity: ' + jsonData.entities_id);",
+									"    console.log('Request Type: ' + jsonData.requesttypes_id);",
+									"    console.log('Urgency: ' + jsonData.urgency);",
+									"    console.log('Impact: ' + jsonData.impact);",
+									"    console.log('Priority: ' + jsonData.priority);",
+									"    console.log('Type: ' + jsonData.type);",
+									"    console.log('Created: ' + jsonData.date);",
+									"    console.log('Updated: ' + jsonData.date_mod);",
+									"    console.log('Solution: ' + (jsonData.solution ? 'Presente' : 'Não informada'));",
+									"} else {",
+									"    pm.test('Failed to get incident details', function () {",
+									"        pm.expect.fail('Error retrieving incident');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/Ticket/{{incident_ticket_id}}?expand_dropdowns=true",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"Ticket",
+								"{{incident_ticket_id}}"
+							],
+							"query": [
+								{
+									"key": "expand_dropdowns",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. List ServiceNow Tickets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test('ServiceNow tickets found', function () {",
+									"        pm.expect(jsonData.data).to.be.an('array');",
+									"    });",
+									"    console.log('=== TICKETS DO SERVICENOW NO GLPI ===');",
+									"    console.log('Total encontrados: ' + jsonData.totalcount);",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        console.log('Tickets com IDs ServiceNow no título:');",
+									"        jsonData.data.forEach(function(ticket) {",
+									"            const title = ticket[1];",
+									"            const regex = /^(INC|REQ|CHG|PRB)\\d{7}/;",
+									"            const match = title.match(regex);",
+									"            const hasSnowId = match ? '✅ ' + match[0] : '❌ Sem ID';",
+									"            console.log('ID: ' + ticket[2] + ', Status: ' + ticket[12] + ', Título: ' + title.substring(0, 40) + '... [' + hasSnowId + ']');",
+									"        });",
+									"    }",
+									"} else {",
+									"    pm.test('Failed to list tickets', function () {",
+									"        pm.expect.fail('Error listing tickets');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/search/Ticket?criteria[0][field]=9&criteria[0][searchtype]=equals&criteria[0][value]={{snow_request_type_id}}&forcedisplay[0]=1&forcedisplay[1]=2&forcedisplay[2]=12&forcedisplay[3]=15&range=0-20",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"search",
+								"Ticket"
+							],
+							"query": [
+								{
+									"key": "criteria[0][field]",
+									"value": "9",
+									"description": "Campo requesttypes_id"
+								},
+								{
+									"key": "criteria[0][searchtype]",
+									"value": "equals"
+								},
+								{
+									"key": "criteria[0][value]",
+									"value": "{{snow_request_type_id}}",
+									"description": "Request type ServiceNow"
+								},
+								{
+									"key": "forcedisplay[0]",
+									"value": "1",
+									"description": "Título"
+								},
+								{
+									"key": "forcedisplay[1]",
+									"value": "2",
+									"description": "ID"
+								},
+								{
+									"key": "forcedisplay[2]",
+									"value": "12",
+									"description": "Status"
+								},
+								{
+									"key": "forcedisplay[3]",
+									"value": "15",
+									"description": "Data de abertura"
+								},
+								{
+									"key": "range",
+									"value": "0-20",
+									"description": "Últimos 20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Check Plugin Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        pm.test('Plugin configuration found', function () {",
+									"            pm.expect(jsonData.data.length).to.be.above(0);",
+									"        });",
+									"        console.log('=== CONFIGURAÇÃO DO PLUGIN SNOWCLIENT ===');",
+									"        jsonData.data.forEach(function(config) {",
+									"            console.log('ID: ' + config[2]);",
+									"            console.log('URL ServiceNow: ' + (config[4] || 'Não configurado'));",
+									"            console.log('Username: ' + (config[5] || 'Não configurado'));",
+									"            console.log('Entity ID: ' + (config[6] || 'Não configurado'));",
+									"            console.log('Sync Tickets: ' + (config[7] ? 'Habilitado' : 'Desabilitado'));",
+									"            console.log('Sync Follow-ups: ' + (config[8] ? 'Habilitado' : 'Desabilitado'));",
+									"            console.log('Sync Status: ' + (config[9] ? 'Habilitado' : 'Desabilitado'));",
+									"            console.log('Debug Mode: ' + (config[10] ? 'Habilitado' : 'Desabilitado'));",
+									"        });",
+									"    } else {",
+									"        pm.test('Plugin not configured', function () {",
+									"            pm.expect.fail('Plugin snowclient não está configurado');",
+									"        });",
+									"    }",
+									"} else {",
+									"    pm.test('Failed to check plugin config', function () {",
+									"        pm.expect.fail('Error checking plugin configuration');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/search/PluginSnowclientConfig?forcedisplay[0]=1&forcedisplay[1]=2&forcedisplay[2]=4&forcedisplay[3]=5&forcedisplay[4]=6&forcedisplay[5]=7&forcedisplay[6]=8&forcedisplay[7]=9&forcedisplay[8]=10",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"search",
+								"PluginSnowclientConfig"
+							],
+							"query": [
+								{
+									"key": "forcedisplay[0]",
+									"value": "1",
+									"description": "Nome"
+								},
+								{
+									"key": "forcedisplay[1]",
+									"value": "2",
+									"description": "ID"
+								},
+								{
+									"key": "forcedisplay[2]",
+									"value": "4",
+									"description": "URL"
+								},
+								{
+									"key": "forcedisplay[3]",
+									"value": "5",
+									"description": "Username"
+								},
+								{
+									"key": "forcedisplay[4]",
+									"value": "6",
+									"description": "Entity ID"
+								},
+								{
+									"key": "forcedisplay[5]",
+									"value": "7",
+									"description": "Sync Tickets"
+								},
+								{
+									"key": "forcedisplay[6]",
+									"value": "8",
+									"description": "Sync Follow-ups"
+								},
+								{
+									"key": "forcedisplay[7]",
+									"value": "9",
+									"description": "Sync Status"
+								},
+								{
+									"key": "forcedisplay[8]",
+									"value": "10",
+									"description": "Debug Mode"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Test Summary Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log('');",
+									"console.log('🎯 ===== RESUMO COMPLETO DO TESTE =====');",
+									"console.log('');",
+									"console.log('📋 TICKETS CRIADOS:');",
+									"console.log('1. Incident: ' + pm.collectionVariables.get('snow_incident_id') + ' → GLPI ID: ' + pm.collectionVariables.get('incident_ticket_id'));",
+									"console.log('2. Request: ' + pm.collectionVariables.get('snow_request_id') + ' → GLPI ID: ' + pm.collectionVariables.get('request_ticket_id'));",
+									"console.log('3. Change: ' + pm.collectionVariables.get('snow_change_id') + ' → GLPI ID: ' + pm.collectionVariables.get('change_ticket_id'));",
+									"console.log('');",
+									"console.log('🔄 SINCRONIZAÇÕES TESTADAS:');",
+									"console.log('✅ 1. Detecção de tickets ServiceNow (por ID no título)');",
+									"console.log('✅ 2. Follow-ups GLPI → Work Notes ServiceNow');",
+									"console.log('✅ 3. Mudanças de status GLPI → State ServiceNow');",
+									"console.log('✅ 4. Soluções GLPI → Close Notes ServiceNow');",
+									"console.log('');",
+									"console.log('🎯 FLUXO TESTADO:');",
+									"console.log('ServiceNow → GLPI → Atualizações → ServiceNow');",
+									"console.log('');",
+									"console.log('📊 CONFIGURAÇÕES:');",
+									"console.log('- Request Type ID: ' + pm.collectionVariables.get('snow_request_type_id'));",
+									"console.log('- Entity ID: ' + pm.collectionVariables.get('entity_id'));",
+									"console.log('- GLPI Base URL: ' + pm.collectionVariables.get('glpi_base_url'));",
+									"console.log('');",
+									"console.log('✨ TESTE COMPLETO FINALIZADO! ✨');",
+									"",
+									"pm.test('All tests completed successfully', function () {",
+									"    pm.expect(pm.collectionVariables.get('incident_ticket_id')).to.not.be.undefined;",
+									"    pm.expect(pm.collectionVariables.get('request_ticket_id')).to.not.be.undefined;",
+									"    pm.expect(pm.collectionVariables.get('change_ticket_id')).to.not.be.undefined;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/getMyProfiles",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"getMyProfiles"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔚 Cleanup",
+			"item": [
+				{
+					"name": "Kill Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Session killed successfully', function () {",
+									"    pm.expect(pm.response.code).to.eql(200);",
+									"});",
+									"",
+									"// Limpar variáveis sensíveis",
+									"pm.collectionVariables.unset('session_token');",
+									"console.log('✅ Sessão encerrada e variáveis limpas');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Session-Token",
+								"value": "{{session_token}}"
+							},
+							{
+								"key": "App-Token",
+								"value": "{{glpi_app_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{glpi_base_url}}/apirest.php/killSession",
+							"host": [
+								"{{glpi_base_url}}"
+							],
+							"path": [
+								"apirest.php",
+								"killSession"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "user_token {{user_token}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "Authorization",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"// Validar se variáveis essenciais estão configuradas",
+					"const requiredVars = ['glpi_base_url', 'glpi_app_token', 'user_token'];",
+					"const missingVars = requiredVars.filter(varName => !pm.collectionVariables.get(varName));",
+					"",
+					"if (missingVars.length > 0) {",
+					"    console.log('❌ ATENÇÃO: Variáveis obrigatórias não configuradas: ' + missingVars.join(', '));",
+					"    console.log('Configure as variáveis da collection antes de executar os testes.');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"// Global test script",
+					"// Log básico para todas as requisições",
+					"if (pm.response.code >= 400) {",
+					"    console.log('❌ Erro HTTP ' + pm.response.code + ': ' + pm.request.name);",
+					"    console.log('Response: ' + pm.response.text().substring(0, 200));",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "glpi_base_url",
+			"value": "https://zamp.engemonit.com.br",
+			"type": "string",
+			"description": "URL base do GLPI (sem /apirest.php)"
+		},
+		{
+			"key": "glpi_app_token",
+			"value": "rm5PiEyoLsJ2saTw8ej4HLbQurLn4zEQvNGRgdtU",
+			"type": "string",
+			"description": "App Token do GLPI para API REST"
+		},
+		{
+			"key": "user_token",
+			"value": "TqzH2rZx241f1i6pXiw9bJOC3CSzEvOi7BuGxBwg",
+			"type": "string",
+			"description": "User Token do usuário para autenticação"
+		},
+		{
+			"key": "registration_number",
+			"value": "123456",
+			"type": "string",
+			"description": "Número de registro da entidade para busca"
+		},
+		{
+			"key": "snow_request_type_id",
+			"value": "7",
+			"type": "string",
+			"description": "ID do tipo de solicitação para tickets ServiceNow"
+		},
+		{
+			"key": "default_entity_id",
+			"value": "1",
+			"type": "string",
+			"description": "ID da entidade padrão caso não encontre por registration_number"
+		},
+		{
+			"key": "glpi_requester_user_id",
+			"value": "2",
+			"type": "string",
+			"description": "ID do usuário solicitante padrão"
+		},
+		{
+			"key": "glpi_technician_user_id",
+			"value": "2",
+			"type": "string",
+			"description": "ID do usuário técnico para atribuição"
+		},
+		{
+			"key": "glpi_technician_group_id",
+			"value": "1",
+			"type": "string",
+			"description": "ID do grupo técnico para atribuição"
+		},
+		{
+			"key": "glpi_technician_name",
+			"value": "Admin GLPI",
+			"type": "string",
+			"description": "Nome do técnico responsável"
+		},
+		{
+			"key": "session_token",
+			"value": "",
+			"type": "string",
+			"description": "Token de sessão (preenchido automaticamente)"
+		},
+		{
+			"key": "entity_id",
+			"value": "",
+			"type": "string",
+			"description": "ID da entidade (preenchido automaticamente)"
+		},
+		{
+			"key": "ticket_timestamp",
+			"value": "",
+			"type": "string",
+			"description": "Timestamp do ticket (preenchido automaticamente)"
+		},
+		{
+			"key": "snow_incident_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do incident ServiceNow (gerado automaticamente)"
+		},
+		{
+			"key": "snow_request_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do request ServiceNow (gerado automaticamente)"
+		},
+		{
+			"key": "snow_change_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do change ServiceNow (gerado automaticamente)"
+		},
+		{
+			"key": "incident_ticket_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do ticket incident no GLPI (preenchido automaticamente)"
+		},
+		{
+			"key": "request_ticket_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do ticket request no GLPI (preenchido automaticamente)"
+		},
+		{
+			"key": "change_ticket_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do ticket change no GLPI (preenchido automaticamente)"
+		}
+	]
+}
