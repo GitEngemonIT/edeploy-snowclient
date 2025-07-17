@@ -173,7 +173,10 @@ class PluginSnowclientConfig extends CommonDBTM
         Entity::dropdown([
             'name' => 'entities_id',
             'value' => $this->fields['entities_id'],
-            'comments' => false
+            'comments' => false,
+            'entity' => -1,  // Mostrar todas as entidades
+            'emptylabel' => __('Select an entity...', 'snowclient'),
+            'display_emptychoice' => true
         ]);
         echo "<br><span class='small'>" . __('Only tickets from this entity and its children will be synchronized', 'snowclient') . "</span>";
         echo "</td>";
@@ -185,7 +188,10 @@ class PluginSnowclientConfig extends CommonDBTM
         RequestType::dropdown([
             'name' => 'request_type',
             'value' => $this->fields['request_type'],
-            'comments' => false
+            'comments' => false,
+            'entity' => -1,  // Mostrar todos os tipos de solicitação
+            'emptylabel' => __('Select a request type...', 'snowclient'),
+            'display_emptychoice' => true
         ]);
         echo "<br><span class='small'>" . __('Request type used to identify tickets from ServiceNow', 'snowclient') . "</span>";
         echo "</td>";
@@ -197,7 +203,13 @@ class PluginSnowclientConfig extends CommonDBTM
         User::dropdown([
             'name' => 'api_user',
             'value' => $this->fields['api_user'],
-            'comments' => false
+            'comments' => false,
+            'entity' => -1,  // Mostrar usuários de todas as entidades
+            'entity_sons' => true,
+            'right' => 'all',
+            'width' => '80%',
+            'emptylabel' => __('Select a user...', 'snowclient'),
+            'display_emptychoice' => true
         ]);
         echo "<br><span class='small'>" . __('User for API operations and follow-ups', 'snowclient') . "</span>";
         echo "</td>";

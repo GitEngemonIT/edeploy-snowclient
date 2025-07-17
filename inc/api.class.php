@@ -202,6 +202,9 @@ class PluginSnowclientApi
         // Extrair ID do ServiceNow do título do ticket
         $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
         if (!$snowId) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
+            }
             return false;
         }
         
@@ -214,7 +217,7 @@ class PluginSnowclientApi
             
             if (empty($searchResult['result'])) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("Incidente $cleanSnowId não encontrado no ServiceNow");
+                    Toolbox::logError("SnowClient: Incidente $cleanSnowId não encontrado no ServiceNow");
                 }
                 return false;
             }
@@ -223,8 +226,9 @@ class PluginSnowclientApi
             
             // Preparar dados de atualização
             $updateData = [
-                'work_notes' => sprintf(__('Ticket atualizado no GLPI por %s', 'snowclient'), 
-                    getUserName(Session::getLoginUserID()))
+                'work_notes' => sprintf(__('Ticket atualizado no GLPI por %s em %s', 'snowclient'), 
+                    getUserName(Session::getLoginUserID()), 
+                    date('Y-m-d H:i:s'))
             ];
             
             // Mapear status do GLPI para ServiceNow
@@ -232,12 +236,49 @@ class PluginSnowclientApi
                 $updateData['state'] = $this->mapGlpiStatusToServiceNow($ticket->fields['status']);
             }
             
+            // Mapear prioridade (ServiceNow usa 1-5, GLPI usa 1-6)
+            if (isset($ticket->fields['priority'])) {
+                $updateData['priority'] = $this->mapGlpiPriorityToServiceNow($ticket->fields['priority']);
+            }
+            
+            // Mapear urgência (ServiceNow usa 1-3, GLPI usa 1-5)
+            if (isset($ticket->fields['urgency'])) {
+                $updateData['urgency'] = $this->mapGlpiUrgencyToServiceNow($ticket->fields['urgency']);
+            }
+            
+            // Mapear impacto (ServiceNow usa 1-3, GLPI usa 1-5)
+            if (isset($ticket->fields['impact'])) {
+                $updateData['impact'] = $this->mapGlpiImpactToServiceNow($ticket->fields['impact']);
+            }
+            
+            // Sincronizar título se mudou
+            if (isset($ticket->fields['name']) && !empty($ticket->fields['name'])) {
+                // Não sobrescrever se o título contém o ID do ServiceNow
+                if (!preg_match('/^#?(INC|REQ|CHG|PRB)\d{7}/', $ticket->fields['name'])) {
+                    $updateData['short_description'] = $ticket->fields['name'];
+                }
+            }
+            
+            // Sincronizar descrição se mudou
+            if (isset($ticket->fields['content']) && !empty($ticket->fields['content'])) {
+                $updateData['description'] = strip_tags($ticket->fields['content']);
+            }
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Atualizando incidente $cleanSnowId com dados: " . json_encode($updateData));
+            }
+            
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Incidente $cleanSnowId atualizado com sucesso");
+            }
+            
             return $result['result'] ?? null;
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("Erro ao atualizar incidente: " . $e->getMessage());
+                Toolbox::logError("SnowClient: Erro ao atualizar incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -250,12 +291,18 @@ class PluginSnowclientApi
     {
         $ticket = new Ticket();
         if (!$ticket->getFromDB($followup->fields['items_id'])) {
+            if ($this->debug_mode) {
+                Toolbox::logError("SnowClient: Ticket {$followup->fields['items_id']} não encontrado para followup");
+            }
             return false;
         }
         
         // Extrair ID do ServiceNow
         $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
         if (!$snowId) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
+            }
             return false;
         }
         
@@ -266,6 +313,9 @@ class PluginSnowclientApi
             $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id");
             
             if (empty($searchResult['result'])) {
+                if ($this->debug_mode) {
+                    Toolbox::logError("SnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para followup");
+                }
                 return false;
             }
             
@@ -273,18 +323,43 @@ class PluginSnowclientApi
             
             // Preparar nota de trabalho
             $userName = getUserName($followup->fields['users_id']);
-            $workNote = sprintf("[GLPI - %s] %s", $userName, $followup->fields['content']);
+            $timestamp = date('Y-m-d H:i:s');
+            
+            // Determinar tipo de followup
+            $followupType = '';
+            if (isset($followup->fields['is_private']) && $followup->fields['is_private']) {
+                $followupType = '[NOTA PRIVADA]';
+            } else {
+                $followupType = '[ATUALIZAÇÃO PÚBLICA]';
+            }
+            
+            $workNote = sprintf(
+                "%s [GLPI - %s em %s]\n%s", 
+                $followupType,
+                $userName, 
+                $timestamp,
+                strip_tags($followup->fields['content'])
+            );
             
             $updateData = [
                 'work_notes' => $workNote
             ];
             
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Adicionando work note ao incidente $cleanSnowId");
+            }
+            
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Work note adicionada com sucesso ao incidente $cleanSnowId");
+            }
+            
             return $result['result'] ?? null;
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("Erro ao adicionar nota de trabalho: " . $e->getMessage());
+                Toolbox::logError("SnowClient: Erro ao adicionar nota de trabalho ao incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -364,5 +439,60 @@ class PluginSnowclientApi
         ];
         
         return $mapping[$glpiStatus] ?? 1; // Default: New
+    }
+
+    /**
+     * Mapear prioridade do GLPI para ServiceNow
+     * GLPI: 1=Muito baixa, 2=Baixa, 3=Média, 4=Alta, 5=Muito alta, 6=Crítica
+     * ServiceNow: 1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning
+     */
+    private function mapGlpiPriorityToServiceNow($glpiPriority)
+    {
+        $mapping = [
+            1 => 5,    // Muito baixa -> Planning
+            2 => 4,    // Baixa -> Low
+            3 => 3,    // Média -> Moderate
+            4 => 2,    // Alta -> High
+            5 => 1,    // Muito alta -> Critical
+            6 => 1     // Crítica -> Critical
+        ];
+        
+        return $mapping[$glpiPriority] ?? 3; // Default: Moderate
+    }
+
+    /**
+     * Mapear urgência do GLPI para ServiceNow
+     * GLPI: 1=Muito baixa, 2=Baixa, 3=Média, 4=Alta, 5=Muito alta
+     * ServiceNow: 1=High, 2=Medium, 3=Low
+     */
+    private function mapGlpiUrgencyToServiceNow($glpiUrgency)
+    {
+        $mapping = [
+            1 => 3,    // Muito baixa -> Low
+            2 => 3,    // Baixa -> Low
+            3 => 2,    // Média -> Medium
+            4 => 1,    // Alta -> High
+            5 => 1     // Muito alta -> High
+        ];
+        
+        return $mapping[$glpiUrgency] ?? 2; // Default: Medium
+    }
+
+    /**
+     * Mapear impacto do GLPI para ServiceNow
+     * GLPI: 1=Muito baixo, 2=Baixo, 3=Médio, 4=Alto, 5=Muito alto
+     * ServiceNow: 1=High, 2=Medium, 3=Low
+     */
+    private function mapGlpiImpactToServiceNow($glpiImpact)
+    {
+        $mapping = [
+            1 => 3,    // Muito baixo -> Low
+            2 => 3,    // Baixo -> Low
+            3 => 2,    // Médio -> Medium
+            4 => 1,    // Alto -> High
+            5 => 1     // Muito alto -> High
+        ];
+        
+        return $mapping[$glpiImpact] ?? 2; // Default: Medium
     }
 }
