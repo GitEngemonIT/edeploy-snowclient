@@ -325,7 +325,11 @@ class PluginSnowclientApi
             
             // Sincronizar descrição se mudou
             if (isset($ticket->fields['content']) && !empty($ticket->fields['content'])) {
-                $updateData['description'] = strip_tags($ticket->fields['content']);
+                $cleanDescription = $this->cleanHtmlContent($ticket->fields['content']);
+                if (empty($cleanDescription)) {
+                    $cleanDescription = 'Descrição não disponível';
+                }
+                $updateData['description'] = $cleanDescription;
             }
             
             if ($this->debug_mode) {
