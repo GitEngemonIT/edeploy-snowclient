@@ -492,11 +492,19 @@ class PluginSnowclientApi
         // Obter caminho do arquivo
         $filepath = GLPI_ROOT . '/files/' . $document->fields['filepath'];
         
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Caminho do arquivo: $filepath");
+        }
+        
         if (!file_exists($filepath)) {
             if ($this->debug_mode) {
                 Toolbox::logDebug("SnowClient: Arquivo não encontrado: " . $filepath);
             }
             return false;
+        }
+
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Arquivo encontrado, tamanho: " . filesize($filepath) . " bytes");
         }
 
         if ($this->debug_mode) {
