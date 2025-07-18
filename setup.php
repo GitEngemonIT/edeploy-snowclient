@@ -73,6 +73,7 @@ function plugin_init_snowclient()
             'Ticket' => 'plugin_snowclient_item_add',
             'ITILFollowup' => 'plugin_snowclient_item_add',
             'Document' => 'plugin_snowclient_item_add',
+            'Document_Item' => 'plugin_snowclient_item_add',
         ];
 
         $PLUGIN_HOOKS['item_update']['snowclient'] = [
