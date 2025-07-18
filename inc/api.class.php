@@ -492,10 +492,6 @@ class PluginSnowclientApi
         // Obter caminho do arquivo
         $filepath = GLPI_ROOT . '/files/' . $document->fields['filepath'];
         
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Caminho do arquivo: $filepath");
-        }
-        
         if (!file_exists($filepath)) {
             if ($this->debug_mode) {
                 Toolbox::logDebug("SnowClient: Arquivo não encontrado: " . $filepath);
@@ -504,62 +500,54 @@ class PluginSnowclientApi
         }
 
         if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Arquivo encontrado, tamanho: " . filesize($filepath) . " bytes");
-        }
-
-        if ($this->debug_mode) {
             Toolbox::logDebug("SnowClient: Arquivo encontrado: " . $filepath . " (tamanho: " . filesize($filepath) . " bytes)");
         }
 
-        // Verificar se o arquivo é muito grande (>20MB)
-        if (filesize($filepath) > 20 * 1024 * 1024) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Arquivo muito grande (>20MB), tentando redimensionar se for imagem");
-            }
+        try {
+            // Passo 1: Upload do arquivo via ServiceNow Attachment API
+            $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name']);
             
-            // Redimensionar imagem se for muito grande
-            $image_info = getimagesize($filepath);
-            if ($image_info) {
-                $max_width = 1920;
-                $max_height = 1080;
-                
-                if ($image_info[0] > $max_width || $image_info[1] > $max_height) {
-                    $ratio = min($max_width / $image_info[0], $max_height / $image_info[1]);
-                    $new_width = intval($image_info[0] * $ratio);
-                    $new_height = intval($image_info[1] * $ratio);
-                    
-                    // Criar nova imagem redimensionada
-                    $src_image = imagecreatefromstring(file_get_contents($filepath));
-                    $dst_image = imagecreatetruecolor($new_width, $new_height);
-                    imagecopyresampled($dst_image, $src_image, 0, 0, 0, 0, $new_width, $new_height, $image_info[0], $image_info[1]);
-                    
-                    // Salvar imagem temporária
-                    $temp_file = tempnam(sys_get_temp_dir(), 'glpi_resize_');
-                    imagejpeg($dst_image, $temp_file, 85);
-                    
-                    // Usar arquivo temporário
-                    $file_content = file_get_contents($temp_file);
-                    unlink($temp_file);
-                    
-                    imagedestroy($src_image);
-                    imagedestroy($dst_image);
-                    
-                    if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: Imagem redimensionada com sucesso");
-                    }
-                } else {
-                    $file_content = file_get_contents($filepath);
+            if (!$attachmentSysId) {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Falha no upload do arquivo");
                 }
+                return false;
+            }
+
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Upload bem-sucedido, attachment sys_id: " . $attachmentSysId);
+            }
+
+            // Passo 2: Associar o attachment ao incidente
+            $success = $this->linkAttachmentToIncident($attachmentSysId, $sys_id);
+            
+            if ($success) {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Attachment associado ao incidente com sucesso");
+                }
+                return true;
             } else {
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Arquivo muito grande e não é imagem - cancelando envio");
+                    Toolbox::logDebug("SnowClient: Falha ao associar attachment ao incidente");
                 }
-                return false; // Arquivo muito grande e não é imagem
+                return false;
             }
-        } else {
-            $file_content = file_get_contents($filepath);
+
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Exceção ao enviar anexo: " . $e->getMessage());
+            }
+            return false;
         }
-        
+    }
+
+    /**
+     * Upload de arquivo para ServiceNow
+     */
+    private function uploadFileToServiceNow($filepath, $filename)
+    {
+        // Ler arquivo
+        $file_content = file_get_contents($filepath);
         if ($file_content === false) {
             if ($this->debug_mode) {
                 Toolbox::logDebug("SnowClient: Erro ao ler arquivo: " . $filepath);
@@ -567,39 +555,90 @@ class PluginSnowclientApi
             return false;
         }
 
-        $base64_content = base64_encode($file_content);
-        
         // Preparar dados para upload
-        $attachment_data = [
-            'table_name' => 'incident',
-            'table_sys_id' => $sys_id,
-            'file_name' => $document->fields['name'],
-            'content' => $base64_content,
-            'content_type' => $document->fields['mime'] ?? 'application/octet-stream'
-        ];
+        $boundary = '----WebKitFormBoundary' . uniqid();
+        $postData = '';
+        
+        // Adicionar arquivo ao payload
+        $postData .= "--$boundary\r\n";
+        $postData .= "Content-Disposition: form-data; name=\"uploadFile\"; filename=\"$filename\"\r\n";
+        $postData .= "Content-Type: application/octet-stream\r\n\r\n";
+        $postData .= $file_content . "\r\n";
+        $postData .= "--$boundary--\r\n";
+
+        $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file';
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: multipart/form-data; boundary=' . $boundary,
+            'Accept: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_USERPWD, $this->username . ':' . $this->password);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
 
         if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Dados do anexo preparados - nome: " . $document->fields['name'] . ", tipo: " . ($document->fields['mime'] ?? 'application/octet-stream') . ", tamanho base64: " . strlen($base64_content) . " bytes");
+            Toolbox::logDebug("SnowClient: Upload response code: $http_code");
+            Toolbox::logDebug("SnowClient: Upload response: " . substr($response, 0, 500));
         }
 
-        try {
-            // Fazer upload via ServiceNow Attachment API
-            $response = $this->makeAttachmentRequest('api/now/attachment/upload', 'POST', $attachment_data);
-            
-            if ($response && isset($response['result']) && isset($response['result']['sys_id'])) {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Anexo enviado com sucesso - sys_id: " . $response['result']['sys_id']);
-                }
-                return true;
-            } else {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Resposta inesperada do ServiceNow: " . json_encode($response));
-                }
-                return false;
+        if ($error) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: cURL Error no upload: $error");
             }
+            return false;
+        }
+
+        if ($http_code >= 400) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: HTTP Error $http_code no upload: $response");
+            }
+            return false;
+        }
+
+        $result = json_decode($response, true);
+        
+        if (isset($result['result']) && isset($result['result']['sys_id'])) {
+            return $result['result']['sys_id'];
+        }
+
+        return false;
+    }
+
+    /**
+     * Associar attachment a um incidente
+     */
+    private function linkAttachmentToIncident($attachmentSysId, $incidentSysId)
+    {
+        // Atualizar o attachment para associá-lo ao incidente
+        $updateData = [
+            'table_name' => 'incident',
+            'table_sys_id' => $incidentSysId
+        ];
+
+        $endpoint = "api/now/table/sys_attachment/$attachmentSysId";
+        
+        try {
+            $result = $this->makeRequest($endpoint, 'PUT', $updateData);
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Link attachment result: " . json_encode($result));
+            }
+
+            return isset($result['result']);
+            
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Erro ao enviar anexo: " . $e->getMessage());
+                Toolbox::logDebug("SnowClient: Erro ao associar attachment: " . $e->getMessage());
             }
             return false;
         }
