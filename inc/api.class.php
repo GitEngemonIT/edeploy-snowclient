@@ -505,7 +505,8 @@ class PluginSnowclientApi
 
         try {
             // Passo 1: Upload do arquivo via ServiceNow Attachment API
-            $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name']);
+            $mimeType = $document->fields['mime'] ?? 'application/octet-stream';
+            $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name'], $mimeType);
             
             if (!$attachmentSysId) {
                 if ($this->debug_mode) {
@@ -544,8 +545,12 @@ class PluginSnowclientApi
     /**
      * Upload de arquivo para ServiceNow
      */
-    private function uploadFileToServiceNow($filepath, $filename)
+    private function uploadFileToServiceNow($filepath, $filename, $mimeType = null)
     {
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Iniciando upload do arquivo: $filename");
+        }
+
         // Ler arquivo
         $file_content = file_get_contents($filepath);
         if ($file_content === false) {
@@ -555,6 +560,13 @@ class PluginSnowclientApi
             return false;
         }
 
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Arquivo lido com sucesso, tamanho: " . strlen($file_content) . " bytes");
+        }
+
+        // Usar MIME type do documento ou padrão
+        $contentType = $mimeType ?: 'application/octet-stream';
+
         // Preparar dados para upload
         $boundary = '----WebKitFormBoundary' . uniqid();
         $postData = '';
@@ -562,11 +574,16 @@ class PluginSnowclientApi
         // Adicionar arquivo ao payload
         $postData .= "--$boundary\r\n";
         $postData .= "Content-Disposition: form-data; name=\"uploadFile\"; filename=\"$filename\"\r\n";
-        $postData .= "Content-Type: application/octet-stream\r\n\r\n";
+        $postData .= "Content-Type: $contentType\r\n\r\n";
         $postData .= $file_content . "\r\n";
         $postData .= "--$boundary--\r\n";
 
         $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file';
+        
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Fazendo upload para URL: $url");
+            Toolbox::logDebug("SnowClient: Content-Type usado: $contentType");
+        }
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -588,7 +605,7 @@ class PluginSnowclientApi
 
         if ($this->debug_mode) {
             Toolbox::logDebug("SnowClient: Upload response code: $http_code");
-            Toolbox::logDebug("SnowClient: Upload response: " . substr($response, 0, 500));
+            Toolbox::logDebug("SnowClient: Upload response: " . substr($response, 0, 1000));
         }
 
         if ($error) {
@@ -607,10 +624,21 @@ class PluginSnowclientApi
 
         $result = json_decode($response, true);
         
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Upload result parsed: " . json_encode($result));
+        }
+        
         if (isset($result['result']) && isset($result['result']['sys_id'])) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Upload bem-sucedido, sys_id: " . $result['result']['sys_id']);
+            }
             return $result['result']['sys_id'];
         }
 
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Upload falhou - resposta não contém sys_id");
+        }
+        
         return false;
     }
 
