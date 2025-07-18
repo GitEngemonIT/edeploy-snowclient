@@ -597,52 +597,62 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
-        if (!$config->fields['sync_documents']) {
-            if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Sincronização de documentos está desabilitada");
-            }
-            return false;
-        }
+        error_log("SnowClient: afterDocumentItemAdd chamado - itemtype: {$documentItem->fields['itemtype']}, items_id: {$documentItem->fields['items_id']}, documents_id: {$documentItem->fields['documents_id']}");
         
-        if ($config->fields['debug_mode']) {
-            error_log("SnowClient: afterDocumentItemAdd chamado - itemtype: {$documentItem->fields['itemtype']}, items_id: {$documentItem->fields['items_id']}");
+        if (!$config->fields['sync_documents']) {
+            error_log("SnowClient: Sincronização de documentos está desabilitada");
+            return false;
         }
         
         // Verificar se o anexo é para um ticket diretamente
         if ($documentItem->fields['itemtype'] == 'Ticket') {
+            error_log("SnowClient: Anexo é para ticket ID: {$documentItem->fields['items_id']}");
+            
             $ticket = new Ticket();
-            if ($ticket->getFromDB($documentItem->fields['items_id']) && self::shouldSyncTicket($ticket)) {
-                if ($config->fields['debug_mode']) {
-                    error_log("SnowClient: Processando anexo direto do ticket {$ticket->fields['id']}");
-                }
+            if ($ticket->getFromDB($documentItem->fields['items_id'])) {
+                error_log("SnowClient: Ticket carregado, verificando elegibilidade");
                 
-                // Obter sys_id do ServiceNow
-                $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
-                
-                if ($snowSysId) {
-                    $api = new PluginSnowclientApi();
+                if (self::shouldSyncTicket($ticket)) {
+                    error_log("SnowClient: Ticket elegível, verificando se é do ServiceNow");
                     
-                    // Obter sys_id real do ServiceNow
-                    $realSysId = $api->getSysIdFromIncidentNumber($snowSysId);
-                    
-                    if ($realSysId) {
-                        $document = new Document();
-                        if ($document->getFromDB($documentItem->fields['documents_id'])) {
-                            $result = $api->attachDocument($document, $realSysId);
-                            if ($config->fields['debug_mode']) {
-                                error_log("SnowClient: Anexo do ticket {$ticket->fields['id']} enviado para ServiceNow - resultado: " . ($result ? 'sucesso' : 'falha'));
+                    if (self::isTicketFromServiceNow($ticket)) {
+                        error_log("SnowClient: Ticket é do ServiceNow, processando anexo");
+                        
+                        // Obter sys_id do ServiceNow
+                        $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
+                        error_log("SnowClient: Snow sys_id: " . ($snowSysId ?? 'null'));
+                        
+                        if ($snowSysId) {
+                            $api = new PluginSnowclientApi();
+                            
+                            // Obter sys_id real do ServiceNow
+                            $realSysId = $api->getSysIdFromIncidentNumber($snowSysId);
+                            error_log("SnowClient: Real sys_id: " . ($realSysId ?? 'null'));
+                            
+                            if ($realSysId) {
+                                $document = new Document();
+                                if ($document->getFromDB($documentItem->fields['documents_id'])) {
+                                    error_log("SnowClient: Documento carregado: {$document->fields['name']}");
+                                    
+                                    $result = $api->attachDocument($document, $realSysId);
+                                    error_log("SnowClient: Resultado do envio: " . ($result ? 'sucesso' : 'falha'));
+                                } else {
+                                    error_log("SnowClient: Erro ao carregar documento ID: {$documentItem->fields['documents_id']}");
+                                }
+                            } else {
+                                error_log("SnowClient: Não foi possível obter sys_id real para o incidente $snowSysId");
                             }
+                        } else {
+                            error_log("SnowClient: Ticket {$ticket->fields['id']} não tem mapeamento com ServiceNow");
                         }
                     } else {
-                        if ($config->fields['debug_mode']) {
-                            error_log("SnowClient: Não foi possível obter sys_id real para o incidente $snowSysId");
-                        }
+                        error_log("SnowClient: Ticket não é do ServiceNow");
                     }
                 } else {
-                    if ($config->fields['debug_mode']) {
-                        error_log("SnowClient: Ticket {$ticket->fields['id']} não tem mapeamento com ServiceNow");
-                    }
+                    error_log("SnowClient: Ticket não é elegível para sincronização");
                 }
+            } else {
+                error_log("SnowClient: Erro ao carregar ticket ID: {$documentItem->fields['items_id']}");
             }
         }
         
