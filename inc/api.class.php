@@ -58,6 +58,14 @@ class PluginSnowclientApi
     }
 
     /**
+     * Método público para teste - permite acesso ao makeRequest
+     */
+    public function testRequest($endpoint, $method = 'GET', $data = null)
+    {
+        return $this->makeRequest($endpoint, $method, $data);
+    }
+
+    /**
      * Fazer uma requisição HTTP para a API do ServiceNow
      */
     private function makeRequest($endpoint, $method = 'GET', $data = null)
@@ -605,20 +613,20 @@ class PluginSnowclientApi
     /**
      * Mapear prioridade do GLPI para ServiceNow
      * GLPI: 1=Muito baixa, 2=Baixa, 3=Média, 4=Alta, 5=Muito alta, 6=Crítica
-     * ServiceNow: 1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning
+     * ServiceNow: 1=Crítico, 2=Alto, 3=Moderado, 4=Baixo
      */
     private function mapGlpiPriorityToServiceNow($glpiPriority)
     {
         $mapping = [
-            1 => 5,    // Muito baixa -> Planning
-            2 => 4,    // Baixa -> Low
-            3 => 3,    // Média -> Moderate
-            4 => 2,    // Alta -> High
-            5 => 1,    // Muito alta -> Critical
-            6 => 1     // Crítica -> Critical
+            1 => 4,    // Muito baixa -> Baixo
+            2 => 4,    // Baixa -> Baixo
+            3 => 3,    // Média -> Moderado
+            4 => 2,    // Alta -> Alto
+            5 => 1,    // Muito alta -> Crítico
+            6 => 1     // Crítica -> Crítico
         ];
         
-        return $mapping[$glpiPriority] ?? 3; // Default: Moderate
+        return $mapping[$glpiPriority] ?? 3; // Default: Moderado
     }
 
     /**
