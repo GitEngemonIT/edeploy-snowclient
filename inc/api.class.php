@@ -486,9 +486,12 @@ class PluginSnowclientApi
         }
 
         error_log("SnowClient: Iniciando envio de anexo - documento: {$document->fields['name']}");
+        error_log("SnowClient: Filepath original: {$document->fields['filepath']}");
 
-        // Obter caminho do arquivo
-        $filepath = GLPI_ROOT . '/files/' . $document->fields['filepath'];
+        // Usar caminho correto do GLPI para documentos
+        $filepath = GLPI_ROOT . '/../files/' . $document->fields['filepath'];
+        
+        error_log("SnowClient: Caminho construído: $filepath");
         
         if (!file_exists($filepath)) {
             error_log("SnowClient: Arquivo não encontrado: $filepath");
