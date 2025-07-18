@@ -488,24 +488,45 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
+        error_log("SnowClient: afterTicketFollowUp chamado para followup ID: " . $followup->fields['id']);
+        
         if (!$config->fields['sync_followups']) {
+            error_log("SnowClient: Sincronização de followups está desabilitada");
             return false;
         }
         
         $ticket = new Ticket();
         if ($ticket->getFromDB($followup->fields['items_id'])) {
+            error_log("SnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
+            
             if (!self::isTicketFromServiceNow($ticket)) {
+                error_log("SnowClient: Ticket não é do ServiceNow, ignorando followup");
                 return false;
             }
             
             // Skip if followup is from API user to avoid loops
             if ($followup->fields['users_id'] == $config->fields['api_user']) {
+                error_log("SnowClient: Followup é do usuário API, ignorando para evitar loop");
                 return false;
             }
             
+            error_log("SnowClient: Enviando followup para ServiceNow...");
+            
             $api = new PluginSnowclientApi();
-            $api->addWorkNote($followup);
+            $result = $api->addWorkNote($followup);
+            
+            if ($result) {
+                error_log("SnowClient: Followup enviado com sucesso para ServiceNow");
+            } else {
+                error_log("SnowClient: ERRO - Falha ao enviar followup para ServiceNow");
+            }
+            
+            return $result;
+        } else {
+            error_log("SnowClient: ERRO - Não foi possível carregar ticket ID: " . $followup->fields['items_id']);
         }
+        
+        return false;
     }
 
     static function afterDocumentAdd($document)

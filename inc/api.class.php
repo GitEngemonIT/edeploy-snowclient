@@ -393,8 +393,17 @@ class PluginSnowclientApi
             $userName = getUserName($followup->fields['users_id']);
             $timestamp = date('Y-m-d H:i:s');
             
-            // Limpar conteúdo HTML de forma mais robusta
+            // Limpar conteúdo HTML de forma robusta - HOTFIX
             $content = $this->cleanHtmlContent($followup->fields['content']);
+            
+            // Validação dupla para garantir que tags HTML foram removidas
+            if (preg_match('/<[^>]+>/', $content) || preg_match('/style\s*=/', $content)) {
+                // Se ainda houver tags HTML, fazer limpeza manual adicional
+                $content = strip_tags($content);
+                $content = preg_replace('/style\s*=\s*["\'][^"\']*["\']/', '', $content);
+                $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $content = trim(preg_replace('/\s+/', ' ', $content));
+            }
             
             if (empty($content)) {
                 $content = 'Atualização sem conteúdo de texto';
