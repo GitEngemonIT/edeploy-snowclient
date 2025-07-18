@@ -43,15 +43,8 @@ class PluginSnowclientApi
         $this->instance_url = $this->config->fields['instance_url'];
         $this->username = $this->config->fields['username'];
         
-        // Descriptografar senha
-        $encryptedPassword = $this->config->fields['password'];
-        if (!empty($encryptedPassword)) {
-            if (method_exists('Toolbox', 'sodiumDecrypt')) {
-                $this->password = Toolbox::sodiumDecrypt($encryptedPassword);
-            } else {
-                $this->password = base64_decode($encryptedPassword);
-            }
-        }
+        // A senha já vem descriptografada da classe Config
+        $this->password = $this->config->fields['password'];
         
         $this->debug_mode = $this->config->fields['debug_mode'];
     }
