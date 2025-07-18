@@ -478,92 +478,86 @@ class PluginSnowclientApi
      */
     public function attachDocument($document, $sys_id = null)
     {
+        error_log("SnowClient: attachDocument iniciado - documento ID: {$document->fields['id']}, sys_id: $sys_id");
+        
         if (!$sys_id) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Erro - sys_id não fornecido para anexo do documento");
-            }
+            error_log("SnowClient: Erro - sys_id não fornecido");
             return false;
         }
 
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Iniciando envio de anexo - documento ID: {$document->fields['id']}, nome: {$document->fields['name']}, sys_id: $sys_id");
-        }
+        error_log("SnowClient: Iniciando envio de anexo - documento: {$document->fields['name']}");
 
         // Obter caminho do arquivo
         $filepath = GLPI_ROOT . '/files/' . $document->fields['filepath'];
         
         if (!file_exists($filepath)) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Arquivo não encontrado: " . $filepath);
-            }
+            error_log("SnowClient: Arquivo não encontrado: $filepath");
             return false;
         }
 
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Arquivo encontrado: " . $filepath . " (tamanho: " . filesize($filepath) . " bytes)");
-        }
+        error_log("SnowClient: Arquivo encontrado: $filepath (tamanho: " . filesize($filepath) . " bytes)");
 
         try {
             // Passo 1: Upload do arquivo via ServiceNow Attachment API
             $mimeType = $document->fields['mime'] ?? 'application/octet-stream';
+            error_log("SnowClient: Iniciando upload - mime: $mimeType");
+            
             $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name'], $mimeType);
             
             if (!$attachmentSysId) {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Falha no upload do arquivo");
-                }
+                error_log("SnowClient: Falha no upload do arquivo");
                 return false;
             }
 
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Upload bem-sucedido, attachment sys_id: " . $attachmentSysId);
-            }
+            error_log("SnowClient: Upload bem-sucedido, attachment sys_id: $attachmentSysId");
 
             // Passo 2: Associar o attachment ao incidente
             $success = $this->linkAttachmentToIncident($attachmentSysId, $sys_id);
             
             if ($success) {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Attachment associado ao incidente com sucesso");
-                }
+                error_log("SnowClient: Attachment associado ao incidente com sucesso");
                 return true;
             } else {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Falha ao associar attachment ao incidente");
-                }
+                error_log("SnowClient: Falha ao associar attachment ao incidente");
                 return false;
             }
 
         } catch (Exception $e) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Exceção ao enviar anexo: " . $e->getMessage());
-            }
+            error_log("SnowClient: Exceção ao enviar anexo: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Upload de arquivo para ServiceNow
+     * Upload de arquivo para ServiceNow usando a API correta
      */
     private function uploadFileToServiceNow($filepath, $filename, $mimeType = null)
     {
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Iniciando upload do arquivo: $filename");
-        }
-
+        error_log("SnowClient: Iniciando upload do arquivo: $filename");
+        
         // Verificar se arquivo existe
         if (!file_exists($filepath)) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Arquivo não encontrado: $filepath");
-            }
+            error_log("SnowClient: Arquivo não encontrado: $filepath");
             return false;
         }
 
-        $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file';
-        
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Fazendo upload para URL: $url");
+        // Ler conteúdo do arquivo
+        $fileContent = file_get_contents($filepath);
+        if ($fileContent === false) {
+            error_log("SnowClient: Erro ao ler arquivo: $filepath");
+            return false;
         }
+
+        // Usar query parameters conforme documentação ServiceNow
+        $params = [
+            'table_name' => 'incident',
+            'table_sys_id' => '', // Será definido no linkAttachmentToIncident
+            'file_name' => $filename
+        ];
+        
+        $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file?' . http_build_query($params);
+        
+        error_log("SnowClient: Fazendo upload para URL: $url");
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -573,58 +567,44 @@ class PluginSnowclientApi
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 120);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: ' . ($mimeType ?? 'application/octet-stream'),
             'Accept: application/json'
         ]);
         
-        // Usar CURLFile para upload direto
-        $postData = [
-            'uploadFile' => new CURLFile($filepath, $mimeType, $filename)
-        ];
-        
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        // Enviar conteúdo binário diretamente no body
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
 
+        error_log("SnowClient: Enviando request de upload... (tamanho: " . strlen($fileContent) . " bytes)");
+        
         $response = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
 
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Upload response code: $http_code");
-            Toolbox::logDebug("SnowClient: Upload response: " . substr($response, 0, 1000));
-        }
+        error_log("SnowClient: Upload response code: $http_code");
+        error_log("SnowClient: Upload response: " . substr($response, 0, 1000));
 
         if ($error) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: cURL Error no upload: $error");
-            }
+            error_log("SnowClient: cURL Error no upload: $error");
             return false;
         }
 
         if ($http_code >= 400) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: HTTP Error $http_code no upload: $response");
-            }
+            error_log("SnowClient: HTTP Error $http_code no upload: $response");
             return false;
         }
 
         $result = json_decode($response, true);
         
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Upload result parsed: " . json_encode($result));
-        }
+        error_log("SnowClient: Upload result parsed: " . json_encode($result));
         
         if (isset($result['result']) && isset($result['result']['sys_id'])) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Upload bem-sucedido, sys_id: " . $result['result']['sys_id']);
-            }
+            error_log("SnowClient: Upload bem-sucedido, sys_id: " . $result['result']['sys_id']);
             return $result['result']['sys_id'];
+        } else {
+            error_log("SnowClient: Upload falhou - resposta inválida");
+            return false;
         }
-
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Upload falhou - resposta não contém sys_id");
-        }
-        
-        return false;
     }
 
     /**
