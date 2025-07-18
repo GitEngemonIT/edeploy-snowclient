@@ -551,52 +551,37 @@ class PluginSnowclientApi
             Toolbox::logDebug("SnowClient: Iniciando upload do arquivo: $filename");
         }
 
-        // Ler arquivo
-        $file_content = file_get_contents($filepath);
-        if ($file_content === false) {
+        // Verificar se arquivo existe
+        if (!file_exists($filepath)) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Erro ao ler arquivo: " . $filepath);
+                Toolbox::logDebug("SnowClient: Arquivo não encontrado: $filepath");
             }
             return false;
         }
-
-        if ($this->debug_mode) {
-            Toolbox::logDebug("SnowClient: Arquivo lido com sucesso, tamanho: " . strlen($file_content) . " bytes");
-        }
-
-        // Usar MIME type do documento ou padrão
-        $contentType = $mimeType ?: 'application/octet-stream';
-
-        // Preparar dados para upload
-        $boundary = '----WebKitFormBoundary' . uniqid();
-        $postData = '';
-        
-        // Adicionar arquivo ao payload
-        $postData .= "--$boundary\r\n";
-        $postData .= "Content-Disposition: form-data; name=\"uploadFile\"; filename=\"$filename\"\r\n";
-        $postData .= "Content-Type: $contentType\r\n\r\n";
-        $postData .= $file_content . "\r\n";
-        $postData .= "--$boundary--\r\n";
 
         $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file';
         
         if ($this->debug_mode) {
             Toolbox::logDebug("SnowClient: Fazendo upload para URL: $url");
-            Toolbox::logDebug("SnowClient: Content-Type usado: $contentType");
         }
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: multipart/form-data; boundary=' . $boundary,
-            'Accept: application/json'
-        ]);
         curl_setopt($ch, CURLOPT_USERPWD, $this->username . ':' . $this->password);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json'
+        ]);
+        
+        // Usar CURLFile para upload direto
+        $postData = [
+            'uploadFile' => new CURLFile($filepath, $mimeType, $filename)
+        ];
+        
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
 
         $response = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
