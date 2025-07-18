@@ -505,7 +505,7 @@ class PluginSnowclientApi
             $mimeType = $document->fields['mime'] ?? 'application/octet-stream';
             error_log("SnowClient: Iniciando upload - mime: $mimeType");
             
-            $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name'], $mimeType);
+            $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name'], $mimeType, $sys_id);
             
             if (!$attachmentSysId) {
                 error_log("SnowClient: Falha no upload do arquivo");
@@ -513,17 +513,7 @@ class PluginSnowclientApi
             }
 
             error_log("SnowClient: Upload bem-sucedido, attachment sys_id: $attachmentSysId");
-
-            // Passo 2: Associar o attachment ao incidente
-            $success = $this->linkAttachmentToIncident($attachmentSysId, $sys_id);
-            
-            if ($success) {
-                error_log("SnowClient: Attachment associado ao incidente com sucesso");
-                return true;
-            } else {
-                error_log("SnowClient: Falha ao associar attachment ao incidente");
-                return false;
-            }
+            return true;
 
         } catch (Exception $e) {
             error_log("SnowClient: Exceção ao enviar anexo: " . $e->getMessage());
@@ -534,7 +524,7 @@ class PluginSnowclientApi
     /**
      * Upload de arquivo para ServiceNow usando a API correta
      */
-    private function uploadFileToServiceNow($filepath, $filename, $mimeType = null)
+    private function uploadFileToServiceNow($filepath, $filename, $mimeType = null, $incidentSysId = null)
     {
         error_log("SnowClient: Iniciando upload do arquivo: $filename");
         
@@ -556,6 +546,11 @@ class PluginSnowclientApi
             'table_name' => 'incident',
             'file_name' => $filename
         ];
+        
+        // Incluir table_sys_id se fornecido
+        if ($incidentSysId) {
+            $params['table_sys_id'] = $incidentSysId;
+        }
         
         $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file?' . http_build_query($params);
         
@@ -610,44 +605,23 @@ class PluginSnowclientApi
     }
 
     /**
-     * Associar attachment a um incidente
-     */
-    private function linkAttachmentToIncident($attachmentSysId, $incidentSysId)
-    {
-        error_log("SnowClient: Associando attachment $attachmentSysId ao incidente $incidentSysId");
-        
-        // Atualizar o attachment para associá-lo ao incidente
-        $updateData = [
-            'table_name' => 'incident',
-            'table_sys_id' => $incidentSysId
-        ];
-
-        $endpoint = "api/now/table/sys_attachment/$attachmentSysId";
-        
-        try {
-            $result = $this->makeRequest($endpoint, 'PATCH', $updateData);
-            
-            error_log("SnowClient: Link attachment result: " . json_encode($result));
-
-            return isset($result['result']);
-            
-        } catch (Exception $e) {
-            error_log("SnowClient: Erro ao associar attachment: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
      * Obter sys_id real do ServiceNow a partir do número do incidente
      */
     public function getSysIdFromIncidentNumber($incident_number)
     {
         try {
             $cleanNumber = ltrim($incident_number, '#');
-            $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanNumber&sysparm_fields=sys_id");
+            $searchResult = $this->makeRequest("api/now/table/incident?number=$cleanNumber&sysparm_fields=sys_id&sysparm_display_value=all");
             
             if (isset($searchResult['result']) && count($searchResult['result']) > 0) {
-                return $searchResult['result'][0]['sys_id'];
+                // A API retorna sys_id como objeto com display_value e value
+                $sysIdData = $searchResult['result'][0]['sys_id'];
+                
+                if (is_array($sysIdData) && isset($sysIdData['value'])) {
+                    return $sysIdData['value'];
+                } else if (is_string($sysIdData)) {
+                    return $sysIdData;
+                }
             }
             
             return null;

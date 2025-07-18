@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.0.5');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.0.6');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -173,17 +173,25 @@ function plugin_snowclient_update($current_version)
               `id` int {$default_key_sign} NOT NULL auto_increment,
               `glpi_ticket_id` int NOT NULL,
               `snow_sys_id` varchar(255) NOT NULL,
+              `snow_number` varchar(20) NOT NULL DEFAULT '',
               `snow_type` varchar(50) NOT NULL DEFAULT 'incident',
               `date_creation` timestamp NULL DEFAULT NULL,
               `date_mod` timestamp NULL DEFAULT NULL,
               PRIMARY KEY (`id`),
               UNIQUE KEY `glpi_ticket_id` (`glpi_ticket_id`),
               KEY `snow_sys_id` (`snow_sys_id`),
+              KEY `snow_number` (`snow_number`),
               KEY `snow_type` (`snow_type`)
             ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
 
             $DB->queryOrDie($query, $DB->error());
         }
+    }
+    
+    // Migração para versão 1.0.7 - Simplificação: usar sempre API para buscar sys_id
+    if (version_compare($current_version, '1.0.7', '<')) {
+        $migration->displayMessage("Updating to 1.0.7 - Simplified sys_id handling via API");
+        // Não fazemos migração de dados - deixamos como está e usamos sempre a API
     }
     
     $migration->executeMigration();
@@ -214,12 +222,14 @@ function plugin_snowclient_install()
           `id` int {$default_key_sign} NOT NULL auto_increment,
           `glpi_ticket_id` int NOT NULL,
           `snow_sys_id` varchar(255) NOT NULL,
+          `snow_number` varchar(20) NOT NULL DEFAULT '',
           `snow_type` varchar(50) NOT NULL DEFAULT 'incident',
           `date_creation` timestamp NULL DEFAULT NULL,
           `date_mod` timestamp NULL DEFAULT NULL,
           PRIMARY KEY (`id`),
           UNIQUE KEY `glpi_ticket_id` (`glpi_ticket_id`),
           KEY `snow_sys_id` (`snow_sys_id`),
+          KEY `snow_number` (`snow_number`),
           KEY `snow_type` (`snow_type`)
         ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation} ROW_FORMAT=DYNAMIC;";
 
