@@ -308,7 +308,9 @@ class PluginSnowclientApi
             
             // Sincronizar descrição se mudou
             if (isset($ticket->fields['content']) && !empty($ticket->fields['content'])) {
-                $updateData['description'] = strip_tags($ticket->fields['content']);
+                $cleanDescription = html_entity_decode(strip_tags($ticket->fields['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $cleanDescription = trim($cleanDescription);
+                $updateData['description'] = $cleanDescription;
             }
             
             if ($this->debug_mode) {
@@ -372,20 +374,24 @@ class PluginSnowclientApi
             $userName = getUserName($followup->fields['users_id']);
             $timestamp = date('Y-m-d H:i:s');
             
+            // Limpar conteúdo HTML
+            $cleanContent = html_entity_decode(strip_tags($followup->fields['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $cleanContent = trim($cleanContent);
+            
             // Determinar tipo de followup
             $followupType = '';
             if (isset($followup->fields['is_private']) && $followup->fields['is_private']) {
-                $followupType = '[NOTA PRIVADA]';
+                $followupType = 'NOTA PRIVADA';
             } else {
-                $followupType = '[ATUALIZAÇÃO PÚBLICA]';
+                $followupType = 'ATUALIZAÇÃO PÚBLICA';
             }
             
             $workNote = sprintf(
-                "%s [GLPI - %s em %s]\n%s", 
+                "[%s] [GLPI - %s em %s]\n%s", 
                 $followupType,
                 $userName, 
                 $timestamp,
-                strip_tags($followup->fields['content'])
+                $cleanContent
             );
             
             $updateData = [
