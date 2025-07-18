@@ -544,6 +544,53 @@ class PluginSnowclientConfig extends CommonDBTM
         }
     }
 
+    static function afterDocumentItemAdd($documentItem)
+    {
+        $config = self::getInstance();
+        
+        if (!$config->fields['sync_documents']) {
+            return false;
+        }
+        
+        // Verificar se o anexo é para um followup
+        if ($documentItem->fields['itemtype'] == 'ITILFollowup') {
+            $followup = new ITILFollowup();
+            if ($followup->getFromDB($documentItem->fields['items_id'])) {
+                $ticket = new Ticket();
+                if ($ticket->getFromDB($followup->fields['items_id']) && self::shouldSyncTicket($ticket)) {
+                    // Obter sys_id do ServiceNow
+                    $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
+                    
+                    if ($snowSysId) {
+                        $api = new PluginSnowclientApi();
+                        
+                        // Obter sys_id real do ServiceNow
+                        $realSysId = $api->getSysIdFromIncidentNumber($snowSysId);
+                        
+                        if ($realSysId) {
+                            $document = new Document();
+                            if ($document->getFromDB($documentItem->fields['documents_id'])) {
+                                $api->attachDocument($document, $realSysId);
+                                
+                                if ($config->fields['debug_mode']) {
+                                    error_log("SnowClient: Anexo do followup {$followup->fields['id']} enviado para ServiceNow");
+                                }
+                            }
+                        } else {
+                            if ($config->fields['debug_mode']) {
+                                error_log("SnowClient: Não foi possível obter sys_id real para o incidente $snowSysId");
+                            }
+                        }
+                    } else {
+                        if ($config->fields['debug_mode']) {
+                            error_log("SnowClient: Ticket {$ticket->fields['id']} não tem mapeamento com ServiceNow");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Utility methods
     static function shouldSyncTicket($ticket)
     {

@@ -37,6 +37,10 @@ function plugin_snowclient_item_add($item)
     if ($item::getType() === Document::getType()) {
         PluginSnowclientConfig::afterDocumentAdd($item);
     }
+    
+    if ($item::getType() === Document_Item::getType()) {
+        PluginSnowclientConfig::afterDocumentItemAdd($item);
+    }
 }
 
 function plugin_snowclient_item_update($item)
