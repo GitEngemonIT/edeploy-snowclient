@@ -551,7 +551,6 @@ class PluginSnowclientApi
         // Usar query parameters conforme documentação ServiceNow
         $params = [
             'table_name' => 'incident',
-            'table_sys_id' => '', // Será definido no linkAttachmentToIncident
             'file_name' => $filename
         ];
         
@@ -612,6 +611,8 @@ class PluginSnowclientApi
      */
     private function linkAttachmentToIncident($attachmentSysId, $incidentSysId)
     {
+        error_log("SnowClient: Associando attachment $attachmentSysId ao incidente $incidentSysId");
+        
         // Atualizar o attachment para associá-lo ao incidente
         $updateData = [
             'table_name' => 'incident',
@@ -621,18 +622,14 @@ class PluginSnowclientApi
         $endpoint = "api/now/table/sys_attachment/$attachmentSysId";
         
         try {
-            $result = $this->makeRequest($endpoint, 'PUT', $updateData);
+            $result = $this->makeRequest($endpoint, 'PATCH', $updateData);
             
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Link attachment result: " . json_encode($result));
-            }
+            error_log("SnowClient: Link attachment result: " . json_encode($result));
 
             return isset($result['result']);
             
         } catch (Exception $e) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Erro ao associar attachment: " . $e->getMessage());
-            }
+            error_log("SnowClient: Erro ao associar attachment: " . $e->getMessage());
             return false;
         }
     }
