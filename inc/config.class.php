@@ -68,20 +68,28 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $result = parent::getFromDB($ID);
         
-        // Decrypt password if exists
-        if ($result && !empty($this->fields['password'])) {
-            if (method_exists('Toolbox', 'sodiumDecrypt')) {
-                try {
-                    $this->fields['password'] = Toolbox::sodiumDecrypt($this->fields['password']);
-                } catch (Exception $e) {
-                    $this->fields['password'] = base64_decode($this->fields['password']);
-                }
-            } else {
-                $this->fields['password'] = base64_decode($this->fields['password']);
-            }
-        }
-        
+        // NÃO descriptografar aqui - será feito apenas quando necessário
         return $result;
+    }
+
+    /**
+     * Get decrypted password when needed
+     */
+    function getDecryptedPassword()
+    {
+        if (empty($this->fields['password'])) {
+            return '';
+        }
+
+        if (method_exists('Toolbox', 'sodiumDecrypt')) {
+            try {
+                return Toolbox::sodiumDecrypt($this->fields['password']);
+            } catch (Exception $e) {
+                return base64_decode($this->fields['password']);
+            }
+        } else {
+            return base64_decode($this->fields['password']);
+        }
     }
 
     function post_updateItem($history = 1)
