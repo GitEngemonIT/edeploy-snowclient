@@ -43,8 +43,8 @@ class PluginSnowclientApi
         $this->instance_url = $this->config->fields['instance_url'];
         $this->username = $this->config->fields['username'];
         
-        // A senha já vem descriptografada da classe Config
-        $this->password = $this->config->fields['password'];
+        // Descriptografar senha apenas quando necessário
+        $this->password = $this->config->getDecryptedPassword();
         
         $this->debug_mode = $this->config->fields['debug_mode'];
     }
