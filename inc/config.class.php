@@ -68,28 +68,20 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $result = parent::getFromDB($ID);
         
-        // NÃO descriptografar aqui - será feito apenas quando necessário
-        return $result;
-    }
-
-    /**
-     * Get decrypted password when needed
-     */
-    function getDecryptedPassword()
-    {
-        if (empty($this->fields['password'])) {
-            return '';
-        }
-
-        if (method_exists('Toolbox', 'sodiumDecrypt')) {
-            try {
-                return Toolbox::sodiumDecrypt($this->fields['password']);
-            } catch (Exception $e) {
-                return base64_decode($this->fields['password']);
+        // Decrypt password if exists
+        if ($result && !empty($this->fields['password'])) {
+            if (method_exists('Toolbox', 'sodiumDecrypt')) {
+                try {
+                    $this->fields['password'] = Toolbox::sodiumDecrypt($this->fields['password']);
+                } catch (Exception $e) {
+                    $this->fields['password'] = base64_decode($this->fields['password']);
+                }
+            } else {
+                $this->fields['password'] = base64_decode($this->fields['password']);
             }
-        } else {
-            return base64_decode($this->fields['password']);
         }
+        
+        return $result;
     }
 
     function post_updateItem($history = 1)
@@ -297,19 +289,10 @@ class PluginSnowclientConfig extends CommonDBTM
 
     function prepareInputForUpdate($input)
     {
-        // Enhanced input validation
-        $input = $this->sanitizeInput($input);
-        
         // Validate URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
                 Session::addMessageAfterRedirect(__('Invalid URL', 'snowclient'), false, ERROR);
-                return false;
-            }
-            
-            // Ensure HTTPS
-            if (parse_url($input['instance_url'], PHP_URL_SCHEME) !== 'https') {
-                Session::addMessageAfterRedirect(__('URL must use HTTPS protocol', 'snowclient'), false, ERROR);
                 return false;
             }
         }
@@ -339,27 +322,7 @@ class PluginSnowclientConfig extends CommonDBTM
             }
         }
 
-        // Security logging
-        error_log("SnowClient Config Update: User " . Session::getLoginUserID() . " updated configuration");
-
         return $input;
-    }
-
-    /**
-     * Sanitize input data for security
-     */
-    private function sanitizeInput($input)
-    {
-        $sanitized = [];
-        foreach ($input as $key => $value) {
-            if (is_string($value)) {
-                // Remove potential XSS
-                $sanitized[$key] = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
-            } else {
-                $sanitized[$key] = $value;
-            }
-        }
-        return $sanitized;
     }
 
     function prepareInputForAdd($input)
@@ -548,8 +511,27 @@ class PluginSnowclientConfig extends CommonDBTM
         if (isset($document->fields['items_id']) && $document->fields['itemtype'] == 'Ticket') {
             $ticket = new Ticket();
             if ($ticket->getFromDB($document->fields['items_id']) && self::shouldSyncTicket($ticket)) {
-                $api = new PluginSnowclientApi();
-                $api->attachDocument($document);
+                // Obter sys_id do ServiceNow
+                $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
+                
+                if ($snowSysId) {
+                    $api = new PluginSnowclientApi();
+                    
+                    // Obter sys_id real do ServiceNow (pode ser diferente do número)
+                    $realSysId = $api->getSysIdFromIncidentNumber($snowSysId);
+                    
+                    if ($realSysId) {
+                        $api->attachDocument($document, $realSysId);
+                    } else {
+                        if ($config->fields['debug_mode']) {
+                            error_log("SnowClient: Não foi possível obter sys_id real para o incidente $snowSysId");
+                        }
+                    }
+                } else {
+                    if ($config->fields['debug_mode']) {
+                        error_log("SnowClient: Ticket {$ticket->fields['id']} não tem mapeamento com ServiceNow");
+                    }
+                }
             }
         }
     }
@@ -627,5 +609,27 @@ class PluginSnowclientConfig extends CommonDBTM
         if (strpos($snowId, 'CHG') === 0) return 'change_request';
         if (strpos($snowId, 'PRB') === 0) return 'problem';
         return 'incident';
+    }
+
+    /**
+     * Obter sys_id do ServiceNow a partir do ticket GLPI
+     */
+    static function getSnowSysIdFromTicket($ticket_id)
+    {
+        global $DB;
+        
+        $mappingTable = 'glpi_plugin_snowclient_mappings';
+        
+        $result = $DB->request([
+            'FROM' => $mappingTable,
+            'WHERE' => ['glpi_ticket_id' => $ticket_id]
+        ]);
+        
+        if (count($result) > 0) {
+            $row = $result->current();
+            return $row['snow_sys_id'];
+        }
+        
+        return null;
     }
 }

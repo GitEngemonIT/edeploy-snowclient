@@ -43,34 +43,25 @@ class PluginSnowclientApi
         $this->instance_url = $this->config->fields['instance_url'];
         $this->username = $this->config->fields['username'];
         
-        // Descriptografar senha apenas quando necessário
-        $this->password = $this->config->getDecryptedPassword();
+        // Descriptografar senha
+        $encryptedPassword = $this->config->fields['password'];
+        if (!empty($encryptedPassword)) {
+            if (method_exists('Toolbox', 'sodiumDecrypt')) {
+                $this->password = Toolbox::sodiumDecrypt($encryptedPassword);
+            } else {
+                $this->password = base64_decode($encryptedPassword);
+            }
+        }
         
         $this->debug_mode = $this->config->fields['debug_mode'];
     }
 
     /**
-     * Rate limiting to prevent abuse
+     * Definir modo de debug
      */
-    private function checkRateLimit()
+    public function setDebugMode($enabled)
     {
-        $cacheKey = 'snowclient_rate_limit_' . Session::getLoginUserID();
-        $requests = isset($_SESSION[$cacheKey]) ? $_SESSION[$cacheKey] : [];
-        $now = time();
-        
-        // Remove requests older than 1 minute
-        $requests = array_filter($requests, function($timestamp) use ($now) {
-            return ($now - $timestamp) < 60;
-        });
-        
-        // Check if we've exceeded the limit (10 requests per minute)
-        if (count($requests) >= 10) {
-            throw new Exception("Rate limit exceeded. Please wait before making more requests.");
-        }
-        
-        // Add current request
-        $requests[] = $now;
-        $_SESSION[$cacheKey] = $requests;
+        $this->debug_mode = $enabled;
     }
 
     /**
@@ -78,15 +69,7 @@ class PluginSnowclientApi
      */
     private function makeRequest($endpoint, $method = 'GET', $data = null)
     {
-        // Rate limiting check
-        $this->checkRateLimit();
-        
         $url = rtrim($this->instance_url, '/') . '/' . ltrim($endpoint, '/');
-        
-        // Input validation
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new Exception("Invalid URL: $url");
-        }
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -96,12 +79,7 @@ class PluginSnowclientApi
             'Content-Type: application/json'
         ]);
         curl_setopt($ch, CURLOPT_USERPWD, $this->username . ':' . $this->password);
-        
-        // Enhanced SSL security
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-        curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-        
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
         if ($method === 'POST') {
@@ -126,16 +104,6 @@ class PluginSnowclientApi
         $error = curl_error($ch);
         curl_close($ch);
 
-        // Security and audit logging
-        $logData = [
-            'timestamp' => date('Y-m-d H:i:s'),
-            'user' => Session::getLoginUserID(),
-            'method' => $method,
-            'endpoint' => parse_url($url, PHP_URL_PATH),
-            'http_code' => $http_code,
-            'success' => ($http_code >= 200 && $http_code < 400)
-        ];
-
         if ($this->debug_mode) {
             Toolbox::logDebug("ServiceNow API Request: $method $url");
             if ($data) {
@@ -143,16 +111,64 @@ class PluginSnowclientApi
             }
             Toolbox::logDebug("Response Code: $http_code");
             Toolbox::logDebug("Response: " . substr($response, 0, 500));
-            Toolbox::logDebug("Security Log: " . json_encode($logData));
-        }
-
-        // Always log security events
-        if ($http_code >= 400) {
-            error_log("SnowClient Security Alert: " . json_encode(array_merge($logData, ['error' => substr($response, 0, 200)])));
         }
 
         if ($error) {
-            error_log("SnowClient Connection Error: " . json_encode(array_merge($logData, ['curl_error' => $error])));
+            throw new Exception("cURL Error: $error");
+        }
+
+        if ($http_code >= 400) {
+            throw new Exception("HTTP Error $http_code: $response");
+        }
+
+        return json_decode($response, true);
+    }
+
+    /**
+     * Fazer uma requisição HTTP específica para upload de anexos
+     */
+    private function makeAttachmentRequest($endpoint, $method = 'POST', $data = null)
+    {
+        $url = rtrim($this->instance_url, '/') . '/' . ltrim($endpoint, '/');
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_USERPWD, $this->username . ':' . $this->password);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120); // Timeout maior para uploads
+
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            if ($data) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            }
+        }
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($this->debug_mode) {
+            Toolbox::logDebug("ServiceNow Attachment API Request: $method $url");
+            if ($data) {
+                // Log sem o conteúdo base64 para evitar logs enormes
+                $log_data = $data;
+                if (isset($log_data['content'])) {
+                    $log_data['content'] = '[BASE64_CONTENT_' . strlen($log_data['content']) . '_BYTES]';
+                }
+                Toolbox::logDebug("Request Data: " . json_encode($log_data));
+            }
+            Toolbox::logDebug("Response Code: $http_code");
+            Toolbox::logDebug("Response: " . substr($response, 0, 500));
+        }
+
+        if ($error) {
             throw new Exception("cURL Error: $error");
         }
 
@@ -308,8 +324,7 @@ class PluginSnowclientApi
             
             // Sincronizar descrição se mudou
             if (isset($ticket->fields['content']) && !empty($ticket->fields['content'])) {
-                $cleanDescription = $this->cleanHtmlContent($ticket->fields['content'], 'Descrição não disponível');
-                $updateData['description'] = $cleanDescription;
+                $updateData['description'] = strip_tags($ticket->fields['content']);
             }
             
             if ($this->debug_mode) {
@@ -373,8 +388,13 @@ class PluginSnowclientApi
             $userName = getUserName($followup->fields['users_id']);
             $timestamp = date('Y-m-d H:i:s');
             
-            // Limpar conteúdo HTML usando função utilitária
-            $content = $this->cleanHtmlContent($followup->fields['content'], 'Atualização sem conteúdo de texto');
+            // Limpar conteúdo HTML
+            $content = html_entity_decode(strip_tags($followup->fields['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $content = trim($content);
+            
+            if (empty($content)) {
+                $content = 'Atualização sem conteúdo de texto';
+            }
             
             $workNote = sprintf(
                 "[GLPI - %s em %s]\n%s", 
@@ -455,15 +475,121 @@ class PluginSnowclientApi
     /**
      * Anexar documento a um incidente no ServiceNow
      */
-    public function attachDocument($document)
+    public function attachDocument($document, $sys_id = null)
     {
-        // Esta é uma implementação placeholder - ServiceNow attachments requerem multipart/form-data
-        if ($this->debug_mode) {
-            Toolbox::logDebug("Anexo de documento não implementado ainda: " . $document->fields['name']);
+        if (!$sys_id) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("Erro: sys_id não fornecido para anexo do documento");
+            }
+            return false;
+        }
+
+        // Obter caminho do arquivo
+        $filepath = GLPI_ROOT . '/files/' . $document->fields['filepath'];
+        
+        if (!file_exists($filepath)) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("Arquivo não encontrado: " . $filepath);
+            }
+            return false;
+        }
+
+        // Verificar se o arquivo é muito grande (>20MB)
+        if (filesize($filepath) > 20 * 1024 * 1024) {
+            // Redimensionar imagem se for muito grande
+            $image_info = getimagesize($filepath);
+            if ($image_info) {
+                $max_width = 1920;
+                $max_height = 1080;
+                
+                if ($image_info[0] > $max_width || $image_info[1] > $max_height) {
+                    $ratio = min($max_width / $image_info[0], $max_height / $image_info[1]);
+                    $new_width = intval($image_info[0] * $ratio);
+                    $new_height = intval($image_info[1] * $ratio);
+                    
+                    // Criar nova imagem redimensionada
+                    $src_image = imagecreatefromstring(file_get_contents($filepath));
+                    $dst_image = imagecreatetruecolor($new_width, $new_height);
+                    imagecopyresampled($dst_image, $src_image, 0, 0, 0, 0, $new_width, $new_height, $image_info[0], $image_info[1]);
+                    
+                    // Salvar imagem temporária
+                    $temp_file = tempnam(sys_get_temp_dir(), 'glpi_resize_');
+                    imagejpeg($dst_image, $temp_file, 85);
+                    
+                    // Usar arquivo temporário
+                    $file_content = file_get_contents($temp_file);
+                    unlink($temp_file);
+                    
+                    imagedestroy($src_image);
+                    imagedestroy($dst_image);
+                } else {
+                    $file_content = file_get_contents($filepath);
+                }
+            } else {
+                return false; // Arquivo muito grande e não é imagem
+            }
+        } else {
+            $file_content = file_get_contents($filepath);
         }
         
-        // TODO: Implementar upload de anexos via ServiceNow Attachment API
-        return false;
+        if ($file_content === false) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("Erro ao ler arquivo: " . $filepath);
+            }
+            return false;
+        }
+
+        $base64_content = base64_encode($file_content);
+        
+        // Preparar dados para upload
+        $attachment_data = [
+            'table_name' => 'incident',
+            'table_sys_id' => $sys_id,
+            'file_name' => $document->fields['name'],
+            'content' => $base64_content,
+            'content_type' => $document->fields['mime'] ?? 'application/octet-stream'
+        ];
+
+        if ($this->debug_mode) {
+            Toolbox::logDebug("Enviando anexo: " . $document->fields['name'] . " (tamanho: " . strlen($base64_content) . " bytes base64)");
+        }
+
+        // Fazer upload via ServiceNow Attachment API
+        $response = $this->makeAttachmentRequest('api/now/attachment/upload', 'POST', $attachment_data);
+        
+        if ($response && isset($response['result']) && isset($response['result']['sys_id'])) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("Anexo enviado com sucesso: " . $response['result']['sys_id']);
+            }
+            return true;
+        } else {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("Erro ao enviar anexo: " . json_encode($response));
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Obter sys_id real do ServiceNow a partir do número do incidente
+     */
+    public function getSysIdFromIncidentNumber($incident_number)
+    {
+        try {
+            $cleanNumber = ltrim($incident_number, '#');
+            $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanNumber&sysparm_fields=sys_id");
+            
+            if (isset($searchResult['result']) && count($searchResult['result']) > 0) {
+                return $searchResult['result'][0]['sys_id'];
+            }
+            
+            return null;
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("Erro ao buscar sys_id para incidente $incident_number: " . $e->getMessage());
+            }
+            return null;
+        }
     }
 
     /**
@@ -536,34 +662,5 @@ class PluginSnowclientApi
         ];
         
         return $mapping[$glpiImpact] ?? 2; // Default: Medium
-    }
-    
-    /**
-     * Limpa completamente o conteúdo HTML, removendo tags e entities
-     * 
-     * @param string $content Conteúdo HTML
-     * @param string $placeholder Texto a usar se o conteúdo ficar vazio
-     * @return string Conteúdo limpo
-     */
-    private function cleanHtmlContent($content, $placeholder = '') {
-        if (empty($content)) {
-            return $placeholder;
-        }
-        
-        // Primeiro decodificar entities HTML
-        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        
-        // Remover todas as tags HTML
-        $content = strip_tags($content);
-        
-        // Remover espaços extras e quebras de linha desnecessárias
-        $content = trim(preg_replace('/\s+/', ' ', $content));
-        
-        // Se estiver vazio após limpeza, usar placeholder
-        if (empty($content) && !empty($placeholder)) {
-            return $placeholder;
-        }
-        
-        return $content;
     }
 }
