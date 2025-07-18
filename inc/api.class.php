@@ -389,9 +389,8 @@ class PluginSnowclientApi
             $userName = getUserName($followup->fields['users_id']);
             $timestamp = date('Y-m-d H:i:s');
             
-            // Limpar conteúdo HTML
-            $content = html_entity_decode(strip_tags($followup->fields['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $content = trim($content);
+            // Limpar conteúdo HTML de forma mais robusta
+            $content = $this->cleanHtmlContent($followup->fields['content']);
             
             if (empty($content)) {
                 $content = 'Atualização sem conteúdo de texto';
@@ -703,5 +702,44 @@ class PluginSnowclientApi
         ];
         
         return $mapping[$glpiImpact] ?? 2; // Default: Medium
+    }
+
+    /**
+     * Limpar conteúdo HTML de forma robusta
+     * Remove tags HTML, estilos inline, entidades HTML e espaços extras
+     */
+    private function cleanHtmlContent($htmlContent)
+    {
+        if (empty($htmlContent)) {
+            return '';
+        }
+
+        // 1. Converter quebras de linha HTML para texto
+        $content = str_replace(['<br>', '<br/>', '<br />', '<p>', '</p>', '<div>', '</div>'], "\n", $htmlContent);
+        
+        // 2. Remover todas as tags HTML
+        $content = strip_tags($content);
+        
+        // 3. Decodificar entidades HTML
+        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // 4. Remover caracteres de controle e espaços desnecessários
+        $content = preg_replace('/[\x00-\x1F\x7F]/', '', $content);
+        
+        // 5. Normalizar espaços em branco
+        $content = preg_replace('/\s+/', ' ', $content);
+        
+        // 6. Normalizar quebras de linha múltiplas
+        $content = preg_replace('/\n\s*\n/', "\n\n", $content);
+        
+        // 7. Remover espaços no início e fim
+        $content = trim($content);
+        
+        // 8. Limitar o tamanho se necessário (ServiceNow tem limites)
+        if (strlen($content) > 4000) {
+            $content = substr($content, 0, 3997) . '...';
+        }
+        
+        return $content;
     }
 }
