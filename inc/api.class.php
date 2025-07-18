@@ -57,11 +57,43 @@ class PluginSnowclientApi
     }
 
     /**
+     * Rate limiting to prevent abuse
+     */
+    private function checkRateLimit()
+    {
+        $cacheKey = 'snowclient_rate_limit_' . Session::getLoginUserID();
+        $requests = isset($_SESSION[$cacheKey]) ? $_SESSION[$cacheKey] : [];
+        $now = time();
+        
+        // Remove requests older than 1 minute
+        $requests = array_filter($requests, function($timestamp) use ($now) {
+            return ($now - $timestamp) < 60;
+        });
+        
+        // Check if we've exceeded the limit (10 requests per minute)
+        if (count($requests) >= 10) {
+            throw new Exception("Rate limit exceeded. Please wait before making more requests.");
+        }
+        
+        // Add current request
+        $requests[] = $now;
+        $_SESSION[$cacheKey] = $requests;
+    }
+
+    /**
      * Fazer uma requisição HTTP para a API do ServiceNow
      */
     private function makeRequest($endpoint, $method = 'GET', $data = null)
     {
+        // Rate limiting check
+        $this->checkRateLimit();
+        
         $url = rtrim($this->instance_url, '/') . '/' . ltrim($endpoint, '/');
+        
+        // Input validation
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            throw new Exception("Invalid URL: $url");
+        }
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -71,7 +103,12 @@ class PluginSnowclientApi
             'Content-Type: application/json'
         ]);
         curl_setopt($ch, CURLOPT_USERPWD, $this->username . ':' . $this->password);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        
+        // Enhanced SSL security
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
         if ($method === 'POST') {
@@ -96,6 +133,16 @@ class PluginSnowclientApi
         $error = curl_error($ch);
         curl_close($ch);
 
+        // Security and audit logging
+        $logData = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'user' => Session::getLoginUserID(),
+            'method' => $method,
+            'endpoint' => parse_url($url, PHP_URL_PATH),
+            'http_code' => $http_code,
+            'success' => ($http_code >= 200 && $http_code < 400)
+        ];
+
         if ($this->debug_mode) {
             Toolbox::logDebug("ServiceNow API Request: $method $url");
             if ($data) {
@@ -103,9 +150,16 @@ class PluginSnowclientApi
             }
             Toolbox::logDebug("Response Code: $http_code");
             Toolbox::logDebug("Response: " . substr($response, 0, 500));
+            Toolbox::logDebug("Security Log: " . json_encode($logData));
+        }
+
+        // Always log security events
+        if ($http_code >= 400) {
+            error_log("SnowClient Security Alert: " . json_encode(array_merge($logData, ['error' => substr($response, 0, 200)])));
         }
 
         if ($error) {
+            error_log("SnowClient Connection Error: " . json_encode(array_merge($logData, ['curl_error' => $error])));
             throw new Exception("cURL Error: $error");
         }
 

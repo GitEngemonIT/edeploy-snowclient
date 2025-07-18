@@ -289,10 +289,19 @@ class PluginSnowclientConfig extends CommonDBTM
 
     function prepareInputForUpdate($input)
     {
+        // Enhanced input validation
+        $input = $this->sanitizeInput($input);
+        
         // Validate URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
                 Session::addMessageAfterRedirect(__('Invalid URL', 'snowclient'), false, ERROR);
+                return false;
+            }
+            
+            // Ensure HTTPS
+            if (parse_url($input['instance_url'], PHP_URL_SCHEME) !== 'https') {
+                Session::addMessageAfterRedirect(__('URL must use HTTPS protocol', 'snowclient'), false, ERROR);
                 return false;
             }
         }
@@ -322,7 +331,27 @@ class PluginSnowclientConfig extends CommonDBTM
             }
         }
 
+        // Security logging
+        error_log("SnowClient Config Update: User " . Session::getLoginUserID() . " updated configuration");
+
         return $input;
+    }
+
+    /**
+     * Sanitize input data for security
+     */
+    private function sanitizeInput($input)
+    {
+        $sanitized = [];
+        foreach ($input as $key => $value) {
+            if (is_string($value)) {
+                // Remove potential XSS
+                $sanitized[$key] = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+        return $sanitized;
     }
 
     function prepareInputForAdd($input)
