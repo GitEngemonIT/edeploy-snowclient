@@ -308,8 +308,7 @@ class PluginSnowclientApi
             
             // Sincronizar descrição se mudou
             if (isset($ticket->fields['content']) && !empty($ticket->fields['content'])) {
-                $cleanDescription = html_entity_decode(strip_tags($ticket->fields['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $cleanDescription = trim($cleanDescription);
+                $cleanDescription = $this->cleanHtmlContent($ticket->fields['content'], 'Descrição não disponível');
                 $updateData['description'] = $cleanDescription;
             }
             
@@ -374,24 +373,14 @@ class PluginSnowclientApi
             $userName = getUserName($followup->fields['users_id']);
             $timestamp = date('Y-m-d H:i:s');
             
-            // Limpar conteúdo HTML
-            $cleanContent = html_entity_decode(strip_tags($followup->fields['content']), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $cleanContent = trim($cleanContent);
-            
-            // Determinar tipo de followup
-            $followupType = '';
-            if (isset($followup->fields['is_private']) && $followup->fields['is_private']) {
-                $followupType = 'NOTA PRIVADA';
-            } else {
-                $followupType = 'ATUALIZAÇÃO PÚBLICA';
-            }
+            // Limpar conteúdo HTML usando função utilitária
+            $content = $this->cleanHtmlContent($followup->fields['content'], 'Atualização sem conteúdo de texto');
             
             $workNote = sprintf(
-                "[%s] [GLPI - %s em %s]\n%s", 
-                $followupType,
+                "[GLPI - %s em %s]\n%s", 
                 $userName, 
                 $timestamp,
-                $cleanContent
+                $content
             );
             
             $updateData = [
@@ -547,5 +536,34 @@ class PluginSnowclientApi
         ];
         
         return $mapping[$glpiImpact] ?? 2; // Default: Medium
+    }
+    
+    /**
+     * Limpa completamente o conteúdo HTML, removendo tags e entities
+     * 
+     * @param string $content Conteúdo HTML
+     * @param string $placeholder Texto a usar se o conteúdo ficar vazio
+     * @return string Conteúdo limpo
+     */
+    private function cleanHtmlContent($content, $placeholder = '') {
+        if (empty($content)) {
+            return $placeholder;
+        }
+        
+        // Primeiro decodificar entities HTML
+        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Remover todas as tags HTML
+        $content = strip_tags($content);
+        
+        // Remover espaços extras e quebras de linha desnecessárias
+        $content = trim(preg_replace('/\s+/', ' ', $content));
+        
+        // Se estiver vazio após limpeza, usar placeholder
+        if (empty($content) && !empty($placeholder)) {
+            return $placeholder;
+        }
+        
+        return $content;
     }
 }
