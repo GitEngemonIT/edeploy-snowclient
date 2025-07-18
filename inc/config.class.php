@@ -513,12 +513,24 @@ class PluginSnowclientConfig extends CommonDBTM
         $config = self::getInstance();
         
         if (!$config->fields['sync_documents']) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Sincronização de documentos está desabilitada");
+            }
             return false;
         }
         
+        if ($config->fields['debug_mode']) {
+            error_log("SnowClient: afterDocumentAdd chamado para documento ID: " . $document->fields['id']);
+        }
+        
+        // Verificar se o documento está associado diretamente a um ticket
         if (isset($document->fields['items_id']) && $document->fields['itemtype'] == 'Ticket') {
             $ticket = new Ticket();
             if ($ticket->getFromDB($document->fields['items_id']) && self::shouldSyncTicket($ticket)) {
+                if ($config->fields['debug_mode']) {
+                    error_log("SnowClient: Processando anexo direto do ticket {$ticket->fields['id']}");
+                }
+                
                 // Obter sys_id do ServiceNow
                 $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
                 
@@ -529,7 +541,10 @@ class PluginSnowclientConfig extends CommonDBTM
                     $realSysId = $api->getSysIdFromIncidentNumber($snowSysId);
                     
                     if ($realSysId) {
-                        $api->attachDocument($document, $realSysId);
+                        $result = $api->attachDocument($document, $realSysId);
+                        if ($config->fields['debug_mode']) {
+                            error_log("SnowClient: Resultado do anexo: " . ($result ? 'sucesso' : 'falha'));
+                        }
                     } else {
                         if ($config->fields['debug_mode']) {
                             error_log("SnowClient: Não foi possível obter sys_id real para o incidente $snowSysId");
@@ -549,7 +564,52 @@ class PluginSnowclientConfig extends CommonDBTM
         $config = self::getInstance();
         
         if (!$config->fields['sync_documents']) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Sincronização de documentos está desabilitada");
+            }
             return false;
+        }
+        
+        if ($config->fields['debug_mode']) {
+            error_log("SnowClient: afterDocumentItemAdd chamado - itemtype: {$documentItem->fields['itemtype']}, items_id: {$documentItem->fields['items_id']}");
+        }
+        
+        // Verificar se o anexo é para um ticket diretamente
+        if ($documentItem->fields['itemtype'] == 'Ticket') {
+            $ticket = new Ticket();
+            if ($ticket->getFromDB($documentItem->fields['items_id']) && self::shouldSyncTicket($ticket)) {
+                if ($config->fields['debug_mode']) {
+                    error_log("SnowClient: Processando anexo direto do ticket {$ticket->fields['id']}");
+                }
+                
+                // Obter sys_id do ServiceNow
+                $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
+                
+                if ($snowSysId) {
+                    $api = new PluginSnowclientApi();
+                    
+                    // Obter sys_id real do ServiceNow
+                    $realSysId = $api->getSysIdFromIncidentNumber($snowSysId);
+                    
+                    if ($realSysId) {
+                        $document = new Document();
+                        if ($document->getFromDB($documentItem->fields['documents_id'])) {
+                            $result = $api->attachDocument($document, $realSysId);
+                            if ($config->fields['debug_mode']) {
+                                error_log("SnowClient: Anexo do ticket {$ticket->fields['id']} enviado para ServiceNow - resultado: " . ($result ? 'sucesso' : 'falha'));
+                            }
+                        }
+                    } else {
+                        if ($config->fields['debug_mode']) {
+                            error_log("SnowClient: Não foi possível obter sys_id real para o incidente $snowSysId");
+                        }
+                    }
+                } else {
+                    if ($config->fields['debug_mode']) {
+                        error_log("SnowClient: Ticket {$ticket->fields['id']} não tem mapeamento com ServiceNow");
+                    }
+                }
+            }
         }
         
         // Verificar se o anexo é para um followup
@@ -558,6 +618,10 @@ class PluginSnowclientConfig extends CommonDBTM
             if ($followup->getFromDB($documentItem->fields['items_id'])) {
                 $ticket = new Ticket();
                 if ($ticket->getFromDB($followup->fields['items_id']) && self::shouldSyncTicket($ticket)) {
+                    if ($config->fields['debug_mode']) {
+                        error_log("SnowClient: Processando anexo do followup {$followup->fields['id']} do ticket {$ticket->fields['id']}");
+                    }
+                    
                     // Obter sys_id do ServiceNow
                     $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
                     
@@ -570,10 +634,10 @@ class PluginSnowclientConfig extends CommonDBTM
                         if ($realSysId) {
                             $document = new Document();
                             if ($document->getFromDB($documentItem->fields['documents_id'])) {
-                                $api->attachDocument($document, $realSysId);
+                                $result = $api->attachDocument($document, $realSysId);
                                 
                                 if ($config->fields['debug_mode']) {
-                                    error_log("SnowClient: Anexo do followup {$followup->fields['id']} enviado para ServiceNow");
+                                    error_log("SnowClient: Anexo do followup {$followup->fields['id']} enviado para ServiceNow - resultado: " . ($result ? 'sucesso' : 'falha'));
                                 }
                             }
                         } else {

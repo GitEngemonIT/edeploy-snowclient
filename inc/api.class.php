@@ -480,9 +480,13 @@ class PluginSnowclientApi
     {
         if (!$sys_id) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("Erro: sys_id não fornecido para anexo do documento");
+                Toolbox::logDebug("SnowClient: Erro - sys_id não fornecido para anexo do documento");
             }
             return false;
+        }
+
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Iniciando envio de anexo - documento ID: {$document->fields['id']}, nome: {$document->fields['name']}, sys_id: $sys_id");
         }
 
         // Obter caminho do arquivo
@@ -490,13 +494,21 @@ class PluginSnowclientApi
         
         if (!file_exists($filepath)) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("Arquivo não encontrado: " . $filepath);
+                Toolbox::logDebug("SnowClient: Arquivo não encontrado: " . $filepath);
             }
             return false;
         }
 
+        if ($this->debug_mode) {
+            Toolbox::logDebug("SnowClient: Arquivo encontrado: " . $filepath . " (tamanho: " . filesize($filepath) . " bytes)");
+        }
+
         // Verificar se o arquivo é muito grande (>20MB)
         if (filesize($filepath) > 20 * 1024 * 1024) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Arquivo muito grande (>20MB), tentando redimensionar se for imagem");
+            }
+            
             // Redimensionar imagem se for muito grande
             $image_info = getimagesize($filepath);
             if ($image_info) {
@@ -523,10 +535,17 @@ class PluginSnowclientApi
                     
                     imagedestroy($src_image);
                     imagedestroy($dst_image);
+                    
+                    if ($this->debug_mode) {
+                        Toolbox::logDebug("SnowClient: Imagem redimensionada com sucesso");
+                    }
                 } else {
                     $file_content = file_get_contents($filepath);
                 }
             } else {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Arquivo muito grande e não é imagem - cancelando envio");
+                }
                 return false; // Arquivo muito grande e não é imagem
             }
         } else {
@@ -535,7 +554,7 @@ class PluginSnowclientApi
         
         if ($file_content === false) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("Erro ao ler arquivo: " . $filepath);
+                Toolbox::logDebug("SnowClient: Erro ao ler arquivo: " . $filepath);
             }
             return false;
         }
@@ -552,20 +571,27 @@ class PluginSnowclientApi
         ];
 
         if ($this->debug_mode) {
-            Toolbox::logDebug("Enviando anexo: " . $document->fields['name'] . " (tamanho: " . strlen($base64_content) . " bytes base64)");
+            Toolbox::logDebug("SnowClient: Dados do anexo preparados - nome: " . $document->fields['name'] . ", tipo: " . ($document->fields['mime'] ?? 'application/octet-stream') . ", tamanho base64: " . strlen($base64_content) . " bytes");
         }
 
-        // Fazer upload via ServiceNow Attachment API
-        $response = $this->makeAttachmentRequest('api/now/attachment/upload', 'POST', $attachment_data);
-        
-        if ($response && isset($response['result']) && isset($response['result']['sys_id'])) {
-            if ($this->debug_mode) {
-                Toolbox::logDebug("Anexo enviado com sucesso: " . $response['result']['sys_id']);
+        try {
+            // Fazer upload via ServiceNow Attachment API
+            $response = $this->makeAttachmentRequest('api/now/attachment/upload', 'POST', $attachment_data);
+            
+            if ($response && isset($response['result']) && isset($response['result']['sys_id'])) {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Anexo enviado com sucesso - sys_id: " . $response['result']['sys_id']);
+                }
+                return true;
+            } else {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Resposta inesperada do ServiceNow: " . json_encode($response));
+                }
+                return false;
             }
-            return true;
-        } else {
+        } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("Erro ao enviar anexo: " . json_encode($response));
+                Toolbox::logDebug("SnowClient: Erro ao enviar anexo: " . $e->getMessage());
             }
             return false;
         }
