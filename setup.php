@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.0.8');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.0.9');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -192,6 +192,17 @@ function plugin_snowclient_update($current_version)
     if (version_compare($current_version, '1.0.7', '<')) {
         $migration->displayMessage("Updating to 1.0.7 - Simplified sys_id handling via API");
         // Não fazemos migração de dados - deixamos como está e usamos sempre a API
+    }
+    
+    // Migração para versão 1.0.9 - Correções críticas de segurança
+    if (version_compare($current_version, '1.0.9', '<')) {
+        $migration->displayMessage("Updating to 1.0.9 - Critical security fixes for entity validation");
+        // Correções implementadas no código:
+        // - Revalidação de entidade em afterTicketUpdate()
+        // - Revalidação de entidade em afterTicketDelete() 
+        // - Validação de entidade em afterDocumentAdd()
+        // - Validação de entidade em afterDocumentItemAdd()
+        // Nenhuma migração de dados necessária - apenas correções de código
     }
     
     $migration->executeMigration();
