@@ -460,28 +460,82 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
-        if (!self::shouldSyncTicket($ticket) || !self::isTicketFromServiceNow($ticket)) {
+        if ($config->fields['debug_mode']) {
+            error_log("SnowClient: afterTicketUpdate chamado para ticket ID: " . $ticket->fields['id']);
+        }
+        
+        // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
+        if (!self::shouldSyncTicket($ticket)) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Ticket não está na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando atualização.");
+            }
+            return false;
+        }
+        
+        if (!self::isTicketFromServiceNow($ticket)) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Ticket não é do ServiceNow, ignorando atualização");
+            }
             return false;
         }
         
         if ($config->fields['sync_tickets']) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Enviando atualização do ticket para ServiceNow...");
+            }
+            
             $api = new PluginSnowclientApi();
-            $api->updateIncident($ticket);
+            $result = $api->updateIncident($ticket);
+            
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Resultado da atualização: " . ($result ? 'sucesso' : 'falha'));
+            }
+            
+            return $result;
         }
+        
+        return false;
     }
 
     static function afterTicketDelete($ticket)
     {
         $config = self::getInstance();
         
-        if (!self::shouldSyncTicket($ticket) || !self::isTicketFromServiceNow($ticket)) {
+        if ($config->fields['debug_mode']) {
+            error_log("SnowClient: afterTicketDelete chamado para ticket ID: " . $ticket->fields['id']);
+        }
+        
+        // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
+        if (!self::shouldSyncTicket($ticket)) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Ticket não está na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando exclusão.");
+            }
+            return false;
+        }
+        
+        if (!self::isTicketFromServiceNow($ticket)) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Ticket não é do ServiceNow, ignorando exclusão");
+            }
             return false;
         }
         
         if ($config->fields['sync_tickets']) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Enviando exclusão do ticket para ServiceNow...");
+            }
+            
             $api = new PluginSnowclientApi();
-            $api->deleteIncident($ticket);
+            $result = $api->deleteIncident($ticket);
+            
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Resultado da exclusão: " . ($result ? 'sucesso' : 'falha'));
+            }
+            
+            return $result;
         }
+        
+        return false;
     }
 
     static function afterTicketFollowUp($followup)
@@ -498,6 +552,12 @@ class PluginSnowclientConfig extends CommonDBTM
         $ticket = new Ticket();
         if ($ticket->getFromDB($followup->fields['items_id'])) {
             error_log("SnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
+            
+            // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
+            if (!self::shouldSyncTicket($ticket)) {
+                error_log("SnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando followup.");
+                return false;
+            }
             
             if (!self::isTicketFromServiceNow($ticket)) {
                 error_log("SnowClient: Ticket não é do ServiceNow, ignorando followup");
@@ -616,7 +676,15 @@ class PluginSnowclientConfig extends CommonDBTM
             $followup = new ITILFollowup();
             if ($followup->getFromDB($documentItem->fields['items_id'])) {
                 $ticket = new Ticket();
-                if ($ticket->getFromDB($followup->fields['items_id']) && self::shouldSyncTicket($ticket)) {
+                if ($ticket->getFromDB($followup->fields['items_id'])) {
+                    // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
+                    if (!self::shouldSyncTicket($ticket)) {
+                        if ($config->fields['debug_mode']) {
+                            error_log("SnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando documento de followup.");
+                        }
+                        return false;
+                    }
+                    
                     if (self::isTicketFromServiceNow($ticket)) {
                         // Obter sys_id do ServiceNow (busca via API automaticamente)
                         $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
