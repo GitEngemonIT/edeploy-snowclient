@@ -43,19 +43,35 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
-            // Tentar adicionar o botão com múltiplas tentativas (versão que funcionava)
+            // Esperar um pouco e verificar se deve mostrar o botão baseado na lógica PHP
             setTimeout(function() {
-                self.addReturnButton();
-            }, 500);
+                if (typeof window.snowclient_show_return_button !== 'undefined' && 
+                    window.snowclient_show_return_button === true) {
+                    self.log('Deve mostrar botão de devolução - ticket integrado do ServiceNow');
+                    self.addReturnButton();
+                } else {
+                    self.log('Ticket não integrado ou não atende critérios - não mostra botão');
+                    // Log adicional para debug
+                    self.log('snowclient_show_return_button = ' + (typeof window.snowclient_show_return_button !== 'undefined' ? window.snowclient_show_return_button : 'undefined'));
+                }
+            }, 1000); // Aumentado para 1 segundo
             
+            // Tentar novamente após delay maior
             setTimeout(function() {
-                if ($('#snowclient-return-button').length === 0) {
+                if (typeof window.snowclient_show_return_button !== 'undefined' && 
+                    window.snowclient_show_return_button === true && 
+                    $('#snowclient-return-button').length === 0) {
+                    self.log('Segunda tentativa - adicionando botão');
                     self.addReturnButton();
                 }
-            }, 1500);
+            }, 2000);
             
+            // Terceira tentativa
             setTimeout(function() {
-                if ($('#snowclient-return-button').length === 0) {
+                if (typeof window.snowclient_show_return_button !== 'undefined' && 
+                    window.snowclient_show_return_button === true && 
+                    $('#snowclient-return-button').length === 0) {
+                    self.log('Terceira tentativa - adicionando botão');
                     self.addReturnButton();
                 }
             }, 3000);
@@ -63,10 +79,12 @@ var SnowClient = {
             // Também tentar quando a página mudar (AJAX)
             $(document).ajaxComplete(function() {
                 setTimeout(function() {
-                    if ($('#snowclient-return-button').length === 0) {
+                    if (typeof window.snowclient_show_return_button !== 'undefined' && 
+                        window.snowclient_show_return_button === true && 
+                        $('#snowclient-return-button').length === 0) {
                         self.addReturnButton();
                     }
-                }, 300);
+                }, 500);
             });
         }
     },
@@ -81,9 +99,31 @@ var SnowClient = {
             return;
         }
         
-        // Buscar por diversos seletores possíveis, priorizando botão Salvar (configuração original que funcionava)
+        // Debug: listar todos os botões na página para entender a estrutura
+        self.log('=== DEBUG: Listando todos os botões na página ===');
+        $('button, input[type="submit"], .btn').each(function(index) {
+            var $this = $(this);
+            var text = $this.text() || $this.val() || $this.attr('value') || '';
+            var classes = $this.attr('class') || '';
+            var name = $this.attr('name') || '';
+            var id = $this.attr('id') || '';
+            self.log('Botão ' + index + ': text="' + text + '" classes="' + classes + '" name="' + name + '" id="' + id + '"');
+        });
+        self.log('=== FIM DEBUG ===');
+        
+        // Buscar por diversos seletores possíveis, priorizando botão Responder
         var targetElements = [
-            // Primeiro: área do botão Salvar (que funcionava antes)
+            // Primeiro: área do botão Responder (onde o usuário quer)
+            'button[name="add"]', // Botão Responder no GLPI
+            'input[name="add"]', // Responder como input
+            'button:contains("Responder")', // Botão com texto Responder
+            '.btn:contains("Responder")', // Classe btn com texto Responder
+            'input[type="submit"][value*="Responder"]', // Input submit com valor Responder
+            // Seletores específicos da área de followup/responder
+            '.followup-form .btn:last',
+            '.followup-buttons .btn:last',
+            '.card-body .btn-success:last',
+            // Fallback para botão Salvar (configuração original que funcionava)
             'input[name="update"]',
             'input[value="Salvar"]',
             'input[type="submit"][value*="Salvar"]',
