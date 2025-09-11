@@ -12,6 +12,9 @@ Plugin para integração entre GLPI e ServiceNow, permitindo sincronização aut
 - ✅ Modo debug para troubleshooting
 - ✅ Teste de conectividade integrado
 - ✅ Interface de configuração amigável
+- ✅ **NOVO**: Botão "Devolver ao ServiceNow" para tickets
+- ✅ **NOVO**: Devolução com justificativa e fila específica
+- ✅ **NOVO**: Resolução automática no GLPI sem resolver no ServiceNow
 
 ## Requisitos
 
@@ -44,9 +47,42 @@ Plugin para integração entre GLPI e ServiceNow, permitindo sincronização aut
 - **Sincronizar Documentos**: Anexa documentos aos incidents
 - **Tipo de Ticket Padrão**: Define o tipo padrão (Incident, Service Request, etc.)
 
+### Configuração de Devolução
+
+- **ID do Grupo da Fila de Devolução**: sys_id do ServiceNow do grupo que receberá tickets devolvidos
+
 ### Debug
 
 - **Modo Debug**: Habilita logs detalhados em `files/_log/snowclient.log`
+
+## Funcionalidade de Devolução de Tickets
+
+### Como Usar
+
+1. **Identificação**: O botão "Devolver ao ServiceNow" aparece automaticamente em tickets que:
+   - Foram criados pelo ServiceNow
+   - Estão na entidade configurada para sincronização
+   - Não estão resolvidos ou fechados
+
+2. **Processo de Devolução**:
+   - Clique no botão "Devolver ao ServiceNow" (localizado após o botão Escalar)
+   - Preencha o **motivo da devolução** (obrigatório)
+   - Opcionalmente, especifique a **fila de destino** no ServiceNow
+   - Confirme a devolução
+
+3. **Resultado**:
+   - Ticket é **resolvido automaticamente no GLPI**
+   - **Acompanhamento** é adicionado com justificativa
+   - Ticket é **transferido de volta ao ServiceNow**
+   - No ServiceNow: ticket **NÃO é resolvido**, apenas transferido para nova fila
+   - Work note é adicionada explicando a devolução
+
+### Casos de Uso
+
+- Tickets que precisam de conhecimento específico do ServiceNow
+- Chamados que requerem acesso a sistemas não disponíveis no GLPI
+- Transferência para equipes especializadas do ServiceNow
+- Devolução por falta de informações técnicas adequadas
 
 ## Mapeamento de Campos
 
@@ -79,3 +115,37 @@ Os logs são gravados em `files/_log/snowclient.log` quando o modo debug está h
 Tipos de log:
 - `ERROR`: Erros de conexão ou API
 - `DEBUG`: Requisições e respostas detalhadas
+
+## Changelog
+
+### v1.1.0 (Setembro 2025)
+🚀 **NOVA FUNCIONALIDADE: Devolução de Tickets (VERSÃO MELHORADA)**
+- ✅ **NOVO**: Botão "Devolver ao ServiceNow" na tela de tickets
+- ✅ **NOVO**: Modal com justificativa obrigatória para devolução
+- ✅ **NOVO**: Campo de configuração para fila padrão de devolução (sys_id)
+- ✅ **NOVO**: Suporte a sys_id ou nome do grupo de atribuição
+- ✅ **NOVO**: Resolução automática do ticket no GLPI
+- ✅ **NOVO**: Transferência para ServiceNow SEM resolver o ticket lá
+- ✅ **CRÍTICO**: Sistema anti-loop para evitar sincronização durante devolução
+- ✅ **CRÍTICO**: Proteção contra hooks de resolução em devoluções
+- ✅ **NOVO**: API para busca automática de grupos de atribuição
+- ✅ Interface multilíngue (Português/Inglês)
+- ✅ CSS e JavaScript dedicados para a funcionalidade
+
+### v1.0.9 (Setembro 2025)
+🔒 **CORREÇÕES CRÍTICAS DE SEGURANÇA**
+- **CRÍTICO**: Implementada revalidação de entidade em `afterTicketUpdate()`
+- **CRÍTICO**: Implementada revalidação de entidade em `afterTicketDelete()`
+- **CRÍTICO**: Implementada validação de entidade em `afterDocumentAdd()`
+- **CRÍTICO**: Implementada validação de entidade em `afterDocumentItemAdd()`
+- ✅ **VULNERABILIDADE CORRIGIDA**: Tickets movidos entre entidades não sincronizam mais indevidamente
+- ✅ Adicionado logging detalhado para auditoria de segurança
+- ✅ Proteção completa contra vazamento de dados entre entidades
+
+### v1.0.8 
+- Melhorias na sincronização de documentos
+- Correções de bugs menores
+
+### v1.0.7
+- Simplificação no manuseio de sys_id via API
+- Melhorias na estabilidade da conexão

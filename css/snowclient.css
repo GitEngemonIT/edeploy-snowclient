@@ -1,0 +1,36 @@
+/* ServiceNow Client Plugin CSS */
+
+#snowclient-return-button {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+    color: white;
+}
+
+#snowclient-return-button:hover {
+    background-color: #e76500;
+    border-color: #e76500;
+    color: white;
+}
+
+#snowclient-return-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
+}
+
+.snowclient-modal .modal-header {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.snowclient-modal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#snowclientReturnModal .alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+#snowclientReturnModal textarea:focus,
+#snowclientReturnModal input:focus {
+    border-color: #fd7e14;
+    box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
+}

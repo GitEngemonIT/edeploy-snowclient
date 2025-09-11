@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.0.9');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.1.0');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -88,6 +88,23 @@ function plugin_init_snowclient()
         // Add menu item
         $PLUGIN_HOOKS['menu_toadd']['snowclient'] = [
             'plugins' => 'PluginSnowclientConfig'
+        ];
+
+        // Hook para adicionar botões personalizados na tela de ticket
+        $PLUGIN_HOOKS['use_massive_action']['snowclient'] = 1;
+        
+        // Hook para adicionar JavaScript e CSS
+        $PLUGIN_HOOKS['add_javascript']['snowclient'] = [
+            'js/snowclient.js'
+        ];
+        
+        $PLUGIN_HOOKS['add_css']['snowclient'] = [
+            'css/snowclient.css'
+        ];
+
+        // Hook para formulários personalizados
+        $PLUGIN_HOOKS['item_form']['snowclient'] = [
+            'Ticket' => 'plugin_snowclient_item_form'
         ];
     }
 }
@@ -203,6 +220,29 @@ function plugin_snowclient_update($current_version)
         // - Validação de entidade em afterDocumentAdd()
         // - Validação de entidade em afterDocumentItemAdd()
         // Nenhuma migração de dados necessária - apenas correções de código
+    }
+    
+    // Migração para versão 1.1.0 - Nova funcionalidade de devolução de tickets
+    if (version_compare($current_version, '1.1.0', '<')) {
+        $migration->displayMessage("Updating to 1.1.0 - Added return ticket functionality");
+        
+        // Adicionar campo return_queue_group se não existir
+        $table = 'glpi_plugin_snowclient_configs';
+        if ($DB->tableExists($table)) {
+            if (!$DB->fieldExists($table, 'return_queue_group')) {
+                $migration->addField($table, 'return_queue_group', 'varchar(255) DEFAULT NULL');
+                $migration->migrationOneTable($table);
+            }
+        }
+        
+        // Nova funcionalidade implementada:
+        // - Botão "Devolver ao ServiceNow" em tickets
+        // - Modal de justificativa para devolução
+        // - Resolução automática no GLPI
+        // - Transferência para fila específica no ServiceNow sem resolver
+        // - API para busca de grupos de atribuição
+        // - Campo de configuração para fila padrão de devolução
+        // - Sistema de flags para evitar loops de sincronização
     }
     
     $migration->executeMigration();

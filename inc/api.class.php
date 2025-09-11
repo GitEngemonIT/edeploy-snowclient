@@ -746,4 +746,130 @@ class PluginSnowclientApi
         
         return $content;
     }
+
+    /**
+     * Devolve um ticket para uma fila específica no ServiceNow sem resolver
+     */
+    public function returnTicketToQueue($ticket, $reason, $queue = '')
+    {
+        try {
+            // Buscar o sys_id do ticket no ServiceNow
+            $sysId = PluginSnowclientConfig::getSnowSysIdFromTicket($ticket->getID());
+            
+            if (!$sysId) {
+                if ($this->debug_mode) {
+                    error_log("SnowClient: Não foi possível encontrar sys_id para ticket GLPI {$ticket->getID()}");
+                }
+                return false;
+            }
+
+            // Preparar dados para atualização
+            $updateData = [];
+            
+            // Adicionar work note explicando a devolução
+            $workNote = "CHAMADO DEVOLVIDO DO GLPI\n\n" .
+                       "Motivo: " . $reason . "\n\n" .
+                       "Este chamado foi devolvido pelo GLPI para tratamento pela equipe do ServiceNow.\n\n" .
+                       "Ticket GLPI: " . $ticket->getID() . "\n" .
+                       "Usuário: " . getUserName(Session::getLoginUserID()) . "\n" .
+                       "Data: " . date('d/m/Y H:i:s');
+            
+            $updateData['work_notes'] = $workNote;
+            
+            // Usar fila configurada no plugin ou fila especificada pelo usuário
+            $targetQueue = '';
+            if (!empty($queue)) {
+                $targetQueue = $queue;
+            } else {
+                // Usar fila configurada no plugin
+                $targetQueue = $this->config->fields['return_queue_group'];
+            }
+            
+            // Se foi especificada uma fila, definir o assignment_group
+            if (!empty($targetQueue)) {
+                // Se é um sys_id (32 caracteres), usar diretamente
+                if (strlen($targetQueue) == 32) {
+                    $updateData['assignment_group'] = $targetQueue;
+                    if ($this->debug_mode) {
+                        error_log("SnowClient: Definindo assignment_group usando sys_id configurado: $targetQueue");
+                    }
+                } else {
+                    // Tentar buscar por nome
+                    $groupSysId = $this->findAssignmentGroupByName($targetQueue);
+                    if ($groupSysId) {
+                        $updateData['assignment_group'] = $groupSysId;
+                        if ($this->debug_mode) {
+                            error_log("SnowClient: Definindo assignment_group para: $targetQueue ($groupSysId)");
+                        }
+                    } else {
+                        // Se não encontrou o grupo, adicionar na work note
+                        $updateData['work_notes'] .= "\n\nNota: Fila solicitada '$targetQueue' não foi encontrada automaticamente.";
+                        if ($this->debug_mode) {
+                            error_log("SnowClient: Grupo '$targetQueue' não encontrado no ServiceNow");
+                        }
+                    }
+                }
+            } else {
+                if ($this->debug_mode) {
+                    error_log("SnowClient: Nenhuma fila de devolução configurada");
+                }
+                $updateData['work_notes'] .= "\n\nNota: Nenhuma fila específica configurada para devolução.";
+            }
+            
+            // Definir estado como "In Progress" para garantir que não está resolvido
+            $updateData['state'] = '2'; // In Progress
+            
+            // Limpar assigned_to para forçar redistribuição
+            $updateData['assigned_to'] = '';
+            
+            if ($this->debug_mode) {
+                error_log("SnowClient: Devolvendo ticket $sysId com dados: " . json_encode($updateData));
+            }
+            
+            // Fazer a requisição de atualização
+            $endpoint = "/api/now/table/incident/$sysId";
+            $response = $this->makeRequest($endpoint, 'PATCH', $updateData);
+            
+            if ($response && isset($response['result'])) {
+                if ($this->debug_mode) {
+                    error_log("SnowClient: Ticket devolvido com sucesso - sys_id: $sysId");
+                }
+                return true;
+            } else {
+                if ($this->debug_mode) {
+                    error_log("SnowClient: Erro na resposta da API ao devolver ticket: " . json_encode($response));
+                }
+                return false;
+            }
+            
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                error_log("SnowClient: Exceção ao devolver ticket: " . $e->getMessage());
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Busca um grupo de atribuição pelo nome
+     */
+    private function findAssignmentGroupByName($groupName)
+    {
+        try {
+            $endpoint = "/api/now/table/sys_user_group?sysparm_query=name=" . urlencode($groupName) . "&sysparm_fields=sys_id,name&sysparm_limit=1";
+            $response = $this->makeRequest($endpoint, 'GET');
+            
+            if ($response && isset($response['result']) && count($response['result']) > 0) {
+                return $response['result'][0]['sys_id'];
+            }
+            
+            return null;
+            
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                error_log("SnowClient: Erro ao buscar grupo '$groupName': " . $e->getMessage());
+            }
+            return null;
+        }
+    }
 }

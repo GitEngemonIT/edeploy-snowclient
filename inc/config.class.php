@@ -52,6 +52,25 @@ class PluginSnowclientConfig extends CommonDBTM
         return $tabs;
     }
 
+    // Flag para controlar se deve ignorar hooks de sincronização
+    private static $skipSyncHooks = false;
+    
+    /**
+     * Define se deve ignorar hooks de sincronização temporariamente
+     */
+    public static function setSkipSyncHooks($skip = true)
+    {
+        self::$skipSyncHooks = $skip;
+    }
+    
+    /**
+     * Verifica se deve ignorar hooks de sincronização
+     */
+    public static function shouldSkipSyncHooks()
+    {
+        return self::$skipSyncHooks;
+    }
+
     static function getInstance()
     {
         static $instance = null;
@@ -171,6 +190,16 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "<td>" . __('Default Assignment Group', 'snowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'assignment_group');
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Return Queue Group ID', 'snowclient') . "</td>";
+        echo "<td>";
+        Html::autocompletionTextField($this, 'return_queue_group', [
+            'placeholder' => __('sys_id of the group for returned tickets', 'snowclient')
+        ]);
+        echo "<br><span class='small'>" . __('ServiceNow sys_id of the group that will receive returned tickets', 'snowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
@@ -357,6 +386,7 @@ class PluginSnowclientConfig extends CommonDBTM
               `username` varchar(255) DEFAULT NULL,
               `password` text DEFAULT NULL,
               `assignment_group` varchar(255) DEFAULT NULL,
+              `return_queue_group` varchar(255) DEFAULT NULL,
               `entities_id` int NOT NULL DEFAULT '0',
               `request_type` int NOT NULL DEFAULT '0',
               `api_user` int NOT NULL DEFAULT '0',
@@ -380,6 +410,7 @@ class PluginSnowclientConfig extends CommonDBTM
                 'username' => '',
                 'password' => '',
                 'assignment_group' => '',
+                'return_queue_group' => '',
                 'entities_id' => 0,
                 'request_type' => 0,
                 'api_user' => 0,
@@ -460,6 +491,14 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
+        // Verificar se deve pular sincronização (ex: devolução)
+        if (self::shouldSkipSyncHooks()) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Pulando sincronização de afterTicketUpdate (flag ativa) para ticket ID: " . $ticket->fields['id']);
+            }
+            return false;
+        }
+        
         if ($config->fields['debug_mode']) {
             error_log("SnowClient: afterTicketUpdate chamado para ticket ID: " . $ticket->fields['id']);
         }
@@ -500,6 +539,14 @@ class PluginSnowclientConfig extends CommonDBTM
     static function afterTicketDelete($ticket)
     {
         $config = self::getInstance();
+        
+        // Verificar se deve pular sincronização (ex: devolução)
+        if (self::shouldSkipSyncHooks()) {
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Pulando sincronização de afterTicketDelete (flag ativa) para ticket ID: " . $ticket->fields['id']);
+            }
+            return false;
+        }
         
         if ($config->fields['debug_mode']) {
             error_log("SnowClient: afterTicketDelete chamado para ticket ID: " . $ticket->fields['id']);
@@ -820,5 +867,234 @@ class PluginSnowclientConfig extends CommonDBTM
         }
         
         return null;
+    }
+
+    /**
+     * Verifica se deve mostrar o botão "Devolver" para um ticket
+     */
+    static function shouldShowReturnButton($ticket)
+    {
+        $config = self::getInstance();
+        
+        // Verificar se o ticket é do ServiceNow e está na entidade configurada
+        if (!self::shouldSyncTicket($ticket) || !self::isTicketFromServiceNow($ticket)) {
+            return false;
+        }
+        
+        // Verificar se o ticket não está resolvido/fechado
+        if (in_array($ticket->fields['status'], [Ticket::SOLVED, Ticket::CLOSED])) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Mostra o botão "Devolver" no formulário do ticket
+     */
+    static function showReturnButton($ticket, $options = [])
+    {
+        global $CFG_GLPI;
+        
+        if (!$ticket->canUpdate()) {
+            return;
+        }
+        
+        echo "<script type='text/javascript'>
+        $(document).ready(function() {
+            // Adicionar botão Devolver após o botão Escalar
+            var escalateButton = $('.escalate-button, button[name=\"escalate\"], input[name=\"escalate\"]');
+            if (escalateButton.length === 0) {
+                // Se não encontrou botão de escalar, adicionar após os botões de ação padrão
+                escalateButton = $('.main-actions .btn:last, .form-buttons input[type=\"submit\"]:last');
+            }
+            
+            if (escalateButton.length > 0) {
+                var returnButton = '<button type=\"button\" class=\"btn btn-warning ms-2\" id=\"snowclient-return-button\" data-ticket-id=\"{$ticket->getID()}\">' +
+                    '<i class=\"fas fa-undo\"></i> ' + '" . __('Return to ServiceNow', 'snowclient') . "' +
+                    '</button>';
+                escalateButton.after(returnButton);
+            }
+            
+            // Event handler para o botão
+            $(document).on('click', '#snowclient-return-button', function(e) {
+                e.preventDefault();
+                var ticketId = $(this).data('ticket-id');
+                showReturnModal(ticketId);
+            });
+        });
+
+        function showReturnModal(ticketId) {
+            var modalHtml = '<div class=\"modal fade\" id=\"snowclientReturnModal\" tabindex=\"-1\">' +
+                '<div class=\"modal-dialog modal-lg\">' +
+                    '<div class=\"modal-content\">' +
+                        '<div class=\"modal-header\">' +
+                            '<h5 class=\"modal-title\">' + '" . __('Return Ticket to ServiceNow', 'snowclient') . "' + '</h5>' +
+                            '<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\"></button>' +
+                        '</div>' +
+                        '<div class=\"modal-body\">' +
+                            '<form id=\"snowclient-return-form\">' +
+                                '<input type=\"hidden\" name=\"ticket_id\" value=\"' + ticketId + '\">' +
+                                '<div class=\"mb-3\">' +
+                                    '<label for=\"return_reason\" class=\"form-label\">' + '" . __('Return Reason', 'snowclient') . "' + ' *</label>' +
+                                    '<textarea class=\"form-control\" id=\"return_reason\" name=\"return_reason\" rows=\"4\" required placeholder=\"' + '" . __('Describe why this ticket is being returned to ServiceNow...', 'snowclient') . "' + '\"></textarea>' +
+                                '</div>' +
+                                '<div class=\"mb-3\">' +
+                                    '<label for=\"return_queue\" class=\"form-label\">' + '" . __('Destination Queue in ServiceNow', 'snowclient') . "' + '</label>' +
+                                    '<input type=\"text\" class=\"form-control\" id=\"return_queue\" name=\"return_queue\" placeholder=\"' + '" . __('Ex: Service Desk L1 (optional)', 'snowclient') . "' + '\">' +
+                                '</div>' +
+                                '<div class=\"alert alert-info\">' +
+                                    '<i class=\"fas fa-info-circle\"></i> ' +
+                                    '" . __('This ticket will be resolved in GLPI and transferred back to ServiceNow in the specified queue, WITHOUT being resolved there.', 'snowclient') . "' +
+                                '</div>' +
+                            '</form>' +
+                        '</div>' +
+                        '<div class=\"modal-footer\">' +
+                            '<button type=\"button\" class=\"btn btn-secondary\" data-bs-dismiss=\"modal\">' + '" . __('Cancel', 'snowclient') . "' + '</button>' +
+                            '<button type=\"button\" class=\"btn btn-warning\" id=\"confirm-return\">' + '" . __('Return Ticket', 'snowclient') . "' + '</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+            
+            // Remover modal existente se houver
+            $('#snowclientReturnModal').remove();
+            
+            // Adicionar modal ao body
+            $('body').append(modalHtml);
+            
+            // Mostrar modal
+            $('#snowclientReturnModal').modal('show');
+            
+            // Handler para confirmação
+            $('#confirm-return').click(function() {
+                var reason = $('#return_reason').val().trim();
+                if (!reason) {
+                    alert('" . __('Please provide a return reason', 'snowclient') . "');
+                    return;
+                }
+                
+                $(this).prop('disabled', true).text('" . __('Returning...', 'snowclient') . "');
+                
+                // AJAX para processar a devolução
+                $.ajax({
+                    url: '{$CFG_GLPI['root_doc']}/plugins/snowclient/ajax/return_ticket.php',
+                    method: 'POST',
+                    data: {
+                        ticket_id: ticketId,
+                        return_reason: reason,
+                        return_queue: $('#return_queue').val().trim()
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            alert('" . __('Ticket returned successfully to ServiceNow!', 'snowclient') . "');
+                            $('#snowclientReturnModal').modal('hide');
+                            location.reload(); // Recarregar página para mostrar status atualizado
+                        } else {
+                            alert('" . __('Error returning ticket', 'snowclient') . "' + ': ' + response.message);
+                            $('#confirm-return').prop('disabled', false).text('" . __('Return Ticket', 'snowclient') . "');
+                        }
+                    },
+                    error: function() {
+                        alert('" . __('Communication error. Please try again.', 'snowclient') . "');
+                        $('#confirm-return').prop('disabled', false).text('" . __('Return Ticket', 'snowclient') . "');
+                    }
+                });
+            });
+        }
+        </script>";
+    }
+
+    /**
+     * Processa a devolução de um ticket ao ServiceNow
+     */
+    static function returnTicketToServiceNow($ticket, $reason, $queue = '')
+    {
+        global $DB;
+        
+        $config = self::getInstance();
+        
+        try {
+            // CRÍTICO: Ativar flag para evitar hooks de sincronização
+            self::setSkipSyncHooks(true);
+            
+            // 1. Adicionar followup explicando a devolução
+            $followup = new ITILFollowup();
+            $followupData = [
+                'items_id' => $ticket->getID(),
+                'itemtype' => 'Ticket',
+                'users_id' => Session::getLoginUserID(),
+                'is_private' => 0,
+                'content' => "**CHAMADO DEVOLVIDO AO SERVICENOW**\n\n" . 
+                            "**Motivo:** " . $reason . "\n\n" . 
+                            (!empty($queue) ? "**Fila de destino:** " . $queue . "\n\n" : "") .
+                            "Este chamado foi devolvido ao ServiceNow para tratamento adequado pela equipe responsável.",
+                'date' => $_SESSION['glpi_currenttime']
+            ];
+            
+            $followupId = $followup->add($followupData);
+            if (!$followupId) {
+                throw new Exception('Erro ao adicionar acompanhamento de devolução');
+            }
+            
+            // 2. Resolver o ticket no GLPI
+            $ticketUpdate = [
+                'id' => $ticket->getID(),
+                'status' => Ticket::SOLVED,
+                'solution' => "Chamado devolvido ao ServiceNow.\n\nMotivo: " . $reason,
+                'solutiontypes_id' => 0, // Tipo de solução padrão
+                'date_mod' => $_SESSION['glpi_currenttime']
+            ];
+            
+            if (!$ticket->update($ticketUpdate)) {
+                throw new Exception('Erro ao resolver ticket no GLPI');
+            }
+            
+            // 3. Desativar flag antes de chamar API
+            self::setSkipSyncHooks(false);
+            
+            // 4. Enviar alteração para o ServiceNow (sem resolver lá)
+            $api = new PluginSnowclientApi();
+            $snowResult = $api->returnTicketToQueue($ticket, $reason, $queue);
+            
+            if (!$snowResult) {
+                // Log do erro mas não falha a operação local
+                error_log("SnowClient: Erro ao enviar devolução para ServiceNow - Ticket ID: " . $ticket->getID());
+                
+                // Reativar flag para adicionar followup de erro
+                self::setSkipSyncHooks(true);
+                
+                // Adicionar nota sobre o problema
+                $errorFollowup = new ITILFollowup();
+                $errorFollowup->add([
+                    'items_id' => $ticket->getID(),
+                    'itemtype' => 'Ticket',
+                    'users_id' => Session::getLoginUserID(),
+                    'is_private' => 1,
+                    'content' => "**AVISO:** Ticket foi resolvido no GLPI, mas houve erro ao enviar devolução para ServiceNow. Verifique manualmente.",
+                    'date' => $_SESSION['glpi_currenttime']
+                ]);
+                
+                // Desativar flag novamente
+                self::setSkipSyncHooks(false);
+            }
+            
+            return [
+                'success' => true, 
+                'message' => 'Ticket devolvido com sucesso',
+                'snow_sync' => $snowResult
+            ];
+            
+        } catch (Exception $e) {
+            // Garantir que a flag seja desativada em caso de erro
+            self::setSkipSyncHooks(false);
+            
+            error_log("SnowClient returnTicketToServiceNow Error: " . $e->getMessage());
+            return [
+                'success' => false, 
+                'message' => 'Erro ao processar devolução: ' . $e->getMessage()
+            ];
+        }
     }
 }

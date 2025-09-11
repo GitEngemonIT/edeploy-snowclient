@@ -69,4 +69,23 @@ $LANG['snowclient'] = [
     'Error updating ticket' => 'Error updating ticket',
     'Error adding work note' => 'Error adding work note',
     'Error attaching document' => 'Error attaching document',
+    
+    // Return Functionality
+    'Return to ServiceNow' => 'Return to ServiceNow',
+    'Return Ticket to ServiceNow' => 'Return Ticket to ServiceNow',
+    'Return Reason' => 'Return Reason',
+    'Destination Queue in ServiceNow' => 'Destination Queue in ServiceNow',
+    'Return Queue Group ID' => 'Return Queue Group ID',
+    'sys_id of the group for returned tickets' => 'sys_id of the group for returned tickets',
+    'ServiceNow sys_id of the group that will receive returned tickets' => 'ServiceNow sys_id of the group that will receive returned tickets',
+    'Please provide a return reason' => 'Please provide a return reason',
+    'Ticket returned successfully to ServiceNow!' => 'Ticket returned successfully to ServiceNow!',
+    'Error returning ticket' => 'Error returning ticket',
+    'Communication error. Please try again.' => 'Communication error. Please try again.',
+    'Cancel' => 'Cancel',
+    'Return Ticket' => 'Return Ticket',
+    'Returning...' => 'Returning...',
+    'Describe why this ticket is being returned to ServiceNow...' => 'Describe why this ticket is being returned to ServiceNow...',
+    'Ex: Service Desk L1 (optional)' => 'Ex: Service Desk L1 (optional)',
+    'This ticket will be resolved in GLPI and transferred back to ServiceNow in the specified queue, WITHOUT being resolved there.' => 'This ticket will be resolved in GLPI and transferred back to ServiceNow in the specified queue, WITHOUT being resolved there.',
 ];
