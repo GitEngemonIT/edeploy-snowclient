@@ -67,3 +67,17 @@ function plugin_snowclient_item_form($params)
     // O JavaScript vai verificar se deve mostrar o botão baseado na lógica de negócio
     return true;
 }
+
+function plugin_snowclient_post_item_form($params)
+{
+    if ($params['item']::getType() === Ticket::getType()) {
+        $ticket = $params['item'];
+        
+        // Verificar se deve mostrar o botão
+        if (PluginSnowclientConfig::shouldShowReturnButton($ticket)) {
+            PluginSnowclientConfig::showReturnButton($ticket, $params);
+        }
+    }
+    
+    return true;
+}

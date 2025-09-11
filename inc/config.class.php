@@ -912,162 +912,22 @@ class PluginSnowclientConfig extends CommonDBTM
             return;
         }
         
+        // Apenas injetar um sinal para o JavaScript saber que deve mostrar o botão
         echo "<script type='text/javascript'>
         $(document).ready(function() {
-            console.log('SnowClient: Initializing return button for ticket {$ticket->getID()}');
+            console.log('SnowClient: Return button should be shown for ticket {$ticket->getID()}');
             
-            // Função para adicionar o botão
-            function addReturnButton() {
-                // Remover botão existente se houver
-                $('#snowclient-return-button').remove();
-                
-                // Tentar diferentes seletores para encontrar onde adicionar o botão
-                var targetElements = [
-                    '.card-footer .btn-group:last',
-                    '.card-footer .d-flex:last',
-                    '.card-footer .main-actions',
-                    '.form-buttons',
-                    '.center .submit',
-                    'input[name=\"update\"]:last',
-                    'input[type=\"submit\"]:last',
-                    '.tab_cadre_fixe .center:last'
-                ];
-                
-                var buttonAdded = false;
-                
-                for (var i = 0; i < targetElements.length && !buttonAdded; i++) {
-                    var target = $(targetElements[i]);
-                    console.log('SnowClient: Trying selector: ' + targetElements[i] + ' - Found: ' + target.length);
-                    
-                    if (target.length > 0) {
-                        var returnButton = '<button type=\"button\" class=\"btn btn-warning ms-2 me-2\" id=\"snowclient-return-button\" data-ticket-id=\"{$ticket->getID()}\" style=\"margin-left: 10px;\">' +
-                            '<i class=\"fas fa-undo\"></i> ' + '" . __('Return to ServiceNow', 'snowclient') . "' +
-                            '</button>';
-                        target.after(returnButton);
-                        buttonAdded = true;
-                        console.log('SnowClient: Button added after: ' + targetElements[i]);
-                        break;
-                    }
-                }
-                
-                if (!buttonAdded) {
-                    // Fallback: adicionar no final do body como botão flutuante
-                    console.log('SnowClient: Using fallback - adding floating button');
-                    var floatingButton = '<div style=\"position: fixed; bottom: 20px; right: 20px; z-index: 1000;\">' +
-                        '<button type=\"button\" class=\"btn btn-warning\" id=\"snowclient-return-button\" data-ticket-id=\"{$ticket->getID()}\">' +
-                        '<i class=\"fas fa-undo\"></i> ' + '" . __('Return to ServiceNow', 'snowclient') . "' +
-                        '</button></div>';
-                    $('body').append(floatingButton);
-                    buttonAdded = true;
-                }
-                
-                return buttonAdded;
-            }
-            
-            // Tentar adicionar o botão imediatamente
-            if (!addReturnButton()) {
-                // Se não conseguiu, tentar novamente após um delay
-                setTimeout(function() {
-                    console.log('SnowClient: Retrying to add button...');
-                    addReturnButton();
-                }, 1000);
-            }
-            
-            // Event handler para o botão
-            $(document).on('click', '#snowclient-return-button', function(e) {
-                e.preventDefault();
-                var ticketId = $(this).data('ticket-id');
-                console.log('SnowClient: Return button clicked for ticket:', ticketId);
-                showReturnModal(ticketId);
-            });
+            // Adicionar uma variável global indicando que o botão deve ser mostrado
+            window.snowclient_show_return_button = true;
+            window.snowclient_ticket_id = {$ticket->getID()};
         });
-
-        function showReturnModal(ticketId) {
-            var modalHtml = '<div class=\"modal fade\" id=\"snowclientReturnModal\" tabindex=\"-1\">' +
-                '<div class=\"modal-dialog modal-lg\">' +
-                    '<div class=\"modal-content\">' +
-                        '<div class=\"modal-header\">' +
-                            '<h5 class=\"modal-title\">' + '" . __('Return Ticket to ServiceNow', 'snowclient') . "' + '</h5>' +
-                            '<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\"></button>' +
-                        '</div>' +
-                        '<div class=\"modal-body\">' +
-                            '<form id=\"snowclient-return-form\">' +
-                                '<input type=\"hidden\" name=\"ticket_id\" value=\"' + ticketId + '\">' +
-                                '<div class=\"mb-3\">' +
-                                    '<label for=\"return_reason\" class=\"form-label\">' + '" . __('Return Reason', 'snowclient') . "' + ' *</label>' +
-                                    '<textarea class=\"form-control\" id=\"return_reason\" name=\"return_reason\" rows=\"4\" required placeholder=\"' + '" . __('Describe why this ticket is being returned to ServiceNow...', 'snowclient') . "' + '\"></textarea>' +
-                                '</div>' +
-                                '<div class=\"mb-3\">' +
-                                    '<label for=\"return_queue\" class=\"form-label\">' + '" . __('Destination Queue in ServiceNow', 'snowclient') . "' + '</label>' +
-                                    '<input type=\"text\" class=\"form-control\" id=\"return_queue\" name=\"return_queue\" placeholder=\"' + '" . __('Ex: Service Desk L1 (optional)', 'snowclient') . "' + '\">' +
-                                '</div>' +
-                                '<div class=\"alert alert-info\">' +
-                                    '<i class=\"fas fa-info-circle\"></i> ' +
-                                    '" . __('This ticket will be resolved in GLPI and transferred back to ServiceNow in the specified queue, WITHOUT being resolved there.', 'snowclient') . "' +
-                                '</div>' +
-                            '</form>' +
-                        '</div>' +
-                        '<div class=\"modal-footer\">' +
-                            '<button type=\"button\" class=\"btn btn-secondary\" data-bs-dismiss=\"modal\">' + '" . __('Cancel', 'snowclient') . "' + '</button>' +
-                            '<button type=\"button\" class=\"btn btn-warning\" id=\"confirm-return\">' + '" . __('Return Ticket', 'snowclient') . "' + '</button>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>';
-            
-            // Remover modal existente se houver
-            $('#snowclientReturnModal').remove();
-            
-            // Adicionar modal ao body
-            $('body').append(modalHtml);
-            
-            // Mostrar modal
-            $('#snowclientReturnModal').modal('show');
-            
-            // Handler para confirmação
-            $('#confirm-return').click(function() {
-                var reason = $('#return_reason').val().trim();
-                if (!reason) {
-                    alert('" . __('Please provide a return reason', 'snowclient') . "');
-                    return;
-                }
-                
-                $(this).prop('disabled', true).text('" . __('Returning...', 'snowclient') . "');
-                
-                // AJAX para processar a devolução
-                $.ajax({
-                    url: '{$CFG_GLPI['root_doc']}/plugins/snowclient/ajax/return_ticket.php',
-                    method: 'POST',
-                    data: {
-                        ticket_id: ticketId,
-                        return_reason: reason,
-                        return_queue: $('#return_queue').val().trim()
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            alert('" . __('Ticket returned successfully to ServiceNow!', 'snowclient') . "');
-                            $('#snowclientReturnModal').modal('hide');
-                            location.reload(); // Recarregar página para mostrar status atualizado
-                        } else {
-                            alert('" . __('Error returning ticket', 'snowclient') . "' + ': ' + response.message);
-                            $('#confirm-return').prop('disabled', false).text('" . __('Return Ticket', 'snowclient') . "');
-                        }
-                    },
-                    error: function() {
-                        alert('" . __('Communication error. Please try again.', 'snowclient') . "');
-                        $('#confirm-return').prop('disabled', false).text('" . __('Return Ticket', 'snowclient') . "');
-                    }
-                });
-            });
-        }
         </script>";
     }
 
     /**
      * Processa a devolução de um ticket ao ServiceNow
      */
-    static function returnTicketToServiceNow($ticket, $reason, $queue = '')
+    static function returnTicketToServiceNow($ticket, $reason)
     {
         global $DB;
         
@@ -1086,7 +946,6 @@ class PluginSnowclientConfig extends CommonDBTM
                 'is_private' => 0,
                 'content' => "**CHAMADO DEVOLVIDO AO SERVICENOW**\n\n" . 
                             "**Motivo:** " . $reason . "\n\n" . 
-                            (!empty($queue) ? "**Fila de destino:** " . $queue . "\n\n" : "") .
                             "Este chamado foi devolvido ao ServiceNow para tratamento adequado pela equipe responsável.",
                 'date' => $_SESSION['glpi_currenttime']
             ];
@@ -1114,7 +973,7 @@ class PluginSnowclientConfig extends CommonDBTM
             
             // 4. Enviar alteração para o ServiceNow (sem resolver lá)
             $api = new PluginSnowclientApi();
-            $snowResult = $api->returnTicketToQueue($ticket, $reason, $queue);
+            $snowResult = $api->returnTicketToQueue($ticket, $reason);
             
             if (!$snowResult) {
                 // Log do erro mas não falha a operação local

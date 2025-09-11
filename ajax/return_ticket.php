@@ -21,7 +21,6 @@ if (!isset($_POST['ticket_id']) || !isset($_POST['return_reason'])) {
 
 $ticketId = intval($_POST['ticket_id']);
 $reason = trim($_POST['return_reason']);
-$queue = trim($_POST['return_queue'] ?? '');
 
 if (empty($reason)) {
     echo json_encode(['success' => false, 'message' => 'Motivo da devolução é obrigatório']);
@@ -49,7 +48,7 @@ try {
     }
     
     // Processar a devolução
-    $result = PluginSnowclientConfig::returnTicketToServiceNow($ticket, $reason, $queue);
+    $result = PluginSnowclientConfig::returnTicketToServiceNow($ticket, $reason);
     
     if ($result['success']) {
         echo json_encode(['success' => true, 'message' => 'Ticket devolvido com sucesso']);

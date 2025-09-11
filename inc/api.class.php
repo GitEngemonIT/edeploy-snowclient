@@ -750,7 +750,7 @@ class PluginSnowclientApi
     /**
      * Devolve um ticket para uma fila específica no ServiceNow sem resolver
      */
-    public function returnTicketToQueue($ticket, $reason, $queue = '')
+    public function returnTicketToQueue($ticket, $reason)
     {
         try {
             // Buscar o sys_id do ticket no ServiceNow
@@ -776,16 +776,10 @@ class PluginSnowclientApi
             
             $updateData['work_notes'] = $workNote;
             
-            // Usar fila configurada no plugin ou fila especificada pelo usuário
-            $targetQueue = '';
-            if (!empty($queue)) {
-                $targetQueue = $queue;
-            } else {
-                // Usar fila configurada no plugin
-                $targetQueue = $this->config->fields['return_queue_group'];
-            }
+            // Usar fila configurada no plugin
+            $targetQueue = $this->config->fields['return_queue_group'];
             
-            // Se foi especificada uma fila, definir o assignment_group
+            // Se foi configurada uma fila, definir o assignment_group
             if (!empty($targetQueue)) {
                 // Se é um sys_id (32 caracteres), usar diretamente
                 if (strlen($targetQueue) == 32) {

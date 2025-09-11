@@ -101,5 +101,5 @@ $LANG['snowclient'] = [
     'Returning...' => 'Devolvendo...',
     'Describe why this ticket is being returned to ServiceNow...' => 'Descreva o motivo pelo qual este chamado está sendo devolvido ao ServiceNow...',
     'Ex: Service Desk L1 (optional)' => 'Ex: Service Desk L1 (opcional)',
-    'This ticket will be resolved in GLPI and transferred back to ServiceNow in the specified queue, WITHOUT being resolved there.' => 'Este chamado será resolvido no GLPI e transferido de volta ao ServiceNow na fila especificada, SEM ser resolvido lá.',
+    'This ticket will be resolved in GLPI and transferred back to ServiceNow using the configured return queue, WITHOUT being resolved there.' => 'Este chamado será resolvido no GLPI e transferido de volta ao ServiceNow usando a fila de devolução configurada, SEM ser resolvido lá.',
 ];
