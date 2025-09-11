@@ -43,33 +43,27 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
-            // Esperar um pouco e verificar se deve mostrar o botão baseado na lógica PHP
+            // Tentar adicionar o botão com múltiplas tentativas (versão que funcionava)
             setTimeout(function() {
-                if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                    window.snowclient_show_return_button === true) {
-                    self.log('Deve mostrar botão de devolução - ticket integrado do ServiceNow');
-                    self.addReturnButton();
-                } else {
-                    self.log('Ticket não integrado ou não atende critérios - não mostra botão');
-                }
+                self.addReturnButton();
             }, 500);
             
-            // Tentar novamente após delay maior
             setTimeout(function() {
-                if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                    window.snowclient_show_return_button === true && 
-                    $('#snowclient-return-button').length === 0) {
-                    self.log('Segunda tentativa - adicionando botão');
+                if ($('#snowclient-return-button').length === 0) {
                     self.addReturnButton();
                 }
             }, 1500);
             
+            setTimeout(function() {
+                if ($('#snowclient-return-button').length === 0) {
+                    self.addReturnButton();
+                }
+            }, 3000);
+            
             // Também tentar quando a página mudar (AJAX)
             $(document).ajaxComplete(function() {
                 setTimeout(function() {
-                    if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                        window.snowclient_show_return_button === true && 
-                        $('#snowclient-return-button').length === 0) {
+                    if ($('#snowclient-return-button').length === 0) {
                         self.addReturnButton();
                     }
                 }, 300);
@@ -87,36 +81,27 @@ var SnowClient = {
             return;
         }
         
-        // Buscar por diversos seletores possíveis, priorizando menu lateral direito próximo ao Salvar
+        // Buscar por diversos seletores possíveis, priorizando botão Salvar (configuração original que funcionava)
         var targetElements = [
-            // Botões específicos do GLPI
+            // Primeiro: área do botão Salvar (que funcionava antes)
             'input[name="update"]',
             'input[value="Salvar"]',
-            'button:contains("Salvar")', 
             'input[type="submit"][value*="Salvar"]',
-            '.btn-success:contains("Salvar")',
-            // Seletores específicos da interface do GLPI
-            '.main-form input[type="submit"]:last',
-            '.tab_cadre_fixe input[type="submit"]:last',
-            '.center input[type="submit"]:last',
-            // Área de botões no final do formulário
-            '.form_buttons',
-            '.submit',
-            // Menu lateral e ações
-            '.right-menu .btn:last',
-            '.sidebar-right .btn:last',
-            '.ticket-actions .btn:last',
-            // Rodapé e área de formulário
-            '.card-footer .btn-group:last',
-            '.card-footer .d-flex:last',
-            '.form-buttons .btn:last',
-            '.main-form .btn:last',
-            // Fallbacks tradicionais
+            '.btn-success',
+            // Área de formulário tradicional do GLPI
             '.form-buttons .btn-primary:last',
             '.card-footer .btn-primary:last',
             'input[type="submit"]:last',
-            // Último recurso - qualquer botão
-            '.btn-primary:last',
+            '.main-form .btn:last',
+            // Seletores específicos do GLPI
+            '.main-form input[type="submit"]:last',
+            '.tab_cadre_fixe input[type="submit"]:last',
+            '.center input[type="submit"]:last',
+            // Fallbacks gerais
+            '.card-footer .btn-group:last',
+            '.card-footer .d-flex:last',
+            '.form-buttons .btn:last',
+            // Último recurso
             '.btn:last'
         ];
         
