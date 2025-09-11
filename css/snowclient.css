@@ -4,17 +4,40 @@
     background-color: #fd7e14;
     border-color: #fd7e14;
     color: white;
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease-in-out;
 }
 
 #snowclient-return-button:hover {
     background-color: #e76500;
     border-color: #e76500;
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 #snowclient-return-button:focus {
     box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
 }
+
+#snowclient-return-button:active {
+    transform: translateY(0);
+}
+
+/* Integração com menu lateral do GLPI */
+#snowclient-return-button {
+    margin-left: 10px;
+    margin-right: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Modal de devolução */
 
 .snowclient-modal .modal-header {
     background-color: #fd7e14;

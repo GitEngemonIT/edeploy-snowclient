@@ -43,20 +43,33 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
-            // Esperar um pouco e verificar se deve mostrar o botão
+            // Esperar um pouco e verificar se deve mostrar o botão baseado na lógica PHP
             setTimeout(function() {
                 if (typeof window.snowclient_show_return_button !== 'undefined' && 
                     window.snowclient_show_return_button === true) {
-                    self.log('Deve mostrar botão de devolução');
+                    self.log('Deve mostrar botão de devolução - ticket integrado do ServiceNow');
                     self.addReturnButton();
+                } else {
+                    self.log('Ticket não integrado ou não atende critérios - não mostra botão');
                 }
             }, 500);
+            
+            // Tentar novamente após delay maior
+            setTimeout(function() {
+                if (typeof window.snowclient_show_return_button !== 'undefined' && 
+                    window.snowclient_show_return_button === true && 
+                    $('#snowclient-return-button').length === 0) {
+                    self.log('Segunda tentativa - adicionando botão');
+                    self.addReturnButton();
+                }
+            }, 1500);
             
             // Também tentar quando a página mudar (AJAX)
             $(document).ajaxComplete(function() {
                 setTimeout(function() {
                     if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                        window.snowclient_show_return_button === true) {
+                        window.snowclient_show_return_button === true && 
+                        $('#snowclient-return-button').length === 0) {
                         self.addReturnButton();
                     }
                 }, 300);
@@ -74,24 +87,37 @@ var SnowClient = {
             return;
         }
         
-        // Buscar por diversos seletores possíveis, priorizando área próxima ao botão Responder
+        // Buscar por diversos seletores possíveis, priorizando menu lateral direito próximo ao Salvar
         var targetElements = [
-            // Primeiro tentar encontrar botões próximos ao "Responder"
-            'input[name="add_followup"]',
-            'button:contains("Responder")', 
-            'input[type="submit"][value*="Responder"]',
-            '.followup-actions input[type="submit"]',
-            '.followup-form .btn-primary',
-            // Depois tentar área de ações da primeira parte do form
-            '.card-body .form-buttons .btn-primary:first',
-            '.form-buttons .btn-primary:first', 
-            '.main-form .btn:first',
-            // Fallbacks para posições mais tradicionais
+            // Botões específicos do GLPI
+            'input[name="update"]',
+            'input[value="Salvar"]',
+            'button:contains("Salvar")', 
+            'input[type="submit"][value*="Salvar"]',
+            '.btn-success:contains("Salvar")',
+            // Seletores específicos da interface do GLPI
+            '.main-form input[type="submit"]:last',
+            '.tab_cadre_fixe input[type="submit"]:last',
+            '.center input[type="submit"]:last',
+            // Área de botões no final do formulário
+            '.form_buttons',
+            '.submit',
+            // Menu lateral e ações
+            '.right-menu .btn:last',
+            '.sidebar-right .btn:last',
+            '.ticket-actions .btn:last',
+            // Rodapé e área de formulário
+            '.card-footer .btn-group:last',
+            '.card-footer .d-flex:last',
+            '.form-buttons .btn:last',
+            '.main-form .btn:last',
+            // Fallbacks tradicionais
             '.form-buttons .btn-primary:last',
             '.card-footer .btn-primary:last',
-            'input[name="update"]',
             'input[type="submit"]:last',
-            '.main-form .btn:last'
+            // Último recurso - qualquer botão
+            '.btn-primary:last',
+            '.btn:last'
         ];
         
         var targetFound = false;
@@ -104,7 +130,7 @@ var SnowClient = {
                 // Verificar se é um ticket válido para devolução
                 var ticketId = this.getTicketId();
                 if (ticketId > 0) {
-                    var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '">' +
+                    var returnButton = '<button type="button" class="btn btn-warning me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '" style="margin: 5px;">' +
                         '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
                         '</button>';
                     
