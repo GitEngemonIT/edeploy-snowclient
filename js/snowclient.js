@@ -45,6 +45,10 @@ var SnowClient = {
             
             // Esperar um pouco e verificar se deve mostrar o botão baseado na lógica PHP
             setTimeout(function() {
+                self.log('Verificando variáveis globais...');
+                self.log('window.snowclient_show_return_button = ' + (typeof window.snowclient_show_return_button !== 'undefined' ? window.snowclient_show_return_button : 'undefined'));
+                self.log('window.snowclient_ticket_id = ' + (typeof window.snowclient_ticket_id !== 'undefined' ? window.snowclient_ticket_id : 'undefined'));
+                
                 if (typeof window.snowclient_show_return_button !== 'undefined' && 
                     window.snowclient_show_return_button === true) {
                     self.log('Deve mostrar botão de devolução - ticket integrado do ServiceNow');
