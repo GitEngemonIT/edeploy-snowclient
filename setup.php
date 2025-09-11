@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.1.1');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.1.2');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -243,6 +243,50 @@ function plugin_snowclient_update($current_version)
         // - API para busca de grupos de atribuição
         // - Campo de configuração para fila padrão de devolução
         // - Sistema de flags para evitar loops de sincronização
+    }
+    
+    // Migração para versão 1.1.1 - Correção do campo return_queue_group
+    if (version_compare($current_version, '1.1.1', '<')) {
+        $migration->displayMessage("Updating to 1.1.1 - Fix return_queue_group field");
+        
+        // Garantir que o campo return_queue_group existe
+        $table = 'glpi_plugin_snowclient_configs';
+        if ($DB->tableExists($table)) {
+            if (!$DB->fieldExists($table, 'return_queue_group')) {
+                $migration->displayMessage("Adding missing return_queue_group field");
+                $migration->addField($table, 'return_queue_group', 'varchar(255) DEFAULT NULL', ['after' => 'assignment_group']);
+                $migration->migrationOneTable($table);
+            } else {
+                $migration->displayMessage("return_queue_group field already exists");
+            }
+        }
+        
+        // Correções implementadas:
+        // - Campo return_queue_group adicionado corretamente
+        // - Posicionamento do botão de devolução melhorado
+        // - Detecção automática de tickets integrados
+    }
+    
+    // Migração para versão 1.1.2 - Garantir que o campo return_queue_group existe
+    if (version_compare($current_version, '1.1.2', '<')) {
+        $migration->displayMessage("Updating to 1.1.2 - Ensure return_queue_group field exists");
+        
+        $table = 'glpi_plugin_snowclient_configs';
+        if ($DB->tableExists($table)) {
+            if (!$DB->fieldExists($table, 'return_queue_group')) {
+                $migration->displayMessage("Adding missing return_queue_group field to existing installation");
+                $migration->addField($table, 'return_queue_group', 'varchar(255) DEFAULT NULL', ['after' => 'assignment_group']);
+                $migration->migrationOneTable($table);
+                $migration->displayMessage("return_queue_group field added successfully");
+            } else {
+                $migration->displayMessage("return_queue_group field already exists - no action needed");
+            }
+        }
+        
+        // Melhorias implementadas:
+        // - Verificação robusta da existência do campo return_queue_group
+        // - Correção de problema de persistência do campo
+        // - Posicionamento melhorado do botão próximo ao menu de ações
     }
     
     $migration->executeMigration();
