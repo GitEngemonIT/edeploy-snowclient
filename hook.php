@@ -70,12 +70,19 @@ function plugin_snowclient_item_form($params)
 
 function plugin_snowclient_post_item_form($params)
 {
+    error_log("SnowClient: plugin_snowclient_post_item_form called");
+    
     if ($params['item']::getType() === Ticket::getType()) {
         $ticket = $params['item'];
         
+        error_log("SnowClient: Processing ticket ID: " . $ticket->getID());
+        
         // Verificar se deve mostrar o botão
         if (PluginSnowclientConfig::shouldShowReturnButton($ticket)) {
+            error_log("SnowClient: Should show button - calling showReturnButton");
             PluginSnowclientConfig::showReturnButton($ticket, $params);
+        } else {
+            error_log("SnowClient: Should NOT show button");
         }
     }
     
