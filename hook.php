@@ -63,13 +63,7 @@ function plugin_snowclient_item_delete($item)
 
 function plugin_snowclient_item_form($params)
 {
-    $item = $params['item'];
-    $options = $params['options'];
-    
-    if ($item::getType() === Ticket::getType() && $item->getID() > 0) {
-        // Verificar se o ticket é do ServiceNow e se deve mostrar o botão
-        if (PluginSnowclientConfig::shouldShowReturnButton($item)) {
-            PluginSnowclientConfig::showReturnButton($item, $options);
-        }
-    }
+    // Simplificado - deixar o JavaScript fazer o trabalho de detectar e adicionar o botão
+    // O JavaScript vai verificar se deve mostrar o botão baseado na lógica de negócio
+    return true;
 }

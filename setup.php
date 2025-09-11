@@ -102,9 +102,9 @@ function plugin_init_snowclient()
             'css/snowclient.css'
         ];
 
-        // Hook para formulários personalizados
-        $PLUGIN_HOOKS['item_form']['snowclient'] = [
-            'Ticket' => 'plugin_snowclient_item_form'
+        // Hook para adicionar conteúdo na página de ticket
+        $PLUGIN_HOOKS['post_item_form']['snowclient'] = [
+            'Ticket' => 'plugin_snowclient_post_item_form'
         ];
     }
 }

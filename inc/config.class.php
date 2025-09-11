@@ -876,16 +876,28 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
+        error_log("SnowClient: shouldShowReturnButton - ticket ID: " . $ticket->getID());
+        error_log("SnowClient: shouldShowReturnButton - ticket entity: " . $ticket->fields['entities_id']);
+        error_log("SnowClient: shouldShowReturnButton - ticket status: " . $ticket->fields['status']);
+        
         // Verificar se o ticket é do ServiceNow e está na entidade configurada
-        if (!self::shouldSyncTicket($ticket) || !self::isTicketFromServiceNow($ticket)) {
+        if (!self::shouldSyncTicket($ticket)) {
+            error_log("SnowClient: shouldShowReturnButton - shouldSyncTicket returned false");
+            return false;
+        }
+        
+        if (!self::isTicketFromServiceNow($ticket)) {
+            error_log("SnowClient: shouldShowReturnButton - isTicketFromServiceNow returned false");
             return false;
         }
         
         // Verificar se o ticket não está resolvido/fechado
         if (in_array($ticket->fields['status'], [Ticket::SOLVED, Ticket::CLOSED])) {
+            error_log("SnowClient: shouldShowReturnButton - ticket is solved/closed");
             return false;
         }
         
+        error_log("SnowClient: shouldShowReturnButton - returning true");
         return true;
     }
 
@@ -902,24 +914,70 @@ class PluginSnowclientConfig extends CommonDBTM
         
         echo "<script type='text/javascript'>
         $(document).ready(function() {
-            // Adicionar botão Devolver após o botão Escalar
-            var escalateButton = $('.escalate-button, button[name=\"escalate\"], input[name=\"escalate\"]');
-            if (escalateButton.length === 0) {
-                // Se não encontrou botão de escalar, adicionar após os botões de ação padrão
-                escalateButton = $('.main-actions .btn:last, .form-buttons input[type=\"submit\"]:last');
+            console.log('SnowClient: Initializing return button for ticket {$ticket->getID()}');
+            
+            // Função para adicionar o botão
+            function addReturnButton() {
+                // Remover botão existente se houver
+                $('#snowclient-return-button').remove();
+                
+                // Tentar diferentes seletores para encontrar onde adicionar o botão
+                var targetElements = [
+                    '.card-footer .btn-group:last',
+                    '.card-footer .d-flex:last',
+                    '.card-footer .main-actions',
+                    '.form-buttons',
+                    '.center .submit',
+                    'input[name=\"update\"]:last',
+                    'input[type=\"submit\"]:last',
+                    '.tab_cadre_fixe .center:last'
+                ];
+                
+                var buttonAdded = false;
+                
+                for (var i = 0; i < targetElements.length && !buttonAdded; i++) {
+                    var target = $(targetElements[i]);
+                    console.log('SnowClient: Trying selector: ' + targetElements[i] + ' - Found: ' + target.length);
+                    
+                    if (target.length > 0) {
+                        var returnButton = '<button type=\"button\" class=\"btn btn-warning ms-2 me-2\" id=\"snowclient-return-button\" data-ticket-id=\"{$ticket->getID()}\" style=\"margin-left: 10px;\">' +
+                            '<i class=\"fas fa-undo\"></i> ' + '" . __('Return to ServiceNow', 'snowclient') . "' +
+                            '</button>';
+                        target.after(returnButton);
+                        buttonAdded = true;
+                        console.log('SnowClient: Button added after: ' + targetElements[i]);
+                        break;
+                    }
+                }
+                
+                if (!buttonAdded) {
+                    // Fallback: adicionar no final do body como botão flutuante
+                    console.log('SnowClient: Using fallback - adding floating button');
+                    var floatingButton = '<div style=\"position: fixed; bottom: 20px; right: 20px; z-index: 1000;\">' +
+                        '<button type=\"button\" class=\"btn btn-warning\" id=\"snowclient-return-button\" data-ticket-id=\"{$ticket->getID()}\">' +
+                        '<i class=\"fas fa-undo\"></i> ' + '" . __('Return to ServiceNow', 'snowclient') . "' +
+                        '</button></div>';
+                    $('body').append(floatingButton);
+                    buttonAdded = true;
+                }
+                
+                return buttonAdded;
             }
             
-            if (escalateButton.length > 0) {
-                var returnButton = '<button type=\"button\" class=\"btn btn-warning ms-2\" id=\"snowclient-return-button\" data-ticket-id=\"{$ticket->getID()}\">' +
-                    '<i class=\"fas fa-undo\"></i> ' + '" . __('Return to ServiceNow', 'snowclient') . "' +
-                    '</button>';
-                escalateButton.after(returnButton);
+            // Tentar adicionar o botão imediatamente
+            if (!addReturnButton()) {
+                // Se não conseguiu, tentar novamente após um delay
+                setTimeout(function() {
+                    console.log('SnowClient: Retrying to add button...');
+                    addReturnButton();
+                }, 1000);
             }
             
             // Event handler para o botão
             $(document).on('click', '#snowclient-return-button', function(e) {
                 e.preventDefault();
                 var ticketId = $(this).data('ticket-id');
+                console.log('SnowClient: Return button clicked for ticket:', ticketId);
                 showReturnModal(ticketId);
             });
         });
