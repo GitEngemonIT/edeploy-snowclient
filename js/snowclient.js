@@ -170,10 +170,6 @@ var SnowClient = {
                                 '<label for="return_reason" class="form-label">Motivo da Devolução *</label>' +
                                 '<textarea class="form-control" id="return_reason" name="return_reason" rows="4" required placeholder="Descreva o motivo pelo qual este chamado está sendo devolvido ao ServiceNow..."></textarea>' +
                             '</div>' +
-                            '<div class="mb-3">' +
-                                '<label for="return_queue" class="form-label">Fila de Destino no ServiceNow (Opcional)</label>' +
-                                '<input type="text" class="form-control" id="return_queue" name="return_queue" placeholder="Deixe vazio para usar fila configurada no plugin">' +
-                            '</div>' +
                             '<div class="alert alert-info">' +
                                 '<i class="fas fa-info-circle"></i> ' +
                                 'Este chamado será resolvido no GLPI e transferido de volta ao ServiceNow na fila configurada, SEM ser resolvido lá.' +
@@ -213,8 +209,7 @@ var SnowClient = {
                 method: 'POST',
                 data: {
                     ticket_id: ticketId,
-                    return_reason: reason,
-                    return_queue: $('#return_queue').val().trim()
+                    return_reason: reason
                 },
                 dataType: 'json',
                 success: function(response) {
