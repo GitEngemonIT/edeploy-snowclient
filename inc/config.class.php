@@ -921,17 +921,24 @@ class PluginSnowclientConfig extends CommonDBTM
         global $CFG_GLPI;
         
         if (!$ticket->canUpdate()) {
+            error_log("SnowClient: showReturnButton - user cannot update ticket");
             return;
         }
         
+        error_log("SnowClient: showReturnButton - adding JavaScript for ticket " . $ticket->getID());
+        
         // Apenas injetar um sinal para o JavaScript saber que deve mostrar o botão
         echo "<script type='text/javascript'>
+        console.log('SnowClient: Definindo variáveis para ticket {$ticket->getID()}');
+        
+        // Adicionar uma variável global indicando que o botão deve ser mostrado
+        window.snowclient_show_return_button = true;
+        window.snowclient_ticket_id = {$ticket->getID()};
+        
+        console.log('SnowClient: Variáveis definidas - show_button:', window.snowclient_show_return_button, 'ticket_id:', window.snowclient_ticket_id);
+        
         $(document).ready(function() {
-            console.log('SnowClient: Return button should be shown for ticket {$ticket->getID()}');
-            
-            // Adicionar uma variável global indicando que o botão deve ser mostrado
-            window.snowclient_show_return_button = true;
-            window.snowclient_ticket_id = {$ticket->getID()};
+            console.log('SnowClient: Document ready - Return button should be shown for ticket {$ticket->getID()}');
         });
         </script>";
     }

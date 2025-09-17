@@ -42,12 +42,16 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
-            // Esperar o DOM carregar e verificar se deve mostrar botão
+            // TEMPORÁRIO: Sempre tentar adicionar o botão se a variável existir
             setTimeout(function() {
-                if (typeof window.snowclient_show_return_button !== 'undefined' && window.snowclient_show_return_button) {
-                    self.addReturnButton();
+                self.log('Verificando variável snowclient_show_return_button: ' + typeof window.snowclient_show_return_button);
+                if (typeof window.snowclient_show_return_button !== 'undefined') {
+                    self.log('Variável encontrada, valor: ' + window.snowclient_show_return_button);
+                    if (window.snowclient_show_return_button) {
+                        self.addReturnButton();
+                    }
                 } else {
-                    self.log('Botão de devolução não habilitado para este ticket');
+                    self.log('Variável snowclient_show_return_button não definida');
                 }
             }, 1000);
             

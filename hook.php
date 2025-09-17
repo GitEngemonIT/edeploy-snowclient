@@ -70,13 +70,23 @@ function plugin_snowclient_item_form($params)
 
 function plugin_snowclient_post_item_form($params)
 {
-    error_log("SnowClient: plugin_snowclient_post_item_form called");
+    error_log("SnowClient: plugin_snowclient_post_item_form called - START");
     
     if ($params['item']::getType() === Ticket::getType()) {
         $ticket = $params['item'];
         
         error_log("SnowClient: Processing ticket ID: " . $ticket->getID());
+        error_log("SnowClient: Ticket entity: " . $ticket->fields['entities_id']);
+        error_log("SnowClient: Ticket status: " . $ticket->fields['status']);
         
+        // TEMPORÁRIO: Mostrar o botão em todos os tickets para testar
+        if ($ticket->getID() > 0) {
+            error_log("SnowClient: TEMP - Mostrando botão para todos os tickets");
+            PluginSnowclientConfig::showReturnButton($ticket, $params);
+        }
+        
+        // Código original comentado temporariamente
+        /*
         // Verificar se deve mostrar o botão
         if (PluginSnowclientConfig::shouldShowReturnButton($ticket)) {
             error_log("SnowClient: Should show button - calling showReturnButton");
@@ -84,6 +94,7 @@ function plugin_snowclient_post_item_form($params)
         } else {
             error_log("SnowClient: Should NOT show button");
         }
+        */
     }
     
     return true;
