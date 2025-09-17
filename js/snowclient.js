@@ -38,56 +38,19 @@ var SnowClient = {
         
         // Verificar pela URL
         if (window.location.href.includes('ticket.form.php') || 
-            window.location.href.includes('/Ticket/') ||
-            $('body').hasClass('ticket-form')) {
+            window.location.href.includes('/Ticket/')) {
             
             self.log('Página de ticket detectada');
             
-            // Esperar um pouco e verificar se deve mostrar o botão baseado na lógica PHP
+            // Esperar o DOM carregar e tentar adicionar botão
             setTimeout(function() {
-                self.log('Verificando variáveis globais...');
-                self.log('window.snowclient_show_return_button = ' + (typeof window.snowclient_show_return_button !== 'undefined' ? window.snowclient_show_return_button : 'undefined'));
-                self.log('window.snowclient_ticket_id = ' + (typeof window.snowclient_ticket_id !== 'undefined' ? window.snowclient_ticket_id : 'undefined'));
-                
-                if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                    window.snowclient_show_return_button === true) {
-                    self.log('Deve mostrar botão de devolução - ticket integrado do ServiceNow');
-                    self.addReturnButton();
-                } else {
-                    self.log('Ticket não integrado ou não atende critérios - não mostra botão');
-                    // Log adicional para debug
-                    self.log('snowclient_show_return_button = ' + (typeof window.snowclient_show_return_button !== 'undefined' ? window.snowclient_show_return_button : 'undefined'));
-                }
-            }, 1000); // Aumentado para 1 segundo
-            
-            // Tentar novamente após delay maior
-            setTimeout(function() {
-                if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                    window.snowclient_show_return_button === true && 
-                    $('#snowclient-return-button').length === 0) {
-                    self.log('Segunda tentativa - adicionando botão');
-                    self.addReturnButton();
-                }
-            }, 2000);
-            
-            // Terceira tentativa
-            setTimeout(function() {
-                if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                    window.snowclient_show_return_button === true && 
-                    $('#snowclient-return-button').length === 0) {
-                    self.log('Terceira tentativa - adicionando botão');
-                    self.addReturnButton();
-                }
-            }, 3000);
+                self.addReturnButton();
+            }, 1000);
             
             // Também tentar quando a página mudar (AJAX)
             $(document).ajaxComplete(function() {
                 setTimeout(function() {
-                    if (typeof window.snowclient_show_return_button !== 'undefined' && 
-                        window.snowclient_show_return_button === true && 
-                        $('#snowclient-return-button').length === 0) {
-                        self.addReturnButton();
-                    }
+                    self.addReturnButton();
                 }, 500);
             });
         }
@@ -103,50 +66,13 @@ var SnowClient = {
             return;
         }
         
-        // Debug: listar todos os botões na página para entender a estrutura
-        self.log('=== DEBUG: Listando todos os botões na página ===');
-        $('button, input[type="submit"], .btn').each(function(index) {
-            var $this = $(this);
-            var text = $this.text() || $this.val() || $this.attr('value') || '';
-            var classes = $this.attr('class') || '';
-            var name = $this.attr('name') || '';
-            var id = $this.attr('id') || '';
-            self.log('Botão ' + index + ': text="' + text + '" classes="' + classes + '" name="' + name + '" id="' + id + '"');
-        });
-        self.log('=== FIM DEBUG ===');
-        
-        // Buscar por diversos seletores possíveis, priorizando botão Responder
+        // Buscar por diversos seletores possíveis
         var targetElements = [
-            // Primeiro: área do botão Responder (onde o usuário quer)
-            'button[name="add"]', // Botão Responder no GLPI
-            'input[name="add"]', // Responder como input
-            'button:contains("Responder")', // Botão com texto Responder
-            '.btn:contains("Responder")', // Classe btn com texto Responder
-            'input[type="submit"][value*="Responder"]', // Input submit com valor Responder
-            // Seletores específicos da área de followup/responder
-            '.followup-form .btn:last',
-            '.followup-buttons .btn:last',
-            '.card-body .btn-success:last',
-            // Fallback para botão Salvar (configuração original que funcionava)
-            'input[name="update"]',
-            'input[value="Salvar"]',
-            'input[type="submit"][value*="Salvar"]',
-            '.btn-success',
-            // Área de formulário tradicional do GLPI
             '.form-buttons .btn-primary:last',
             '.card-footer .btn-primary:last',
+            'input[name="update"]',
             'input[type="submit"]:last',
-            '.main-form .btn:last',
-            // Seletores específicos do GLPI
-            '.main-form input[type="submit"]:last',
-            '.tab_cadre_fixe input[type="submit"]:last',
-            '.center input[type="submit"]:last',
-            // Fallbacks gerais
-            '.card-footer .btn-group:last',
-            '.card-footer .d-flex:last',
-            '.form-buttons .btn:last',
-            // Último recurso
-            '.btn:last'
+            '.main-form .btn:last'
         ];
         
         var targetFound = false;
@@ -159,7 +85,7 @@ var SnowClient = {
                 // Verificar se é um ticket válido para devolução
                 var ticketId = this.getTicketId();
                 if (ticketId > 0) {
-                    var returnButton = '<button type="button" class="btn btn-warning me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '" style="margin: 5px;">' +
+                    var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '">' +
                         '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
                         '</button>';
                     
@@ -198,13 +124,6 @@ var SnowClient = {
     // Obter ID do ticket da URL ou página
     getTicketId: function() {
         var ticketId = 0;
-        
-        // Primeiro, verificar se temos a variável global definida pelo PHP
-        if (typeof window.snowclient_ticket_id !== 'undefined' && window.snowclient_ticket_id > 0) {
-            ticketId = parseInt(window.snowclient_ticket_id);
-            this.log('Ticket ID obtido da variável global: ' + ticketId);
-            return ticketId;
-        }
         
         // Tentar extrair da URL
         var urlMatch = window.location.href.match(/id=(\d+)/);
@@ -251,9 +170,13 @@ var SnowClient = {
                                 '<label for="return_reason" class="form-label">Motivo da Devolução *</label>' +
                                 '<textarea class="form-control" id="return_reason" name="return_reason" rows="4" required placeholder="Descreva o motivo pelo qual este chamado está sendo devolvido ao ServiceNow..."></textarea>' +
                             '</div>' +
+                            '<div class="mb-3">' +
+                                '<label for="return_queue" class="form-label">Fila de Destino no ServiceNow (Opcional)</label>' +
+                                '<input type="text" class="form-control" id="return_queue" name="return_queue" placeholder="Deixe vazio para usar fila configurada no plugin">' +
+                            '</div>' +
                             '<div class="alert alert-info">' +
                                 '<i class="fas fa-info-circle"></i> ' +
-                                'Este chamado será resolvido no GLPI e transferido de volta ao ServiceNow na fila de retorno configurada, SEM ser resolvido lá.' +
+                                'Este chamado será resolvido no GLPI e transferido de volta ao ServiceNow na fila configurada, SEM ser resolvido lá.' +
                             '</div>' +
                         '</form>' +
                     '</div>' +
@@ -290,7 +213,8 @@ var SnowClient = {
                 method: 'POST',
                 data: {
                     ticket_id: ticketId,
-                    return_reason: reason
+                    return_reason: reason,
+                    return_queue: $('#return_queue').val().trim()
                 },
                 dataType: 'json',
                 success: function(response) {
