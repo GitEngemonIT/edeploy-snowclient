@@ -42,39 +42,60 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
-            // TEMPORÁRIO: Sempre tentar adicionar o botão se a variável existir
+            // Fazer verificação via AJAX para saber se deve mostrar o botão
             setTimeout(function() {
-                self.log('Verificando variável snowclient_show_return_button: ' + typeof window.snowclient_show_return_button);
-                if (typeof window.snowclient_show_return_button !== 'undefined') {
-                    self.log('Variável encontrada, valor: ' + window.snowclient_show_return_button);
-                    if (window.snowclient_show_return_button) {
-                        self.addReturnButton();
-                    }
-                } else {
-                    self.log('Variável snowclient_show_return_button não definida');
-                }
+                self.checkIfShouldShowButton();
             }, 1000);
             
             // Também tentar quando a página mudar (AJAX)
             $(document).ajaxComplete(function() {
                 setTimeout(function() {
-                    if (typeof window.snowclient_show_return_button !== 'undefined' && window.snowclient_show_return_button) {
-                        self.addReturnButton();
-                    }
+                    self.checkIfShouldShowButton();
                 }, 500);
             });
         }
+    },
+
+    // Verificar via AJAX se deve mostrar o botão
+    checkIfShouldShowButton: function() {
+        var self = this;
+        var ticketId = this.getTicketId();
+        
+        if (ticketId <= 0) {
+            self.log('ID do ticket inválido: ' + ticketId);
+            return;
+        }
+        
+        self.log('Verificando se deve mostrar botão para ticket: ' + ticketId);
+        
+        // Fazer requisição AJAX para verificar
+        $.ajax({
+            url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/snowclient/ajax/check_return_button.php',
+            method: 'POST',
+            data: {
+                ticket_id: ticketId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.show_button) {
+                    self.log('Deve mostrar botão - adicionando...');
+                    window.snowclient_show_return_button = true;
+                    window.snowclient_ticket_id = ticketId;
+                    self.addReturnButton();
+                } else {
+                    self.log('Não deve mostrar botão: ' + (response.message || 'critérios não atendidos'));
+                }
+            },
+            error: function(xhr, status, error) {
+                self.log('Erro ao verificar botão: ' + error);
+                // Em caso de erro, não mostrar o botão por segurança
+            }
+        });
     },
     
     // Adicionar botão de devolução
     addReturnButton: function() {
         var self = this;
-        
-        // Verificar se o botão deve ser mostrado (definido pelo PHP)
-        if (typeof window.snowclient_show_return_button === 'undefined' || !window.snowclient_show_return_button) {
-            self.log('Botão de devolução não deve ser mostrado para este ticket');
-            return;
-        }
         
         var ticketId = window.snowclient_ticket_id || this.getTicketId();
         if (ticketId <= 0) {
