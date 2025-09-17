@@ -760,21 +760,32 @@ class PluginSnowclientConfig extends CommonDBTM
         $configEntityId = $config->fields['entities_id'];
         $ticketEntityId = $ticket->fields['entities_id'];
         
+        error_log("SnowClient: shouldSyncTicket - config entity: $configEntityId");
+        error_log("SnowClient: shouldSyncTicket - ticket entity: $ticketEntityId");
+        
         if (empty($configEntityId)) {
+            error_log("SnowClient: shouldSyncTicket - config entity is empty");
             return false;
         }
         
         if ($ticketEntityId == $configEntityId) {
+            error_log("SnowClient: shouldSyncTicket - exact match, returning true");
             return true;
         }
         
         $descendants = getSonsOf('glpi_entities', $configEntityId);
-        return in_array($ticketEntityId, $descendants);
+        $inDescendants = in_array($ticketEntityId, $descendants);
+        error_log("SnowClient: shouldSyncTicket - checking descendants: " . ($inDescendants ? 'true' : 'false'));
+        
+        return $inDescendants;
     }
 
     static function isTicketFromServiceNow($ticket)
     {
-        return self::extractServiceNowId($ticket) !== false;
+        $snowId = self::extractServiceNowId($ticket);
+        $isFromSnow = $snowId !== false;
+        error_log("SnowClient: isTicketFromServiceNow - ticket " . $ticket->getID() . " snow_id: " . ($snowId ? $snowId : 'none') . " - result: " . ($isFromSnow ? 'true' : 'false'));
+        return $isFromSnow;
     }
 
     static function extractServiceNowId($ticket)
@@ -878,6 +889,7 @@ class PluginSnowclientConfig extends CommonDBTM
         
         error_log("SnowClient: shouldShowReturnButton - ticket ID: " . $ticket->getID());
         error_log("SnowClient: shouldShowReturnButton - ticket entity: " . $ticket->fields['entities_id']);
+        error_log("SnowClient: shouldShowReturnButton - config entity: " . $config->fields['entities_id']);
         error_log("SnowClient: shouldShowReturnButton - ticket status: " . $ticket->fields['status']);
         
         // Verificar se o ticket é do ServiceNow e está na entidade configurada
@@ -973,11 +985,13 @@ class PluginSnowclientConfig extends CommonDBTM
             
             // 4. Enviar alteração para o ServiceNow (sem resolver lá)
             $api = new PluginSnowclientApi();
+            error_log("SnowClient RETURN: Chamando API para devolver ticket {$ticket->getID()} ao ServiceNow");
+            
             $snowResult = $api->returnTicketToQueue($ticket, $reason);
             
             if (!$snowResult) {
                 // Log do erro mas não falha a operação local
-                error_log("SnowClient: Erro ao enviar devolução para ServiceNow - Ticket ID: " . $ticket->getID());
+                error_log("SnowClient RETURN: FALHA - Erro ao enviar devolução para ServiceNow - Ticket ID: " . $ticket->getID());
                 
                 // Reativar flag para adicionar followup de erro
                 self::setSkipSyncHooks(true);
@@ -995,6 +1009,8 @@ class PluginSnowclientConfig extends CommonDBTM
                 
                 // Desativar flag novamente
                 self::setSkipSyncHooks(false);
+            } else {
+                error_log("SnowClient RETURN: SUCESSO - Ticket devolvido com sucesso ao ServiceNow");
             }
             
             return [

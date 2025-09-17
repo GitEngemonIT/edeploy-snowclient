@@ -42,15 +42,21 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
-            // Esperar o DOM carregar e tentar adicionar botão
+            // Esperar o DOM carregar e verificar se deve mostrar botão
             setTimeout(function() {
-                self.addReturnButton();
+                if (typeof window.snowclient_show_return_button !== 'undefined' && window.snowclient_show_return_button) {
+                    self.addReturnButton();
+                } else {
+                    self.log('Botão de devolução não habilitado para este ticket');
+                }
             }, 1000);
             
             // Também tentar quando a página mudar (AJAX)
             $(document).ajaxComplete(function() {
                 setTimeout(function() {
-                    self.addReturnButton();
+                    if (typeof window.snowclient_show_return_button !== 'undefined' && window.snowclient_show_return_button) {
+                        self.addReturnButton();
+                    }
                 }, 500);
             });
         }
@@ -59,6 +65,18 @@ var SnowClient = {
     // Adicionar botão de devolução
     addReturnButton: function() {
         var self = this;
+        
+        // Verificar se o botão deve ser mostrado (definido pelo PHP)
+        if (typeof window.snowclient_show_return_button === 'undefined' || !window.snowclient_show_return_button) {
+            self.log('Botão de devolução não deve ser mostrado para este ticket');
+            return;
+        }
+        
+        var ticketId = window.snowclient_ticket_id || this.getTicketId();
+        if (ticketId <= 0) {
+            self.log('ID do ticket inválido');
+            return;
+        }
         
         // Se já existe, não adicionar novamente
         if ($('#snowclient-return-button').length > 0) {
@@ -82,18 +100,15 @@ var SnowClient = {
             if ($target.length > 0) {
                 self.log('Encontrado elemento: ' + targetElements[i]);
                 
-                // Verificar se é um ticket válido para devolução
-                var ticketId = this.getTicketId();
-                if (ticketId > 0) {
-                    var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '">' +
-                        '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
-                        '</button>';
-                    
-                    $target.after(returnButton);
-                    self.log('Botão adicionado após: ' + targetElements[i]);
-                    targetFound = true;
-                    break;
-                }
+                // Usar o ticket ID já validado
+                var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '">' +
+                    '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
+                    '</button>';
+                
+                $target.after(returnButton);
+                self.log('Botão adicionado após: ' + targetElements[i]);
+                targetFound = true;
+                break;
             }
         }
         
@@ -101,7 +116,6 @@ var SnowClient = {
             self.log('Nenhum elemento alvo encontrado. Tentando inserir em local genérico...');
             
             // Última tentativa - inserir em qualquer local visível
-            var ticketId = this.getTicketId();
             if (ticketId > 0) {
                 var genericLocation = $('.card-header, .page-header, .header-title').first();
                 if (genericLocation.length > 0) {

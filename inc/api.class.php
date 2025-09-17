@@ -114,7 +114,18 @@ class PluginSnowclientApi
             Toolbox::logDebug("Response: " . substr($response, 0, 500));
         }
 
+        // Log sempre erros de autenticação e outros problemas críticos
+        if ($http_code === 401) {
+            error_log("SnowClient RETURN: ERRO 401 - Falha de autenticação no ServiceNow. Verifique credenciais.");
+            error_log("SnowClient RETURN: URL tentativa: $url");
+            error_log("SnowClient RETURN: Username: " . $this->username);
+        } elseif ($http_code >= 400) {
+            error_log("SnowClient RETURN: ERRO HTTP $http_code - $response");
+            error_log("SnowClient RETURN: URL: $url");
+        }
+
         if ($error) {
+            error_log("SnowClient RETURN: ERRO cURL - $error");
             throw new Exception("cURL Error: $error");
         }
 
@@ -753,15 +764,18 @@ class PluginSnowclientApi
     public function returnTicketToQueue($ticket, $reason)
     {
         try {
+            // Log inicial
+            error_log("SnowClient RETURN: Iniciando devolução do ticket GLPI {$ticket->getID()}");
+            
             // Buscar o sys_id do ticket no ServiceNow
             $sysId = PluginSnowclientConfig::getSnowSysIdFromTicket($ticket->getID());
             
             if (!$sysId) {
-                if ($this->debug_mode) {
-                    error_log("SnowClient: Não foi possível encontrar sys_id para ticket GLPI {$ticket->getID()}");
-                }
+                error_log("SnowClient RETURN: ERRO - Não foi possível encontrar sys_id para ticket GLPI {$ticket->getID()}");
                 return false;
             }
+            
+            error_log("SnowClient RETURN: sys_id encontrado: $sysId para ticket GLPI {$ticket->getID()}");
 
             // Preparar dados para atualização
             $updateData = [];
@@ -778,35 +792,28 @@ class PluginSnowclientApi
             
             // Usar fila configurada no plugin
             $targetQueue = $this->config->fields['return_queue_group'];
+            error_log("SnowClient RETURN: Fila configurada: " . ($targetQueue ? $targetQueue : '(não configurada)'));
             
             // Se foi configurada uma fila, definir o assignment_group
             if (!empty($targetQueue)) {
                 // Se é um sys_id (32 caracteres), usar diretamente
                 if (strlen($targetQueue) == 32) {
                     $updateData['assignment_group'] = $targetQueue;
-                    if ($this->debug_mode) {
-                        error_log("SnowClient: Definindo assignment_group usando sys_id configurado: $targetQueue");
-                    }
+                    error_log("SnowClient RETURN: Usando sys_id configurado: $targetQueue");
                 } else {
                     // Tentar buscar por nome
                     $groupSysId = $this->findAssignmentGroupByName($targetQueue);
                     if ($groupSysId) {
                         $updateData['assignment_group'] = $groupSysId;
-                        if ($this->debug_mode) {
-                            error_log("SnowClient: Definindo assignment_group para: $targetQueue ($groupSysId)");
-                        }
+                        error_log("SnowClient RETURN: Grupo encontrado: $targetQueue -> $groupSysId");
                     } else {
                         // Se não encontrou o grupo, adicionar na work note
                         $updateData['work_notes'] .= "\n\nNota: Fila solicitada '$targetQueue' não foi encontrada automaticamente.";
-                        if ($this->debug_mode) {
-                            error_log("SnowClient: Grupo '$targetQueue' não encontrado no ServiceNow");
-                        }
+                        error_log("SnowClient RETURN: AVISO - Grupo '$targetQueue' não encontrado");
                     }
                 }
             } else {
-                if ($this->debug_mode) {
-                    error_log("SnowClient: Nenhuma fila de devolução configurada");
-                }
+                error_log("SnowClient RETURN: AVISO - Nenhuma fila de devolução configurada");
                 $updateData['work_notes'] .= "\n\nNota: Nenhuma fila específica configurada para devolução.";
             }
             
@@ -816,30 +823,25 @@ class PluginSnowclientApi
             // Limpar assigned_to para forçar redistribuição
             $updateData['assigned_to'] = '';
             
-            if ($this->debug_mode) {
-                error_log("SnowClient: Devolvendo ticket $sysId com dados: " . json_encode($updateData));
-            }
+            error_log("SnowClient RETURN: Dados para envio: " . json_encode($updateData));
             
             // Fazer a requisição de atualização
             $endpoint = "/api/now/table/incident/$sysId";
+            error_log("SnowClient RETURN: Fazendo requisição PATCH para: " . $this->instance_url . $endpoint);
+            
             $response = $this->makeRequest($endpoint, 'PATCH', $updateData);
             
             if ($response && isset($response['result'])) {
-                if ($this->debug_mode) {
-                    error_log("SnowClient: Ticket devolvido com sucesso - sys_id: $sysId");
-                }
+                error_log("SnowClient RETURN: SUCESSO - Ticket devolvido com sucesso - sys_id: $sysId");
                 return true;
             } else {
-                if ($this->debug_mode) {
-                    error_log("SnowClient: Erro na resposta da API ao devolver ticket: " . json_encode($response));
-                }
+                error_log("SnowClient RETURN: ERRO - Resposta da API: " . json_encode($response));
                 return false;
             }
             
         } catch (Exception $e) {
-            if ($this->debug_mode) {
-                error_log("SnowClient: Exceção ao devolver ticket: " . $e->getMessage());
-            }
+            error_log("SnowClient RETURN: EXCEÇÃO - " . $e->getMessage());
+            error_log("SnowClient RETURN: Stack trace: " . $e->getTraceAsString());
             return false;
         }
     }
