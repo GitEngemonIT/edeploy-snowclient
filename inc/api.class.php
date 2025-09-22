@@ -47,6 +47,14 @@ class PluginSnowclientApi
         $this->password = $this->config->getDecryptedPassword();
         
         $this->debug_mode = $this->config->fields['debug_mode'];
+        
+        // Log de debug para verificar se credenciais foram carregadas
+        if ($this->debug_mode) {
+            error_log("SnowClient DEBUG API: Inicializando API");
+            error_log("SnowClient DEBUG API: URL: " . $this->instance_url);
+            error_log("SnowClient DEBUG API: Username: " . $this->username);
+            error_log("SnowClient DEBUG API: Password carregada: " . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
+        }
     }
 
     /**
