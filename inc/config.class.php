@@ -116,14 +116,14 @@ class PluginSnowclientConfig extends CommonDBTM
                     error_log("SnowClient DEBUG: Descriptografia Sodium bem-sucedida (tamanho: " . strlen($decrypted) . ")");
                 }
                 
-                // Validar se a descriptografia fez sentido (não são caracteres binários)
-                if (ctype_print($decrypted)) {
+                // Validar se a descriptografia fez sentido (senha deve ter tamanho razoável)
+                if (!empty($decrypted) && strlen($decrypted) > 5 && strlen($decrypted) < 200) {
                     return $decrypted;
                 } else {
                     if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                        error_log("SnowClient DEBUG: Resultado Sodium contém caracteres binários, tentando base64");
+                        error_log("SnowClient DEBUG: Resultado Sodium inválido (tamanho: " . strlen($decrypted) . "), tentando base64");
                     }
-                    throw new Exception("Resultado Sodium contém caracteres não imprimíveis");
+                    throw new Exception("Resultado Sodium com tamanho inválido: " . strlen($decrypted));
                 }
                 
             } catch (Exception $e) {
