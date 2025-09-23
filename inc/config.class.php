@@ -763,6 +763,57 @@ class PluginSnowclientConfig extends CommonDBTM
         }
     }
 
+    static function afterTicketSolution($solution)
+    {
+        $config = self::getInstance();
+        
+        error_log("SnowClient: afterTicketSolution chamado para solution ID: " . $solution->fields['id']);
+        
+        if (!$config->fields['sync_followups']) {
+            error_log("SnowClient: Sincronização de followups está desabilitada (soluções usam a mesma configuração)");
+            return false;
+        }
+        
+        $ticket = new Ticket();
+        if ($ticket->getFromDB($solution->fields['items_id'])) {
+            error_log("SnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
+            
+            // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
+            if (!self::shouldSyncTicket($ticket)) {
+                error_log("SnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando solução.");
+                return false;
+            }
+            
+            if (!self::isTicketFromServiceNow($ticket)) {
+                error_log("SnowClient: Ticket não é do ServiceNow, ignorando solução");
+                return false;
+            }
+            
+            // Skip if solution is from API user to avoid loops
+            if ($solution->fields['users_id'] == $config->fields['api_user']) {
+                error_log("SnowClient: Solução é do usuário API, ignorando para evitar loop");
+                return false;
+            }
+            
+            error_log("SnowClient: Enviando solução para ServiceNow...");
+            
+            $api = new PluginSnowclientApi();
+            $result = $api->addSolution($solution);
+            
+            if ($result) {
+                error_log("SnowClient: Solução enviada com sucesso para ServiceNow");
+            } else {
+                error_log("SnowClient: ERRO - Falha ao enviar solução para ServiceNow");
+            }
+            
+            return $result;
+        } else {
+            error_log("SnowClient: ERRO - Não foi possível carregar ticket ID: " . $solution->fields['items_id']);
+        }
+        
+        return false;
+    }
+
     // Utility methods
     static function shouldSyncTicket($ticket)
     {

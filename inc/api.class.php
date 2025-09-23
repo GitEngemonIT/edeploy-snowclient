@@ -462,6 +462,103 @@ class PluginSnowclientApi
     }
 
     /**
+     * Adicionar solução como work note no ServiceNow
+     */
+    public function addSolution($solution)
+    {
+        $ticket = new Ticket();
+        if (!$ticket->getFromDB($solution->fields['items_id'])) {
+            if ($this->debug_mode) {
+                Toolbox::logError("SnowClient: Ticket {$solution->fields['items_id']} não encontrado para solução");
+            }
+            return false;
+        }
+        
+        // Extrair ID do ServiceNow
+        $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
+        if (!$snowId) {
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
+            }
+            return false;
+        }
+        
+        $cleanSnowId = ltrim($snowId, '#');
+        
+        try {
+            // Buscar sys_id do incidente
+            $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id");
+            
+            if (empty($searchResult['result'])) {
+                if ($this->debug_mode) {
+                    Toolbox::logError("SnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para solução");
+                }
+                return false;
+            }
+            
+            $sysId = $searchResult['result'][0]['sys_id'];
+            
+            // Preparar dados da solução
+            $userName = getUserName($solution->fields['users_id']);
+            $timestamp = date('Y-m-d H:i:s');
+            
+            // Limpar conteúdo HTML de forma robusta
+            $content = $this->cleanHtmlContent($solution->fields['content']);
+            
+            // Validação dupla para garantir que tags HTML foram removidas
+            if (preg_match('/<[^>]+>/', $content) || preg_match('/style\s*=/', $content)) {
+                $content = strip_tags($content);
+                $content = preg_replace('/style\s*=\s*["\'][^"\']*["\']/', '', $content);
+                $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $content = trim(preg_replace('/\s+/', ' ', $content));
+            }
+            
+            if (empty($content)) {
+                $content = 'Solução sem conteúdo de texto';
+            }
+            
+            // Obter informações do tipo de solução se disponível
+            $solutionTypeInfo = '';
+            if (!empty($solution->fields['solutiontypes_id'])) {
+                $solutionType = new SolutionType();
+                if ($solutionType->getFromDB($solution->fields['solutiontypes_id'])) {
+                    $solutionTypeInfo = "\nTipo de Solução: " . $solutionType->fields['name'];
+                }
+            }
+            
+            $solutionNote = sprintf(
+                "[GLPI - SOLUÇÃO por %s em %s]%s\n\n%s", 
+                $userName, 
+                $timestamp,
+                $solutionTypeInfo,
+                $content
+            );
+            
+            $updateData = [
+                'work_notes' => $solutionNote
+            ];
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Adicionando solução como work note ao incidente $cleanSnowId");
+            }
+            
+            $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Solução adicionada com sucesso ao incidente $cleanSnowId");
+            }
+            
+            return $result['result'] ?? null;
+            
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                Toolbox::logError("SnowClient: Erro ao adicionar solução ao incidente $cleanSnowId: " . $e->getMessage());
+            }
+            return false;
+        }
+    }
+
+    /**
      * Deletar um incidente no ServiceNow (marcar como cancelado)
      */
     public function deleteIncident($ticket)

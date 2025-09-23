@@ -34,6 +34,10 @@ function plugin_snowclient_item_add($item)
         PluginSnowclientConfig::afterTicketFollowUp($item);
     }
 
+    if ($item::getType() === ITILSolution::getType()) {
+        PluginSnowclientConfig::afterTicketSolution($item);
+    }
+
     if ($item::getType() === Document::getType()) {
         PluginSnowclientConfig::afterDocumentAdd($item);
     }
@@ -51,6 +55,10 @@ function plugin_snowclient_item_update($item)
 
     if ($item::getType() === ITILFollowup::getType()) {
         PluginSnowclientConfig::afterTicketFollowUp($item);
+    }
+
+    if ($item::getType() === ITILSolution::getType()) {
+        PluginSnowclientConfig::afterTicketSolution($item);
     }
 }
 
