@@ -356,3 +356,35 @@ function plugin_snowclient_uninstall()
     $migration->executeMigration();
     return true;
 }
+
+/**
+ * Plugin upgrade function
+ */
+function plugin_snowclient_upgrade($migrations)
+{
+    global $DB;
+    $migration = new Migration(PLUGIN_SNOWCLIENT_VERSION);
+    
+    $table = 'glpi_plugin_snowclient_configs';
+    
+    foreach ($migrations as $version) {
+        switch ($version) {
+            case '1.1.1':
+            case '1.1.2':
+            case '1.1.3':
+            case '1.1.4':
+                // Garantir que o campo return_queue_group existe para instalações existentes
+                if ($DB->tableExists($table)) {
+                    if (!$DB->fieldExists($table, 'return_queue_group')) {
+                        $migration->displayMessage("Adding missing return_queue_group field to existing installation");
+                        $migration->addField($table, 'return_queue_group', 'varchar(255) DEFAULT NULL', ['after' => 'assignment_group']);
+                        $migration->displayMessage("return_queue_group field added successfully");
+                    }
+                }
+                break;
+        }
+    }
+    
+    $migration->executeMigration();
+    return true;
+}
