@@ -48,12 +48,12 @@ class PluginSnowclientApi
         
         $this->debug_mode = $this->config->fields['debug_mode'];
         
-        // Log de debug para verificar se credenciais foram carregadas
+        // Log de debug para verificar se as credenciais foram carregadas
         if ($this->debug_mode) {
-            error_log("SnowClient DEBUG API: Inicializando API");
-            error_log("SnowClient DEBUG API: URL: " . $this->instance_url);
-            error_log("SnowClient DEBUG API: Username: " . $this->username);
-            error_log("SnowClient DEBUG API: Password carregada: " . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
+            error_log("SnowClient API DEBUG: Construtor inicializado");
+            error_log("SnowClient API DEBUG: URL: " . ($this->instance_url ?: 'VAZIA'));
+            error_log("SnowClient API DEBUG: Username: " . ($this->username ?: 'VAZIO'));
+            error_log("SnowClient API DEBUG: Password carregada: " . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
         }
     }
 
@@ -79,6 +79,14 @@ class PluginSnowclientApi
     private function makeRequest($endpoint, $method = 'GET', $data = null)
     {
         $url = rtrim($this->instance_url, '/') . '/' . ltrim($endpoint, '/');
+        
+        // Log temporário para debug de autenticação
+        if ($this->debug_mode) {
+            error_log("SnowClient API DEBUG: URL: " . $url);
+            error_log("SnowClient API DEBUG: Username: " . $this->username);
+            error_log("SnowClient API DEBUG: Password length: " . strlen($this->password));
+            error_log("SnowClient API DEBUG: Password empty: " . (empty($this->password) ? 'YES' : 'NO'));
+        }
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
