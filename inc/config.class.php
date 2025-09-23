@@ -96,50 +96,21 @@ class PluginSnowclientConfig extends CommonDBTM
      */
     function getDecryptedPassword()
     {
-        Toolbox::logInFile('snowclient', "FORCE LOG CONFIG: getDecryptedPassword chamado");
-        
         if (empty($this->fields['password'])) {
-            Toolbox::logInFile('snowclient', "FORCE LOG CONFIG: Senha está vazia no banco de dados");
-            if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                error_log("SnowClient DEBUG: Senha está vazia no banco de dados");
-            }
             return '';
-        }
-
-        // Log de debug se ativo (sem revelar a senha)
-        if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-            error_log("SnowClient DEBUG: Iniciando descriptografia da senha (tamanho criptografado: " . strlen($this->fields['password']) . ")");
         }
 
         if (method_exists('Toolbox', 'sodiumDecrypt')) {
             try {
                 $decrypted = Toolbox::sodiumDecrypt($this->fields['password']);
-                
-                error_log("SnowClient CONFIG FORCE LOG: Sodium decrypt sucesso - tamanho: " . strlen($decrypted));
-                
-                if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Descriptografia Sodium bem-sucedida (tamanho descriptografado: " . strlen($decrypted) . ")");
-                }
-                
                 return $decrypted;
             } catch (Exception $e) {
-                error_log("SnowClient CONFIG FORCE LOG: Sodium decrypt falhou: " . $e->getMessage());
-                
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Falha na descriptografia Sodium: " . $e->getMessage() . " - Tentando fallback base64");
+                    error_log("SnowClient DEBUG: Falha na descriptografia Sodium, usando fallback base64");
                 }
-                
-                $decrypted = base64_decode($this->fields['password']);
-                error_log("SnowClient CONFIG FORCE LOG: Base64 decode - tamanho: " . strlen($decrypted));
-                
-                if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Fallback base64 (tamanho: " . strlen($decrypted) . ")");
-                }
-                return $decrypted;
+                return base64_decode($this->fields['password']);
             }
         } else {
-            error_log("SnowClient CONFIG FORCE LOG: Sodium não disponível, usando base64");
-            
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                 error_log("SnowClient DEBUG: Sodium não disponível, usando base64");
             }
@@ -362,11 +333,6 @@ class PluginSnowclientConfig extends CommonDBTM
 
     function prepareInputForUpdate($input)
     {
-        // DEBUG: Log do input recebido para detectar problema de encoding
-        if (isset($input['password']) && !empty($input['password'])) {
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient INPUT DEBUG: Password recebida: " . $input['password'] . "\n", FILE_APPEND | LOCK_EX);
-        }
-        
         // Validate URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
@@ -385,8 +351,6 @@ class PluginSnowclientConfig extends CommonDBTM
         if (isset($input['password']) && !empty($input['password'])) {
             // FIX: Decode HTML entities que podem ter sido aplicadas pelo frontend
             $input['password'] = html_entity_decode($input['password'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient INPUT DEBUG: Password após html_entity_decode: " . $input['password'] . "\n", FILE_APPEND | LOCK_EX);
             
             if (method_exists('Toolbox', 'sodiumEncrypt')) {
                 $input['password'] = Toolbox::sodiumEncrypt($input['password']);

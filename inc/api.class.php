@@ -39,9 +39,6 @@ class PluginSnowclientApi
 
     public function __construct()
     {
-        // Log sempre para verificar se construtor é chamado
-        Toolbox::logInFile('snowclient', "FORCE LOG API: Construtor chamado");
-        
         $this->config = PluginSnowclientConfig::getInstance();
         $this->instance_url = $this->config->fields['instance_url'];
         $this->username = $this->config->fields['username'];
@@ -51,13 +48,7 @@ class PluginSnowclientApi
         
         $this->debug_mode = $this->config->fields['debug_mode'];
         
-        // Log forçado independente de debug mode
-        Toolbox::logInFile('snowclient', "FORCE LOG API: URL=" . ($this->instance_url ?: 'VAZIA'));
-        Toolbox::logInFile('snowclient', "FORCE LOG API: Username=" . ($this->username ?: 'VAZIO'));
-        Toolbox::logInFile('snowclient', "FORCE LOG API: Password carregada=" . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
-        Toolbox::logInFile('snowclient', "FORCE LOG API: Debug mode=" . ($this->debug_mode ? 'ATIVO' : 'INATIVO'));
-        
-        // Log de debug para verificar se as credenciais foram carregadas
+        // Log de debug apenas se modo debug estiver ativo
         if ($this->debug_mode) {
             error_log("SnowClient API DEBUG: Construtor inicializado");
             error_log("SnowClient API DEBUG: URL: " . ($this->instance_url ?: 'VAZIA'));
@@ -141,17 +132,15 @@ class PluginSnowclientApi
             Toolbox::logDebug("Response: " . substr($response, 0, 500));
         }
 
-        // Log FORÇADO E INCONDICIONAL para todos os erros HTTP
+        // Log apenas erro de autenticação (sem dados sensíveis)
         if ($http_code === 401) {
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: ERRO 401 - Falha de autenticação no ServiceNow\n", FILE_APPEND | LOCK_EX);
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: URL: $url\n", FILE_APPEND | LOCK_EX);
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Username: " . ($this->username ?: 'VAZIO') . "\n", FILE_APPEND | LOCK_EX);
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: CREDENCIAIS INVÁLIDAS - Testar no ServiceNow\n", FILE_APPEND | LOCK_EX);
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Response: " . substr($response, 0, 1000) . "\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient DEBUG: ERRO 401 - Credenciais inválidas no ServiceNow\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient DEBUG: URL: $url\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient DEBUG: Verificar credenciais na configuração\n", FILE_APPEND | LOCK_EX);
         } elseif ($http_code >= 400) {
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: ERRO HTTP $http_code\n", FILE_APPEND | LOCK_EX);
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: URL: $url\n", FILE_APPEND | LOCK_EX);
-            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Response: " . substr($response, 0, 500) . "\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient DEBUG: ERRO HTTP $http_code\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient DEBUG: URL: $url\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient DEBUG: Response: " . substr($response, 0, 500) . "\n", FILE_APPEND | LOCK_EX);
         }
 
         if ($error) {
