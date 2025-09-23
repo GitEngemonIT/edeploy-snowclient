@@ -148,6 +148,9 @@ class PluginSnowclientApi
             file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Username: " . ($this->username ?: 'VAZIO') . "\n", FILE_APPEND | LOCK_EX);
             file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Password length: " . strlen($this->password ?: '') . "\n", FILE_APPEND | LOCK_EX);
             file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Password empty: " . (empty($this->password) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND | LOCK_EX);
+            // Log parcial da senha para debug (apenas primeiros e últimos chars)
+            $pwdSample = !empty($this->password) ? substr($this->password, 0, 3) . '...' . substr($this->password, -3) : 'VAZIO';
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Password sample: " . $pwdSample . "\n", FILE_APPEND | LOCK_EX);
             file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Response: " . substr($response, 0, 1000) . "\n", FILE_APPEND | LOCK_EX);
         } elseif ($http_code >= 400) {
             file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: ERRO HTTP $http_code\n", FILE_APPEND | LOCK_EX);
