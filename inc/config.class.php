@@ -96,10 +96,10 @@ class PluginSnowclientConfig extends CommonDBTM
      */
     function getDecryptedPassword()
     {
-        error_log("SnowClient CONFIG FORCE LOG: getDecryptedPassword chamado");
+        Toolbox::logInFile('snowclient', "FORCE LOG CONFIG: getDecryptedPassword chamado");
         
         if (empty($this->fields['password'])) {
-            error_log("SnowClient CONFIG FORCE LOG: Senha está vazia no banco de dados");
+            Toolbox::logInFile('snowclient', "FORCE LOG CONFIG: Senha está vazia no banco de dados");
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                 error_log("SnowClient DEBUG: Senha está vazia no banco de dados");
             }

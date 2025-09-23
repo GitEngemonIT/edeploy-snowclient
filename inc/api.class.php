@@ -40,7 +40,7 @@ class PluginSnowclientApi
     public function __construct()
     {
         // Log sempre para verificar se construtor é chamado
-        error_log("SnowClient API FORCE LOG: Construtor chamado");
+        Toolbox::logInFile('snowclient', "FORCE LOG API: Construtor chamado");
         
         $this->config = PluginSnowclientConfig::getInstance();
         $this->instance_url = $this->config->fields['instance_url'];
@@ -52,10 +52,10 @@ class PluginSnowclientApi
         $this->debug_mode = $this->config->fields['debug_mode'];
         
         // Log forçado independente de debug mode
-        error_log("SnowClient API FORCE LOG: URL=" . ($this->instance_url ?: 'VAZIA'));
-        error_log("SnowClient API FORCE LOG: Username=" . ($this->username ?: 'VAZIO'));
-        error_log("SnowClient API FORCE LOG: Password carregada=" . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
-        error_log("SnowClient API FORCE LOG: Debug mode=" . ($this->debug_mode ? 'ATIVO' : 'INATIVO'));
+        Toolbox::logInFile('snowclient', "FORCE LOG API: URL=" . ($this->instance_url ?: 'VAZIA'));
+        Toolbox::logInFile('snowclient', "FORCE LOG API: Username=" . ($this->username ?: 'VAZIO'));
+        Toolbox::logInFile('snowclient', "FORCE LOG API: Password carregada=" . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
+        Toolbox::logInFile('snowclient', "FORCE LOG API: Debug mode=" . ($this->debug_mode ? 'ATIVO' : 'INATIVO'));
         
         // Log de debug para verificar se as credenciais foram carregadas
         if ($this->debug_mode) {
@@ -141,17 +141,18 @@ class PluginSnowclientApi
             Toolbox::logDebug("Response: " . substr($response, 0, 500));
         }
 
-        // Log sempre erros de autenticação e outros problemas críticos
+        // Log FORÇADO E INCONDICIONAL para todos os erros HTTP
         if ($http_code === 401) {
-            error_log("SnowClient API: ERRO 401 - Falha de autenticação no ServiceNow");
-            error_log("SnowClient API: URL: $url");
-            error_log("SnowClient API: Username: " . $this->username);
-            error_log("SnowClient API: Senha está vazia: " . (empty($this->password) ? 'SIM' : 'NÃO'));
-            error_log("SnowClient API: Response: " . substr($response, 0, 1000));
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: ERRO 401 - Falha de autenticação no ServiceNow\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: URL: $url\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Username: " . ($this->username ?: 'VAZIO') . "\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Password length: " . strlen($this->password ?: '') . "\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Password empty: " . (empty($this->password) ? 'SIM' : 'NÃO') . "\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Response: " . substr($response, 0, 1000) . "\n", FILE_APPEND | LOCK_EX);
         } elseif ($http_code >= 400) {
-            error_log("SnowClient API: ERRO HTTP $http_code");
-            error_log("SnowClient API: URL: $url");
-            error_log("SnowClient API: Response: " . substr($response, 0, 500));
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: ERRO HTTP $http_code\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: URL: $url\n", FILE_APPEND | LOCK_EX);
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient FORCED DEBUG: Response: " . substr($response, 0, 500) . "\n", FILE_APPEND | LOCK_EX);
         }
 
         if ($error) {
