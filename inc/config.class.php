@@ -96,7 +96,10 @@ class PluginSnowclientConfig extends CommonDBTM
      */
     function getDecryptedPassword()
     {
+        error_log("SnowClient CONFIG FORCE LOG: getDecryptedPassword chamado");
+        
         if (empty($this->fields['password'])) {
+            error_log("SnowClient CONFIG FORCE LOG: Senha está vazia no banco de dados");
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                 error_log("SnowClient DEBUG: Senha está vazia no banco de dados");
             }
@@ -112,23 +115,31 @@ class PluginSnowclientConfig extends CommonDBTM
             try {
                 $decrypted = Toolbox::sodiumDecrypt($this->fields['password']);
                 
+                error_log("SnowClient CONFIG FORCE LOG: Sodium decrypt sucesso - tamanho: " . strlen($decrypted));
+                
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                     error_log("SnowClient DEBUG: Descriptografia Sodium bem-sucedida (tamanho descriptografado: " . strlen($decrypted) . ")");
                 }
                 
                 return $decrypted;
             } catch (Exception $e) {
+                error_log("SnowClient CONFIG FORCE LOG: Sodium decrypt falhou: " . $e->getMessage());
+                
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                     error_log("SnowClient DEBUG: Falha na descriptografia Sodium: " . $e->getMessage() . " - Tentando fallback base64");
                 }
                 
                 $decrypted = base64_decode($this->fields['password']);
+                error_log("SnowClient CONFIG FORCE LOG: Base64 decode - tamanho: " . strlen($decrypted));
+                
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                     error_log("SnowClient DEBUG: Fallback base64 (tamanho: " . strlen($decrypted) . ")");
                 }
                 return $decrypted;
             }
         } else {
+            error_log("SnowClient CONFIG FORCE LOG: Sodium não disponível, usando base64");
+            
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                 error_log("SnowClient DEBUG: Sodium não disponível, usando base64");
             }

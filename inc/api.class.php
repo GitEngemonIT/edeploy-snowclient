@@ -39,6 +39,9 @@ class PluginSnowclientApi
 
     public function __construct()
     {
+        // Log sempre para verificar se construtor é chamado
+        error_log("SnowClient API FORCE LOG: Construtor chamado");
+        
         $this->config = PluginSnowclientConfig::getInstance();
         $this->instance_url = $this->config->fields['instance_url'];
         $this->username = $this->config->fields['username'];
@@ -47,6 +50,12 @@ class PluginSnowclientApi
         $this->password = $this->config->getDecryptedPassword();
         
         $this->debug_mode = $this->config->fields['debug_mode'];
+        
+        // Log forçado independente de debug mode
+        error_log("SnowClient API FORCE LOG: URL=" . ($this->instance_url ?: 'VAZIA'));
+        error_log("SnowClient API FORCE LOG: Username=" . ($this->username ?: 'VAZIO'));
+        error_log("SnowClient API FORCE LOG: Password carregada=" . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
+        error_log("SnowClient API FORCE LOG: Debug mode=" . ($this->debug_mode ? 'ATIVO' : 'INATIVO'));
         
         // Log de debug para verificar se as credenciais foram carregadas
         if ($this->debug_mode) {
