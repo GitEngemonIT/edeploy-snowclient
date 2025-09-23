@@ -362,6 +362,11 @@ class PluginSnowclientConfig extends CommonDBTM
 
     function prepareInputForUpdate($input)
     {
+        // DEBUG: Log do input recebido para detectar problema de encoding
+        if (isset($input['password']) && !empty($input['password'])) {
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient INPUT DEBUG: Password recebida: " . $input['password'] . "\n", FILE_APPEND | LOCK_EX);
+        }
+        
         // Validate URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
@@ -376,8 +381,13 @@ class PluginSnowclientConfig extends CommonDBTM
             return false;
         }
 
-        // Encrypt password if provided
+        // Decrypt HTML entities BEFORE encrypting password
         if (isset($input['password']) && !empty($input['password'])) {
+            // FIX: Decode HTML entities que podem ter sido aplicadas pelo frontend
+            $input['password'] = html_entity_decode($input['password'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            
+            file_put_contents('/var/www/html/files/_log/php-errors.log', "[" . date('Y-m-d H:i:s') . "] SnowClient INPUT DEBUG: Password após html_entity_decode: " . $input['password'] . "\n", FILE_APPEND | LOCK_EX);
+            
             if (method_exists('Toolbox', 'sodiumEncrypt')) {
                 $input['password'] = Toolbox::sodiumEncrypt($input['password']);
             } else {
