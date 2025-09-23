@@ -5,7 +5,7 @@ var SnowClient = {
     
     // Configurações
     config: {
-        debug: true // Ativando debug temporariamente
+        debug: false // Desabilitando debug temporariamente
     },
     
     // Função de log para debug
@@ -42,17 +42,16 @@ var SnowClient = {
             
             self.log('Página de ticket detectada');
             
+            // Flag para evitar múltiplas verificações
+            if (self.buttonCheckInProgress) {
+                self.log('Verificação já em andamento, ignorando...');
+                return;
+            }
+            
             // Fazer verificação via AJAX para saber se deve mostrar o botão
             setTimeout(function() {
                 self.checkIfShouldShowButton();
             }, 1000);
-            
-            // Também tentar quando a página mudar (AJAX)
-            $(document).ajaxComplete(function() {
-                setTimeout(function() {
-                    self.checkIfShouldShowButton();
-                }, 500);
-            });
         }
     },
 
@@ -65,6 +64,15 @@ var SnowClient = {
             self.log('ID do ticket inválido: ' + ticketId);
             return;
         }
+        
+        // Verificar se já foi processado para este ticket
+        if (self.processedTickets && self.processedTickets.includes(ticketId)) {
+            self.log('Ticket ' + ticketId + ' já foi processado, ignorando...');
+            return;
+        }
+        
+        // Marcar como em progresso
+        self.buttonCheckInProgress = true;
         
         self.log('Verificando se deve mostrar botão para ticket: ' + ticketId);
         
@@ -85,10 +93,20 @@ var SnowClient = {
                 } else {
                     self.log('Não deve mostrar botão: ' + (response.message || 'critérios não atendidos'));
                 }
+                
+                // Marcar ticket como processado
+                if (!self.processedTickets) {
+                    self.processedTickets = [];
+                }
+                self.processedTickets.push(ticketId);
             },
             error: function(xhr, status, error) {
                 self.log('Erro ao verificar botão: ' + error);
                 // Em caso de erro, não mostrar o botão por segurança
+            },
+            complete: function() {
+                // Marcar como não está mais em progresso
+                self.buttonCheckInProgress = false;
             }
         });
     },

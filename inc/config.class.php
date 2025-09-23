@@ -97,53 +97,42 @@ class PluginSnowclientConfig extends CommonDBTM
     function getDecryptedPassword()
     {
         if (empty($this->fields['password'])) {
+            if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
+                error_log("SnowClient DEBUG: Senha está vazia no banco de dados");
+            }
             return '';
         }
 
-        $encrypted_password = $this->fields['password'];
-        
-        // Log de debug se ativo
+        // Log de debug se ativo (sem revelar a senha)
         if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-            error_log("SnowClient DEBUG: Iniciando descriptografia da senha (tamanho: " . strlen($encrypted_password) . ")");
+            error_log("SnowClient DEBUG: Iniciando descriptografia da senha (tamanho criptografado: " . strlen($this->fields['password']) . ")");
         }
 
-        // Primeiro tenta Sodium se disponível
         if (method_exists('Toolbox', 'sodiumDecrypt')) {
             try {
-                $decrypted = Toolbox::sodiumDecrypt($encrypted_password);
+                $decrypted = Toolbox::sodiumDecrypt($this->fields['password']);
                 
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Descriptografia Sodium bem-sucedida (tamanho: " . strlen($decrypted) . ")");
+                    error_log("SnowClient DEBUG: Descriptografia Sodium bem-sucedida (tamanho descriptografado: " . strlen($decrypted) . ")");
                 }
                 
-                // Validar se a descriptografia fez sentido (senha deve ter tamanho razoável)
-                if (!empty($decrypted) && strlen($decrypted) > 5 && strlen($decrypted) < 200) {
-                    return $decrypted;
-                } else {
-                    if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                        error_log("SnowClient DEBUG: Resultado Sodium inválido (tamanho: " . strlen($decrypted) . "), tentando base64");
-                    }
-                    throw new Exception("Resultado Sodium com tamanho inválido: " . strlen($decrypted));
-                }
-                
+                return $decrypted;
             } catch (Exception $e) {
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Falha na descriptografia Sodium: " . $e->getMessage());
+                    error_log("SnowClient DEBUG: Falha na descriptografia Sodium: " . $e->getMessage() . " - Tentando fallback base64");
                 }
                 
-                // Fallback para base64
-                $decrypted = base64_decode($encrypted_password);
+                $decrypted = base64_decode($this->fields['password']);
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Usando fallback base64 (tamanho: " . strlen($decrypted) . ")");
+                    error_log("SnowClient DEBUG: Fallback base64 (tamanho: " . strlen($decrypted) . ")");
                 }
                 return $decrypted;
             }
         } else {
-            // Sistema não tem Sodium, usa base64 diretamente
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
                 error_log("SnowClient DEBUG: Sodium não disponível, usando base64");
             }
-            return base64_decode($encrypted_password);
+            return base64_decode($this->fields['password']);
         }
     }
 

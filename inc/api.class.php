@@ -1,6 +1,6 @@
 <?php
 /*
-   ------------------------------------------------------------------------
+   -----------------------------------------------------------------------------------------
    Plugin ServiceNow Client
    Copyright (C) 2025 by EngemonIT
    https://github.com/engemon/snowclient
@@ -115,6 +115,8 @@ class PluginSnowclientApi
 
         if ($this->debug_mode) {
             Toolbox::logDebug("ServiceNow API Request: $method $url");
+            Toolbox::logDebug("ServiceNow API Username: " . $this->username);
+            Toolbox::logDebug("ServiceNow API Password Length: " . strlen($this->password));
             if ($data) {
                 Toolbox::logDebug("Request Data: " . json_encode($data));
             }
@@ -124,12 +126,15 @@ class PluginSnowclientApi
 
         // Log sempre erros de autenticação e outros problemas críticos
         if ($http_code === 401) {
-            error_log("SnowClient RETURN: ERRO 401 - Falha de autenticação no ServiceNow. Verifique credenciais.");
-            error_log("SnowClient RETURN: URL tentativa: $url");
-            error_log("SnowClient RETURN: Username: " . $this->username);
+            error_log("SnowClient API: ERRO 401 - Falha de autenticação no ServiceNow");
+            error_log("SnowClient API: URL: $url");
+            error_log("SnowClient API: Username: " . $this->username);
+            error_log("SnowClient API: Senha está vazia: " . (empty($this->password) ? 'SIM' : 'NÃO'));
+            error_log("SnowClient API: Response: " . substr($response, 0, 1000));
         } elseif ($http_code >= 400) {
-            error_log("SnowClient RETURN: ERRO HTTP $http_code - $response");
-            error_log("SnowClient RETURN: URL: $url");
+            error_log("SnowClient API: ERRO HTTP $http_code");
+            error_log("SnowClient API: URL: $url");
+            error_log("SnowClient API: Response: " . substr($response, 0, 500));
         }
 
         if ($error) {
