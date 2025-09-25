@@ -52,8 +52,10 @@ class PluginSnowclientConfig extends CommonDBTM
         return $tabs;
     }
 
-    // Flag para controlar se deve ignorar hooks de sincronização
+        // Variável estática para controlar se deve pular os hooks de sincronização
     private static $skipSyncHooks = false;
+    
+
     
     /**
      * Define se deve ignorar hooks de sincronização temporariamente
@@ -70,6 +72,7 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         return self::$skipSyncHooks;
     }
+
 
     static function getInstance()
     {
@@ -526,6 +529,38 @@ class PluginSnowclientConfig extends CommonDBTM
                 error_log("SnowClient: Ticket não é do ServiceNow, ignorando atualização");
             }
             return false;
+        }
+        
+        // PREVENÇÃO DE LOOP: Para tickets do ServiceNow que mudaram para SOLVED (6) ou CLOSED (7), 
+        // verificar se a mudança pode ter vindo do próprio ServiceNow para evitar loop
+        if (($ticket->fields['status'] == Ticket::SOLVED || $ticket->fields['status'] == Ticket::CLOSED) && $config->fields['sync_status']) {
+            $statusName = ($ticket->fields['status'] == Ticket::SOLVED) ? 'SOLVED' : 'CLOSED';
+            
+            if ($config->fields['debug_mode']) {
+                error_log("SnowClient: Ticket {$ticket->fields['id']} alterado para {$statusName}. Verificando contexto da alteração...");
+            }
+            
+            // Se não há usuário logado ou é o usuário da API, pode ser uma sincronização automática
+            $currentUser = Session::getLoginUserID();
+            $apiUser = $config->fields['api_user'];
+            
+            if (!$currentUser || $currentUser == $apiUser) {
+                if ($config->fields['debug_mode']) {
+                    error_log("SnowClient: Alteração de status feita por usuário da API ou sem usuário logado (user: {$currentUser}, api_user: {$apiUser}). Assumindo que veio do ServiceNow, ignorando sincronização.");
+                }
+                return false;
+            }
+            
+            // Se a alteração foi muito recente (menos de 10 segundos), pode ser automática
+            $lastUpdate = strtotime($ticket->fields['date_mod']);
+            $timeDiff = time() - $lastUpdate;
+            
+            if ($timeDiff <= 10) {
+                if ($config->fields['debug_mode']) {
+                    error_log("SnowClient: Status alterado há apenas {$timeDiff} segundos. Pode ser sincronização automática do ServiceNow. Ignorando.");
+                }
+                return false;
+            }
         }
         
         if ($config->fields['sync_tickets']) {
