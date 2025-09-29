@@ -318,6 +318,14 @@ class PluginSnowclientApi
             
             $sysId = $searchResult['result'][0]['sys_id'];
             
+            // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
+            if (!$this->canUpdateIncident($ticket, $sysId)) {
+                if ($this->debug_mode) {
+                    Toolbox::logError("SnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a atualizar incidente $sysId devido ao correlation_id");
+                }
+                return false;
+            }
+            
             // Preparar dados de atualização
             $updateData = [
                 'work_notes' => sprintf(__('Ticket atualizado no GLPI por %s em %s', 'snowclient'), 
@@ -410,6 +418,14 @@ class PluginSnowclientApi
             
             $sysId = $searchResult['result'][0]['sys_id'];
             
+            // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
+            if (!$this->canUpdateIncident($ticket, $sysId)) {
+                if ($this->debug_mode) {
+                    Toolbox::logError("SnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar followup ao incidente $sysId devido ao correlation_id");
+                }
+                return false;
+            }
+            
             // Preparar nota de trabalho
             $userName = getUserName($followup->fields['users_id']);
             $timestamp = date('Y-m-d H:i:s');
@@ -497,6 +513,14 @@ class PluginSnowclientApi
             }
             
             $sysId = $searchResult['result'][0]['sys_id'];
+            
+            // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
+            if (!$this->canUpdateIncident($ticket, $sysId)) {
+                if ($this->debug_mode) {
+                    Toolbox::logError("SnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar solução ao incidente $sysId devido ao correlation_id");
+                }
+                return false;
+            }
             
             // Preparar dados da solução
             $userName = getUserName($solution->fields['users_id']);
@@ -731,6 +755,47 @@ class PluginSnowclientApi
         } else {
             error_log("SnowClient: Upload falhou - resposta inválida");
             return false;
+        }
+    }
+
+    /**
+     * Verificar se o ticket GLPI pode atualizar o incidente ServiceNow
+     * Compara o correlation_id do ServiceNow com o ID do ticket GLPI
+     */
+    public function canUpdateIncident($ticket, $sysId)
+    {
+        try {
+            // Buscar correlation_id do incidente no ServiceNow
+            $searchResult = $this->makeRequest("api/now/table/incident/$sysId?sysparm_fields=correlation_id");
+            
+            if (isset($searchResult['result']['correlation_id'])) {
+                $correlationId = $searchResult['result']['correlation_id'];
+                
+                // Verificar se o correlation_id bate com o ID do ticket GLPI
+                if ($correlationId == $ticket->fields['id']) {
+                    if ($this->debug_mode) {
+                        Toolbox::logDebug("SnowClient: Ticket GLPI {$ticket->fields['id']} autorizado a atualizar incidente $sysId (correlation_id: $correlationId)");
+                    }
+                    return true;
+                } else {
+                    if ($this->debug_mode) {
+                        Toolbox::logDebug("SnowClient: Ticket GLPI {$ticket->fields['id']} NÃO autorizado a atualizar incidente $sysId (correlation_id no ServiceNow: '$correlationId')");
+                    }
+                    return false;
+                }
+            } else {
+                // Se não houver correlation_id, permitir atualização (compatibilidade com incidentes antigos)
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Incidente $sysId não possui correlation_id. Permitindo atualização para compatibilidade.");
+                }
+                return true;
+            }
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                Toolbox::logError("SnowClient: Erro ao verificar correlation_id para incidente $sysId: " . $e->getMessage());
+            }
+            // Em caso de erro, permitir atualização para não quebrar funcionalidade existente
+            return true;
         }
     }
 
