@@ -784,11 +784,23 @@ class PluginSnowclientApi
                     return false;
                 }
             } else {
-                // Se não houver correlation_id, permitir atualização (compatibilidade com incidentes antigos)
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Incidente $sysId não possui correlation_id. Permitindo atualização para compatibilidade.");
+                // Se não houver correlation_id, verificar o contexto da chamada
+                $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+                $callingMethod = isset($backtrace[1]['function']) ? $backtrace[1]['function'] : '';
+                
+                // Para devolução de tickets, correlation_id é obrigatório
+                if ($callingMethod === 'returnTicketToQueue') {
+                    if ($this->debug_mode) {
+                        Toolbox::logDebug("SnowClient: Incidente $sysId não possui correlation_id. Negando devolução pois correlation_id é obrigatório para esta operação.");
+                    }
+                    return false;
+                } else {
+                    // Para outras operações, permitir atualização (compatibilidade com incidentes antigos)
+                    if ($this->debug_mode) {
+                        Toolbox::logDebug("SnowClient: Incidente $sysId não possui correlation_id. Permitindo atualização para compatibilidade.");
+                    }
+                    return true;
                 }
-                return true;
             }
         } catch (Exception $e) {
             if ($this->debug_mode) {
@@ -957,6 +969,14 @@ class PluginSnowclientApi
             }
             
             error_log("SnowClient RETURN: sys_id encontrado: $sysId para ticket GLPI {$ticket->getID()}");
+
+            // Verificar se o ticket pode atualizar o incidente (validação de correlation_id)
+            if (!$this->canUpdateIncident($ticket, $sysId)) {
+                error_log("SnowClient RETURN: ERRO - Correlação não encontrada para ticket GLPI {$ticket->getID()} / ServiceNow sys_id: $sysId");
+                return false;
+            }
+            
+            error_log("SnowClient RETURN: Validação de correlação passou para ticket GLPI {$ticket->getID()}");
 
             // Preparar dados para atualização
             $updateData = [];

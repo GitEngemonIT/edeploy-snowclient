@@ -1079,7 +1079,34 @@ class PluginSnowclientConfig extends CommonDBTM
             $snowResult = $api->returnTicketToQueue($ticket, $reason);
             
             if (!$snowResult) {
-                // Log do erro mas não falha a operação local
+                // Verificar se o erro foi de correlação
+                $sysId = self::getSnowSysIdFromTicket($ticket->getID());
+                $correlationError = false;
+                
+                if ($sysId) {
+                    // Verificar se a correlação existe
+                    if (!$api->canUpdateIncident($ticket, $sysId)) {
+                        $correlationError = true;
+                        error_log("SnowClient RETURN: ERRO - Correlação não encontrada para ticket {$ticket->getID()}");
+                    }
+                }
+                
+                if ($correlationError) {
+                    // Desfazer a resolução do ticket no GLPI
+                    self::setSkipSyncHooks(true);
+                    $ticket->update([
+                        'id' => $ticket->getID(),
+                        'status' => $ticket->oldvalues['status'] ?? Ticket::ASSIGNED
+                    ]);
+                    self::setSkipSyncHooks(false);
+                    
+                    return [
+                        'success' => false,
+                        'message' => 'Erro ao devolver chamado, correlação não encontrada'
+                    ];
+                }
+                
+                // Log do erro mas não falha a operação local se não foi erro de correlação
                 error_log("SnowClient RETURN: FALHA - Erro ao enviar devolução para ServiceNow - Ticket ID: " . $ticket->getID());
                 
                 // Reativar flag para adicionar followup de erro

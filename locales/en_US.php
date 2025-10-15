@@ -81,6 +81,7 @@ $LANG['snowclient'] = [
     'Please provide a return reason' => 'Please provide a return reason',
     'Ticket returned successfully to ServiceNow!' => 'Ticket returned successfully to ServiceNow!',
     'Error returning ticket' => 'Error returning ticket',
+    'Error returning ticket, correlation not found' => 'Error returning ticket, correlation not found',
     'Communication error. Please try again.' => 'Communication error. Please try again.',
     'Cancel' => 'Cancel',
     'Return Ticket' => 'Return Ticket',

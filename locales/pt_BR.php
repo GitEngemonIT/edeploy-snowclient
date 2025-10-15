@@ -95,6 +95,7 @@ $LANG['snowclient'] = [
     'Please provide a return reason' => 'Por favor, informe o motivo da devolução',
     'Ticket returned successfully to ServiceNow!' => 'Chamado devolvido com sucesso ao ServiceNow!',
     'Error returning ticket' => 'Erro ao devolver chamado',
+    'Error returning ticket, correlation not found' => 'Erro ao devolver chamado, correlação não encontrada',
     'Communication error. Please try again.' => 'Erro de comunicação. Tente novamente.',
     'Cancel' => 'Cancelar',
     'Return Ticket' => 'Devolver Chamado',
