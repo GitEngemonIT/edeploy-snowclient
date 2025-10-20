@@ -35,7 +35,20 @@ function plugin_snowclient_item_add($item)
     }
 
     if ($item::getType() === ITILSolution::getType()) {
-        PluginSnowclientConfig::afterTicketSolution($item);
+        // Verificar se existem dados da modal na sessão
+        if (isset($_SESSION['snowclient_solution_data'])) {
+            $additionalData = $_SESSION['snowclient_solution_data'];
+            unset($_SESSION['snowclient_solution_data']); // Limpar dados da sessão
+            PluginSnowclientConfig::afterTicketSolution($item, $additionalData);
+        } else {
+            // Se não houver dados da modal, interromper o processo
+            Session::addMessageAfterRedirect(
+                __('É necessário preencher os dados adicionais de solução para o ServiceNow', 'snowclient'),
+                true,
+                ERROR
+            );
+            return false;
+        }
     }
 
     if ($item::getType() === Document::getType()) {

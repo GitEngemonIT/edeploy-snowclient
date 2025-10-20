@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.1.5');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.1.6');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -97,12 +97,17 @@ function plugin_init_snowclient()
         
         // Hook para adicionar JavaScript e CSS
         $PLUGIN_HOOKS['add_javascript']['snowclient'] = [
-            'js/snowclient.js'
+            'js/snowclient.js',
+            'js/solution_modal.js'
         ];
         
         $PLUGIN_HOOKS['add_css']['snowclient'] = [
-            'css/snowclient.css'
+            'css/snowclient.css',
+            'css/solution_modal.css'
         ];
+        
+        // Include solution resources
+        include_once __DIR__ . '/inc/solution_resources.php';
 
         // Hook para adicionar conteúdo na página de ticket
         $PLUGIN_HOOKS['post_item_form']['snowclient'] = [
@@ -290,6 +295,41 @@ function plugin_snowclient_update($current_version)
         // - Correção de problema de persistência do campo
         // - Posicionamento melhorado do botão próximo ao menu de ações
     }
+
+    // Migração para versão 1.1.6 - Adicionar campos customizados do ServiceNow
+    if (version_compare($current_version, '1.1.6', '<')) {
+        $migration->displayMessage("Updating to 1.1.6 - Adding ServiceNow custom fields configuration");
+        
+        $table = 'glpi_plugin_snowclient_configs';
+        if ($DB->tableExists($table)) {
+            // Adicionar campo para valor padrão do tipo de encerramento
+            if (!$DB->fieldExists($table, 'default_close_type')) {
+                $migration->addField($table, 'default_close_type', 'varchar(255) DEFAULT "Definitiva"');
+            }
+            
+            // Adicionar campo para valor padrão da classificação da solução
+            if (!$DB->fieldExists($table, 'default_solution_class')) {
+                $migration->addField($table, 'default_solution_class', 'varchar(255) DEFAULT "Presencial/Hardware"');
+            }
+            
+            // Adicionar campo para armazenar as opções do código de solução
+            if (!$DB->fieldExists($table, 'solution_codes')) {
+                $migration->addField($table, 'solution_codes', 'text', [
+                    'after' => 'default_solution_class',
+                    'value' => json_encode([
+                        'Manutenção de cabeamento',
+                        'Manutenção do equipamento',
+                        'Normalizado sem intervenção',
+                        'Substituição de cabeamento',
+                        'Substituição do equipamento'
+                    ])
+                ]);
+            }
+            
+            $migration->migrationOneTable($table);
+            $migration->displayMessage("ServiceNow custom fields configuration added successfully");
+        }
+    }
     
     $migration->executeMigration();
     
@@ -382,6 +422,31 @@ function plugin_snowclient_upgrade($migrations)
                         $migration->addField($table, 'return_queue_group', 'varchar(255) DEFAULT NULL', ['after' => 'assignment_group']);
                         $migration->displayMessage("return_queue_group field added successfully");
                     }
+                }
+                break;
+            
+            case '1.1.6':
+                // Garantir que os campos customizados do ServiceNow existem
+                if ($DB->tableExists($table)) {
+                    if (!$DB->fieldExists($table, 'default_close_type')) {
+                        $migration->addField($table, 'default_close_type', 'varchar(255) DEFAULT "Definitiva"');
+                    }
+                    if (!$DB->fieldExists($table, 'default_solution_class')) {
+                        $migration->addField($table, 'default_solution_class', 'varchar(255) DEFAULT "Presencial/Hardware"');
+                    }
+                    if (!$DB->fieldExists($table, 'solution_codes')) {
+                        $migration->addField($table, 'solution_codes', 'text', [
+                            'after' => 'default_solution_class',
+                            'value' => json_encode([
+                                'Manutenção de cabeamento',
+                                'Manutenção do equipamento',
+                                'Normalizado sem intervenção',
+                                'Substituição de cabeamento',
+                                'Substituição do equipamento'
+                            ])
+                        ]);
+                    }
+                    $migration->migrationOneTable($table);
                 }
                 break;
         }

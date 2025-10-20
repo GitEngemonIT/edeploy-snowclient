@@ -478,9 +478,9 @@ class PluginSnowclientApi
     }
 
     /**
-     * Adicionar solução como work note no ServiceNow
+     * Adicionar solução como work note no ServiceNow com campos adicionais
      */
-    public function addSolution($solution)
+    public function addSolution($solution, $additionalData = [])
     {
         $ticket = new Ticket();
         if (!$ticket->getFromDB($solution->fields['items_id'])) {
@@ -550,20 +550,68 @@ class PluginSnowclientApi
                 }
             }
             
+            // Construir nota de solução com campos customizados
+            $customFieldsInfo = '';
+            if (!empty($additionalData)) {
+                $customFieldsInfo .= "\n\nInformações adicionais:";
+                if (isset($additionalData['u_bk_solucao'])) {
+                    $customFieldsInfo .= "\nSolução: " . $additionalData['u_bk_solucao'];
+                }
+                if (isset($additionalData['u_bk_tipo_encerramento'])) {
+                    $customFieldsInfo .= "\nTipo de Encerramento: " . $additionalData['u_bk_tipo_encerramento'];
+                }
+                if (isset($additionalData['u_bk_ic_impactado'])) {
+                    $customFieldsInfo .= "\nIC Impactado: " . $additionalData['u_bk_ic_impactado'];
+                }
+                if (isset($additionalData['u_bk_type_of_failure'])) {
+                    $customFieldsInfo .= "\nTipo de Falha: " . $additionalData['u_bk_type_of_failure'];
+                }
+            }
+            
             $solutionNote = sprintf(
-                "[GLPI - SOLUÇÃO por %s em %s]%s\n\n%s", 
+                "[GLPI - SOLUÇÃO por %s em %s]%s\n\n%s%s", 
                 $userName, 
                 $timestamp,
                 $solutionTypeInfo,
-                $content
+                $content,
+                $customFieldsInfo
             );
             
+            // Preparar dados de atualização para o ServiceNow
             $updateData = [
-                'work_notes' => $solutionNote
+                'work_notes' => $solutionNote,
+                'state' => 6, // Resolved
+                'close_code' => 'Resolved',
+                'resolved_by' => $userName,
+                'u_resolved_by_group' => 'GLPI',
+                'resolved_at' => $timestamp
             ];
             
+            // Adicionar campos customizados ao payload
+            if (!empty($additionalData)) {
+                // Campos customizados do ServiceNow
+                if (isset($additionalData['u_bk_solucao'])) {
+                    $updateData['u_bk_solucao'] = $additionalData['u_bk_solucao'];
+                }
+                if (isset($additionalData['u_bk_tipo_encerramento'])) {
+                    $updateData['u_bk_tipo_encerramento'] = $additionalData['u_bk_tipo_encerramento'];
+                }
+                if (isset($additionalData['u_bk_ic_impactado'])) {
+                    $updateData['u_bk_ic_impactado'] = $additionalData['u_bk_ic_impactado'];
+                }
+                if (isset($additionalData['u_bk_type_of_failure'])) {
+                    $updateData['u_bk_type_of_failure'] = $additionalData['u_bk_type_of_failure'];
+                }
+                
+                // Definir campos de resolução baseado no tipo de encerramento
+                if (isset($additionalData['u_bk_tipo_encerramento'])) {
+                    $updateData['close_code'] = $this->mapGlpiClosureTypeToServiceNow($additionalData['u_bk_tipo_encerramento']);
+                }
+            }
+            
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Adicionando solução como work note ao incidente $cleanSnowId");
+                Toolbox::logDebug("SnowClient: Adicionando solução e campos customizados ao incidente $cleanSnowId");
+                Toolbox::logDebug("SnowClient: Dados de atualização: " . json_encode($updateData));
             }
             
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
@@ -949,6 +997,31 @@ class PluginSnowclientApi
         }
         
         return $content;
+    }
+
+    /**
+     * Mapear tipos de encerramento do GLPI para códigos do ServiceNow
+     */
+    private function mapGlpiClosureTypeToServiceNow($glpiClosureType)
+    {
+        $mapping = [
+            'Resolved' => 'Solved (Permanently)',
+            'Solução de Contorno' => 'Solved (Work Around)',
+            'Não Resolvido' => 'Not Solved',
+            'Duplicado' => 'Closed/Resolved by Caller',
+            'Cancelado' => 'Cancelled',
+            'Atualizado' => 'Closed/Resolved by Caller',
+            'Resolvido por Erro' => 'Solved (Work Around)',
+            'Resolvido por Mudança' => 'Solved (Permanently)',
+            'Resolvido por Patch' => 'Solved (Permanently)',
+            'Resolvido por Projeto' => 'Solved (Permanently)',
+            'Resolvido por Melhoria' => 'Solved (Permanently)',
+            'Resolvido por Processo' => 'Solved (Permanently)',
+            'Resolvido por Reset/Reboot' => 'Solved (Work Around)',
+            'Resolvido por Backup' => 'Solved (Work Around)',
+        ];
+        
+        return $mapping[$glpiClosureType] ?? 'Solved (Permanently)'; // Default se não encontrar mapeamento
     }
 
     /**
