@@ -105,13 +105,10 @@ function plugin_init_snowclient()
             'css/snowclient.css',
             'css/solution_modal.css'
         ];
-        
-        // Include solution resources
-        include_once __DIR__ . '/inc/solution_resources.php';
 
-        // Hook para adicionar conteúdo na página de ticket
+        // Hook para adicionar recursos do modal de solução
         $PLUGIN_HOOKS['post_item_form']['snowclient'] = [
-            'Ticket' => 'plugin_snowclient_post_item_form'
+            'Ticket' => 'plugin_snowclient_add_solution_resources'
         ];
     }
 }
