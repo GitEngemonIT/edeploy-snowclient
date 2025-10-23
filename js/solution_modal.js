@@ -406,14 +406,23 @@ function initSolutionModal() {
             // Verificar se é um formulário de solução com campo de conteúdo
             const contentField = form.querySelector('textarea[name="content"]');
             
-            // IMPORTANTE: Verificar se NÃO é um followup
-            // Followup tem input hidden com name="add_followup" ou botão com name contendo "followup"
-            // Solução tem input com name="add" ou botão com name contendo "add" (mas não "followup")
-            const hasFollowupIndicator = form.querySelector('input[name*="followup"], button[name*="followup"]') !== null;
-            const hasSolutionIndicator = form.querySelector('select[name*="solutiontypes_id"], input[name="itemtype"][value="Solution"]') !== null;
+            if (!contentField || form.dataset.snowclientInit) {
+                return; // Pular se não tem campo de conteúdo ou já foi inicializado
+            }
             
-            // Só interceptar se tiver campo de conteúdo, não for followup, e não estiver já inicializado
-            if (contentField && !hasFollowupIndicator && !form.dataset.snowclientInit) {
+            // IMPORTANTE: Verificar se NÃO é um followup
+            // Followup tem botão com name="add_followup"
+            // Solução tem botão com name="add" (sem followup) e campo solutiontypes_id
+            const hasFollowupButton = form.querySelector('button[name="add_followup"], input[name="add_followup"]') !== null;
+            const hasSolutionType = form.querySelector('select[name="solutiontypes_id"]') !== null;
+            const hasAddButton = form.querySelector('button[name="add"]:not([name*="followup"]), input[name="add"]:not([name*="followup"])') !== null;
+            
+            // É um formulário de solução se:
+            // - NÃO tem botão de followup
+            // - TEM campo de tipo de solução OU tem botão "add" simples
+            const isSolutionForm = !hasFollowupButton && (hasSolutionType || hasAddButton);
+            
+            if (isSolutionForm) {
                 console.log('SnowClient: Form de solução encontrado, adicionando interceptador');
                 
                 // Marcar formulário como inicializado
@@ -460,8 +469,10 @@ function initSolutionModal() {
                         console.error('SnowClient: Erro ao verificar ticket:', error);
                     }
                 });
-            } else if (contentField && hasFollowupIndicator) {
-                console.log('SnowClient: Formulário de followup detectado, ignorando');
+            } else if (hasFollowupButton) {
+                console.log('SnowClient: Formulário de followup detectado (tem botão add_followup), ignorando');
+            } else {
+                console.log('SnowClient: Formulário não identificado como solução, ignorando');
             }
         });
     }
