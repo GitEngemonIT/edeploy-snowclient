@@ -305,7 +305,10 @@ class SolutionModal {
      * Handler para o submit do formulário da modal
      */
     async handleSubmit(form) {
-        if (this.isSubmitting) return;
+        if (this.isSubmitting) {
+            console.log('SnowClient Modal: Já está submetendo, ignorando');
+            return;
+        }
         
         try {
             this.isSubmitting = true;
@@ -316,6 +319,7 @@ class SolutionModal {
             if (!solutionCode?.value) {
                 solutionCode.classList.add('is-invalid');
                 alert('Por favor, selecione um código de solução.');
+                this.isSubmitting = false;
                 return;
             }
 
@@ -363,28 +367,19 @@ class SolutionModal {
                 }
             });
 
-            // 6. Remover evento de submit do formulário original
-            const clonedForm = this.originalForm.cloneNode(true);
-            this.originalForm.parentNode.replaceChild(clonedForm, this.originalForm);
+            // 6. Submeter o formulário original diretamente
+            console.log('SnowClient Modal: Submetendo formulário original...');
             
-            // 7. Aguardar um momento para garantir que tudo foi limpo
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // 8. Pegar o novo botão de submit do formulário clonado
-            const newSubmitButton = clonedForm.querySelector('button[name="add"], input[name="add"]');
-            if (!newSubmitButton) {
-                throw new Error('Botão de submit não encontrado após clonagem');
-            }
-
-            // 9. Submeter o formulário clonado
-            console.log('SnowClient Modal: Submetendo formulário...');
-            newSubmitButton.click();
+            // Marcar que estamos submetendo via modal para não interceptar novamente
+            this.originalForm.dataset.snowclientSubmitting = 'true';
+            
+            // Submeter o formulário
+            submitButton.click();
             
         } catch (error) {
             console.error('SnowClient Modal: Erro ao processar submit:', error);
             alert('Erro ao salvar solução: ' + error.message);
             sessionStorage.removeItem('snowclient_solution_data');
-        } finally {
             this.isSubmitting = false;
         }
     }
