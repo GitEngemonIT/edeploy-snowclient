@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Add necessary CSS and JavaScript files for solution modal
+ * Add debug logging for solution modal
+ * CSS and JS are loaded globally via setup.php
  */
 function plugin_snowclient_add_solution_resources($hook_params = [])
 {
@@ -14,17 +15,13 @@ function plugin_snowclient_add_solution_resources($hook_params = [])
         return;
     }
     
-    error_log("SnowClient: Adicionando recursos da modal de solução para ticket " . $hook_params['item']->getID());
-    
-    // Injetar recursos necessários
-    echo "<link rel='stylesheet' type='text/css' href='" . Plugin::getWebDir('snowclient') . "/css/solution_modal.css'>";
-    echo "<script type='text/javascript' src='" . Plugin::getWebDir('snowclient') . "/js/solution_modal.js'></script>";
+    error_log("SnowClient: Verificando ticket " . $hook_params['item']->getID() . " para modal de solução");
     
     // Verificar se é um ticket do ServiceNow
     if (PluginSnowclientConfig::isTicketFromServiceNow($hook_params['item'])) {
-        error_log("SnowClient: Ticket é do ServiceNow, ativando modal de solução");
-        echo "<script>console.log('SnowClient: Ticket do ServiceNow detectado, modal será ativado');</script>";
+        error_log("SnowClient: Ticket é do ServiceNow, modal deve ser ativado");
+        echo "<script>console.log('SnowClient: Ticket do ServiceNow detectado (ID: " . $hook_params['item']->getID() . ")');</script>";
     } else {
-        error_log("SnowClient: Ticket não é do ServiceNow, modal não será ativado");
+        error_log("SnowClient: Ticket não é do ServiceNow");
     }
 }

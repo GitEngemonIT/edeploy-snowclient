@@ -1,32 +1,18 @@
 /* Estilos para modal de solução */
 #snowclient-solution-modal {
-    display: none;
-    position: fixed;
-    z-index: 999999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    z-index: 999999 !important;
 }
 
 #snowclient-solution-modal .modal-dialog {
-    position: relative;
-    margin: 10% auto;
-    padding: 20px;
-    width: 80%;
     max-width: 600px;
-    background-color: #fff;
-    border-radius: 5px;
 }
 
 #snowclient-solution-modal .modal-header {
     padding-bottom: 15px;
     border-bottom: 1px solid #ddd;
-    margin-bottom: 15px;
 }
 
-#snowclient-solution-modal .modal-header h3 {
+#snowclient-solution-modal .modal-header h5 {
     margin: 0;
     color: #333;
 }
@@ -34,10 +20,10 @@
 #snowclient-solution-modal .modal-body {
     max-height: calc(100vh - 250px);
     overflow-y: auto;
-    padding: 15px 0;
 }
 
-#snowclient-solution-modal .form-group {
+#snowclient-solution-modal .form-group,
+#snowclient-solution-modal .mb-3 {
     margin-bottom: 15px;
 }
 
@@ -74,7 +60,13 @@
     margin-left: 10px;
 }
 
-#snowclient-solution-modal .btn-secondary {
+#snowclient-solution-modal .btn-outline-secondary {
+    background-color: transparent;
+    color: #6c757d;
+    border: 1px solid #6c757d;
+}
+
+#snowclient-solution-modal .btn-outline-secondary:hover {
     background-color: #6c757d;
     color: white;
 }
@@ -84,9 +76,38 @@
     color: white;
 }
 
+#snowclient-solution-modal .btn-primary:hover {
+    background-color: #025aa5;
+}
+
 /* Campo readonly com fundo diferente */
 #snowclient-solution-modal input[readonly],
 #snowclient-solution-modal textarea[readonly] {
     background-color: #f8f9fa;
     cursor: not-allowed;
+}
+
+/* Validação de campos */
+#snowclient-solution-modal .is-invalid {
+    border-color: #dc3545;
+}
+
+#snowclient-solution-modal .is-valid {
+    border-color: #28a745;
+}
+
+/* Alert info */
+#snowclient-solution-modal .alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 0;
+}
+
+#snowclient-solution-modal .form-text {
+    font-size: 0.875em;
+    color: #6c757d;
+    margin-top: 4px;
 }

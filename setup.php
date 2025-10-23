@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.1.18');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.1.19');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -100,7 +100,7 @@ function plugin_init_snowclient()
         // Hook para adicionar botões personalizados na tela de ticket
         $PLUGIN_HOOKS['use_massive_action']['snowclient'] = 1;
         
-        // Hook para adicionar JavaScript e CSS
+        // Hook para adicionar JavaScript e CSS globalmente
         $PLUGIN_HOOKS['add_javascript']['snowclient'] = [
             'js/snowclient.js',
             'js/solution_modal.js'
@@ -111,7 +111,7 @@ function plugin_init_snowclient()
             'css/solution_modal.css'
         ];
 
-        // Hook para adicionar recursos do modal de solução
+        // Hook para debug de modal de solução
         include_once __DIR__ . '/inc/solution_resources.php';
         $PLUGIN_HOOKS['post_item_form']['snowclient'] = [
             'Ticket' => 'plugin_snowclient_add_solution_resources'
