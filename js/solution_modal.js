@@ -83,8 +83,10 @@ class SolutionModal {
     /**
      * Abrir modal para um ticket específico
      */
-    async open(ticketId, originalForm) {
+    async open(originalForm, ticketId) {
         console.log('SnowClient Modal: Abrindo modal para ticket', ticketId);
+        console.log('SnowClient Modal: Formulário recebido:', originalForm);
+        
         try {
             this.ticketId = ticketId;
             this.originalForm = originalForm;
