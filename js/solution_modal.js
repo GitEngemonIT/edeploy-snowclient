@@ -399,14 +399,74 @@ function initSolutionModal() {
     }
     
     // Função para interceptar o formulário de solução
-    function interceptSolutionForm() {
-        // Encontrar o container de solução na timeline
-        const solutionContainers = document.querySelectorAll('.timeline-item.ITILSolution, .ajax-container.timeline_solutions');
+    function interceptSolutionButton() {
+        console.log('SnowClient: Procurando botão de adicionar solução...');
         
-        solutionContainers.forEach(container => {
-            const form = container.querySelector('form');
+        // Encontrar o botão "Adicionar uma solução"
+        const solutionButtons = document.querySelectorAll('[data-bs-toggle="collapse"][title*="Adicionar uma solução"]');
+        
+        solutionButtons.forEach(button => {
+            if (!button.dataset.snowclientInit) {
+                console.log('SnowClient: Botão de solução encontrado, adicionando interceptador');
+                button.dataset.snowclientInit = 'true';
+
+                // Pegar ID do ticket da URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const ticketId = urlParams.get('id');
+                
+                if (!ticketId) {
+                    console.log('SnowClient: ID do ticket não encontrado na URL');
+                    return;
+                }
+
+                // Verificar se é ticket do ServiceNow
+                $.ajax({
+                    url: '../plugins/snowclient/ajax/check_return_button.php',
+                    method: 'POST',
+                    data: { ticket_id: ticketId },
+                    success: function(response) {
+                        if (response.success && response.show_button) {
+                            // Adicionar listener para quando o formulário for carregado
+                            const targetId = button.getAttribute('data-bs-target');
+                            if (targetId) {
+                                const target = document.querySelector(targetId);
+                                if (target) {
+                                    const observer = new MutationObserver((mutations) => {
+                                        mutations.forEach((mutation) => {
+                                            if (mutation.addedNodes.length) {
+                                                const form = target.querySelector('form');
+                                                if (form && !form.dataset.snowclientInit) {
+                                                    form.dataset.snowclientInit = 'true';
+                                                    form.addEventListener('submit', function(e) {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        window.SolutionModal.open(ticketId, form);
+                                                        return false;
+                                                    });
+                                                }
+                                            }
+                                        });
+                                    });
+
+                                    observer.observe(target, {
+                                        childList: true,
+                                        subtree: true
+                                    });
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+        
+        addButtons.forEach(button => {
+            const form = button.closest('form');
+        
             // Verificar se é um formulário de solução não inicializado
             if (form && !form.dataset.snowclientInit && form.querySelector('textarea[name="content"]')) {
+                console.log('SnowClient: Form de solução encontrado via botão add');
                 console.log('SnowClient: Form de solução encontrado, adicionando interceptador');    // Observar mudanças no DOM para detectar quando o formulário é adicionado
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
