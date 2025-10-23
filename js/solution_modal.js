@@ -443,8 +443,16 @@ function initSolutionModal() {
                             
                             // Adicionar interceptador de submit
                             form.addEventListener('submit', function(e) {
+                                // Verificar se está sendo submetido pela modal
+                                if (form.dataset.snowclientSubmitting === 'true') {
+                                    console.log('SnowClient: Submit sendo feito pela modal, permitindo');
+                                    delete form.dataset.snowclientSubmitting;
+                                    return true;
+                                }
+                                
                                 e.preventDefault();
                                 e.stopPropagation();
+                                e.stopImmediatePropagation();
                                 
                                 console.log('SnowClient: Submit interceptado, abrindo modal');
                                 window.SolutionModal.open(ticketId, form).catch(function(error) {
@@ -453,7 +461,7 @@ function initSolutionModal() {
                                 });
                                 
                                 return false;
-                            });
+                            }, true);
                             
                             console.log('SnowClient: Interceptador adicionado com sucesso');
                         } else {
