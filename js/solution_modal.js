@@ -129,15 +129,6 @@ class SolutionModal {
             
             // Atualizar conteúdo da modal
             if (this.originalForm) {
-                // Preencher a solução do GLPI
-                const content = this.originalForm.querySelector('textarea[name="content"]');
-                if (content) {
-                    const solutionTextarea = modal.querySelector('#snow-solution');
-                    if (solutionTextarea) {
-                        solutionTextarea.value = content.value || '';
-                    }
-                }
-
                 // Preencher campos readonly com valores mockados do ServiceNow
                 const closeTypeInput = modal.querySelector('#snow-close-type');
                 if (closeTypeInput) {
@@ -299,12 +290,7 @@ class SolutionModal {
     fillReadOnlyFields() {        
         console.log('SnowClient Modal: Preenchendo campos readonly');
         try {
-            // Obter texto da solução do formulário original
-            const solutionText = this.originalForm ? 
-                this.originalForm.querySelector('[name="content"]').value : '';
-            
-            // Preencher campos
-            document.querySelector('#snow-solution').value = solutionText || 'Definitiva';
+            // Preencher campos mockados
             document.querySelector('#snow-close-type').value = 'Presencial';
             document.querySelector('#snow-solution-class').value = 'Hardware';
             
