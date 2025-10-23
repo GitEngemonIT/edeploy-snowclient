@@ -32,7 +32,11 @@ function plugin_snowclient_pre_item_add($item)
         if ($ticket->getFromDB($item->input['items_id'])) {
             if (PluginSnowclientConfig::isTicketFromServiceNow($ticket)) {
                 // Verificar se tem os dados adicionais do ServiceNow
-                if (!isset($_SESSION['snowclient_solution_data'])) {
+                $snowData = isset($_SESSION['snowclient_solution_data']) ? 
+                    json_decode($_SESSION['snowclient_solution_data'], true) : null;
+
+                // Verificar se os dados são para este ticket específico
+                if (!$snowData || $snowData['ticketId'] != $item->input['items_id']) {
                     Session::addMessageAfterRedirect(
                         __('É necessário preencher os dados adicionais de solução para o ServiceNow', 'snowclient'),
                         true,
@@ -40,9 +44,10 @@ function plugin_snowclient_pre_item_add($item)
                     );
                     return false;
                 }
+
                 // Anexar dados adicionais ao input da solução
-                $item->input['snow_data'] = $_SESSION['snowclient_solution_data'];
-                unset($_SESSION['snowclient_solution_data']); // Limpar dados da sessão
+                $item->input['snow_data'] = $snowData;
+                unset($_SESSION['snowclient_solution_data']); // Limpar dados da sessão após uso
             }
         }
     }
@@ -61,9 +66,7 @@ function plugin_snowclient_item_add($item)
 
     if ($item::getType() === ITILSolution::getType()) {
         // Se houver dados do ServiceNow anexados ao input
-        if (isset($item->input['snow_data'])) {
-            PluginSnowclientConfig::afterTicketSolution($item, $item->input['snow_data']);
-        }
+        PluginSnowclientConfig::afterTicketSolution($item);
     }
 
     if ($item::getType() === Document::getType()) {
@@ -83,10 +86,6 @@ function plugin_snowclient_item_update($item)
 
     if ($item::getType() === ITILFollowup::getType()) {
         PluginSnowclientConfig::afterTicketFollowUp($item);
-    }
-
-    if ($item::getType() === ITILSolution::getType()) {
-        PluginSnowclientConfig::afterTicketSolution($item);
     }
 }
 

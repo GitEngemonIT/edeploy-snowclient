@@ -589,23 +589,14 @@ class PluginSnowclientApi
             
             // Adicionar campos customizados ao payload
             if (!empty($additionalData)) {
-                // Campos customizados do ServiceNow
-                if (isset($additionalData['u_bk_solucao'])) {
-                    $updateData['u_bk_solucao'] = $additionalData['u_bk_solucao'];
-                }
-                if (isset($additionalData['u_bk_tipo_encerramento'])) {
-                    $updateData['u_bk_tipo_encerramento'] = $additionalData['u_bk_tipo_encerramento'];
-                }
-                if (isset($additionalData['u_bk_ic_impactado'])) {
-                    $updateData['u_bk_ic_impactado'] = $additionalData['u_bk_ic_impactado'];
-                }
+                // Valores mockados fixos
+                $updateData['close_code'] = 'Definitiva';
+                $updateData['u_bk_tipo_encerramento'] = 'Presencial';
+                $updateData['u_bk_ic_impactado'] = 'Hardware';
+                
+                // Campo que realmente vem da modal
                 if (isset($additionalData['u_bk_type_of_failure'])) {
                     $updateData['u_bk_type_of_failure'] = $additionalData['u_bk_type_of_failure'];
-                }
-                
-                // Definir campos de resolução baseado no tipo de encerramento
-                if (isset($additionalData['u_bk_tipo_encerramento'])) {
-                    $updateData['close_code'] = $this->mapGlpiClosureTypeToServiceNow($additionalData['u_bk_tipo_encerramento']);
                 }
             }
             

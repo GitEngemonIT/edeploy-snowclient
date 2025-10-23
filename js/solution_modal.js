@@ -351,7 +351,17 @@ class SolutionModal {
 
             // 5. Salvar dados na sessão DEPOIS de remover a modal
             console.log('SnowClient Modal: Salvando dados na sessão:', formData);
+            // Salvar no sessionStorage do navegador E na sessão do PHP
             sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
+            
+            // Enviar para a sessão PHP via AJAX
+            await $.ajax({
+                url: '../plugins/snowclient/ajax/save_session_data.php',
+                method: 'POST',
+                data: { 
+                    data: JSON.stringify(formData)
+                }
+            });
 
             // 6. Remover evento de submit do formulário original
             const clonedForm = this.originalForm.cloneNode(true);
