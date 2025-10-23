@@ -423,15 +423,47 @@ class SolutionModal {
                 existingModal.remove();
             }
 
-            // 6. Aguardar um momento
-            await new Promise(resolve => setTimeout(resolve, 200));
+            // 6. Aguardar um momento para garantir que a modal fechou
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             // 7. Marcar formulário e submeter
             console.log('SnowClient Modal: Marcando formulário para submit...');
             this.originalForm.dataset.snowclientSubmitting = 'true';
             
-            console.log('SnowClient Modal: Clicando no botão de submit...');
-            submitButton.click();
+            console.log('SnowClient Modal: Tentando submeter formulário...');
+            console.log('SnowClient Modal: Submit button:', submitButton);
+            console.log('SnowClient Modal: Submit button type:', submitButton.type);
+            console.log('SnowClient Modal: Submit button name:', submitButton.name);
+            
+            // Tentar múltiplas formas de submeter
+            try {
+                // Método 1: Click direto no botão
+                submitButton.click();
+                console.log('SnowClient Modal: Click executado no botão');
+            } catch (e) {
+                console.error('SnowClient Modal: Erro ao clicar no botão:', e);
+                
+                // Método 2: Disparar evento de click
+                try {
+                    const clickEvent = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    submitButton.dispatchEvent(clickEvent);
+                    console.log('SnowClient Modal: Evento de click disparado');
+                } catch (e2) {
+                    console.error('SnowClient Modal: Erro ao disparar evento:', e2);
+                    
+                    // Método 3: Submit direto no form
+                    try {
+                        this.originalForm.submit();
+                        console.log('SnowClient Modal: Form.submit() executado');
+                    } catch (e3) {
+                        console.error('SnowClient Modal: Erro ao submeter form:', e3);
+                    }
+                }
+            }
             
             console.log('SnowClient Modal: Submit concluído');
             
@@ -513,7 +545,7 @@ function initSolutionModal() {
                                 e.stopImmediatePropagation();
                                 
                                 console.log('SnowClient: Submit interceptado, abrindo modal');
-                                window.SolutionModal.open(ticketId, form).catch(function(error) {
+                                window.SolutionModal.open(form, ticketId).catch(function(error) {
                                     console.error('SnowClient: Erro ao abrir modal:', error);
                                     alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
                                 });
