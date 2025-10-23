@@ -94,10 +94,17 @@ class SolutionModal {
             if (!modal) {
                 console.log('SnowClient Modal: Modal não encontrada, carregando template...');
                 
+                // Descobrir o caminho correto baseado no location atual
+                const baseUrl = window.location.pathname.includes('/front/') 
+                    ? '../plugins/snowclient/ajax/get_solution_modal.php'
+                    : './plugins/snowclient/ajax/get_solution_modal.php';
+                
+                console.log('SnowClient Modal: Carregando template de:', baseUrl);
+                
                 // Carregar template da modal
                 try {
                     const response = await $.ajax({
-                        url: '../plugins/snowclient/ajax/get_solution_modal.php',
+                        url: baseUrl,
                         method: 'GET'
                     });
                     
@@ -112,7 +119,9 @@ class SolutionModal {
                     }
                 } catch (error) {
                     console.error('SnowClient Modal: Erro ao carregar template:', error);
-                    throw new Error('Falha ao carregar modal de solução');
+                    console.error('SnowClient Modal: Status:', error.status);
+                    console.error('SnowClient Modal: Response:', error.responseText);
+                    throw new Error('Falha ao carregar modal de solução: ' + (error.responseText || error.statusText));
                 }
             }
             
@@ -362,18 +371,28 @@ class SolutionModal {
             // 4. Salvar dados na sessão via AJAX
             console.log('SnowClient Modal: Salvando dados na sessão...');
             
+            // Descobrir o caminho correto baseado no location atual
+            const baseUrl = window.location.pathname.includes('/front/') 
+                ? '../plugins/snowclient/ajax/save_session_data.php'
+                : './plugins/snowclient/ajax/save_session_data.php';
+            
+            console.log('SnowClient Modal: URL da requisição:', baseUrl);
+            
             try {
-                await $.ajax({
-                    url: '../plugins/snowclient/ajax/save_session_data.php',
+                const ajaxResponse = await $.ajax({
+                    url: baseUrl,
                     method: 'POST',
                     data: { 
                         data: JSON.stringify(formData)
-                    }
+                    },
+                    dataType: 'json'
                 });
-                console.log('SnowClient Modal: Dados salvos na sessão com sucesso');
+                console.log('SnowClient Modal: Dados salvos na sessão com sucesso:', ajaxResponse);
             } catch (ajaxError) {
                 console.error('SnowClient Modal: Erro ao salvar na sessão:', ajaxError);
-                throw new Error('Falha ao salvar dados na sessão');
+                console.error('SnowClient Modal: Status:', ajaxError.status);
+                console.error('SnowClient Modal: Response:', ajaxError.responseText);
+                throw new Error('Falha ao salvar dados na sessão: ' + (ajaxError.responseText || ajaxError.statusText));
             }
 
             // 5. Fechar e remover modal
