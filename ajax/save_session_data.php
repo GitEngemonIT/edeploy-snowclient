@@ -18,14 +18,22 @@ try {
     // Os dados já vêm como string JSON
     $dataString = $_POST['data'];
     error_log('SnowClient: Data string recebida: ' . $dataString);
+    error_log('SnowClient: Data string length: ' . strlen($dataString));
+    error_log('SnowClient: Data string (hex): ' . bin2hex(substr($dataString, 0, 50)));
+    
+    // Verificar se a string não está vazia
+    if (empty($dataString)) {
+        throw new Exception('Empty data string');
+    }
     
     // Decodificar os dados
     $data = json_decode($dataString, true);
     
-    if (!$data || json_last_error() !== JSON_ERROR_NONE) {
+    if ($data === null) {
         $error = json_last_error_msg();
         error_log('SnowClient: Erro ao decodificar JSON: ' . $error);
-        throw new Exception('Invalid JSON data: ' . $error);
+        error_log('SnowClient: JSON error code: ' . json_last_error());
+        throw new Exception('Invalid JSON data: ' . $error . ' (code: ' . json_last_error() . ')');
     }
 
     error_log('SnowClient: Data decodificada: ' . print_r($data, true));

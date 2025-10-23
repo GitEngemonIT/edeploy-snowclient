@@ -360,13 +360,20 @@ class SolutionModal {
             console.log('SnowClient Modal: Formulário e botão encontrados');
 
             // 3. Coletar dados do formulário
+            const ticketId = this.ticketId || 'unknown';
+            const solutionCodeValue = solutionCode.value || '';
+            
+            console.log('SnowClient Modal: ticketId:', ticketId);
+            console.log('SnowClient Modal: solutionCode:', solutionCodeValue);
+            
             const formData = {
-                ticketId: this.ticketId,
-                solutionCode: solutionCode.value,
+                ticketId: String(ticketId),
+                solutionCode: String(solutionCodeValue),
                 timestamp: Date.now()
             };
 
             console.log('SnowClient Modal: Dados coletados:', formData);
+            console.log('SnowClient Modal: FormData como JSON:', JSON.stringify(formData));
 
             // 4. Salvar dados na sessão via AJAX
             console.log('SnowClient Modal: Salvando dados na sessão...');
