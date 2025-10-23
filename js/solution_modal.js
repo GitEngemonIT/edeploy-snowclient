@@ -128,13 +128,29 @@ class SolutionModal {
             
             // Atualizar conteúdo da modal
             if (this.originalForm) {
+                // Preencher a solução do GLPI
                 const content = this.originalForm.querySelector('textarea[name="content"]');
                 if (content) {
                     const solutionTextarea = modal.querySelector('#snow-solution');
                     if (solutionTextarea) {
-                        solutionTextarea.value = content.value;
+                        solutionTextarea.value = content.value || '';
                     }
                 }
+
+                // Preencher campos readonly com valores mockados do ServiceNow
+                const closeTypeInput = modal.querySelector('#snow-close-type');
+                if (closeTypeInput) {
+                    closeTypeInput.value = 'Presencial';  // Valor mockado para u_bk_tipo_encerramento
+                }
+
+                const solutionClass = modal.querySelector('#snow-solution-class');
+                if (solutionClass) {
+                    solutionClass.value = 'Hardware';  // Valor mockado para u_bk_ic_impactado
+                }
+
+                console.log('SnowClient Modal: Campos mockados preenchidos com sucesso');
+            } else {
+                console.warn('SnowClient Modal: Formulário original não encontrado');
             }
             
             // Inicializar select2 no campo de código de solução
