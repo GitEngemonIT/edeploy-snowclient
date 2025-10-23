@@ -560,7 +560,7 @@ class PluginSnowclientApi
             
             // ETAPA 1: Resolver o incidente
             $resolveData = [
-                'work_notes' => $solutionNote,
+                'close_notes' => $solutionNote,
                 'state' => 6, // Resolved
                 'resolved_by' => $userName,
                 'resolved_at' => $timestamp
