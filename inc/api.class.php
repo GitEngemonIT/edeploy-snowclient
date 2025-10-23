@@ -558,60 +558,83 @@ class PluginSnowclientApi
                 $content
             );
             
-            // ETAPA 1: Resolver o incidente com dados mockados fixos
+            // ETAPA 1: Resolver o incidente
             $resolveData = [
                 'work_notes' => $solutionNote,
                 'state' => 6, // Resolved
-                'close_code' => 'Definitiva',
-                'u_bk_tipo_encerramento' => 'Presencial',
-                'u_bk_ic_impactado' => 'Hardware',
                 'resolved_by' => $userName,
                 'resolved_at' => $timestamp
             ];
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: ETAPA 1 - Resolvendo incidente $cleanSnowId com dados mockados");
+                Toolbox::logDebug("SnowClient: ETAPA 1 - Resolvendo incidente $cleanSnowId");
                 Toolbox::logDebug("SnowClient: Dados de resolução: " . json_encode($resolveData));
             }
             
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $resolveData);
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Incidente $cleanSnowId resolvido com sucesso");
+                Toolbox::logDebug("SnowClient: ETAPA 1 - Incidente resolvido com sucesso");
             }
             
-            // ETAPA 2: Enviar type_of_failure em requisição separada (se fornecido pela modal)
+            // Aguardar processamento
+            sleep(1);
+            
+            // ETAPA 2: Enviar dados mockados adicionais
+            $additionalMockedData = [
+                'close_code' => 'Definitiva',
+                'u_bk_tipo_encerramento' => 'Presencial',
+                'u_bk_ic_impactado' => 'Hardware'
+            ];
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: ETAPA 2 - Enviando dados mockados adicionais");
+                Toolbox::logDebug("SnowClient: Dados mockados: " . json_encode($additionalMockedData));
+            }
+            
+            try {
+                $mockedResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $additionalMockedData);
+                
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: ETAPA 2 - Dados mockados enviados com sucesso");
+                }
+            } catch (Exception $e) {
+                if ($this->debug_mode) {
+                    Toolbox::logError("SnowClient: ETAPA 2 - Erro ao enviar dados mockados (não crítico): " . $e->getMessage());
+                }
+            }
+            
+            // Aguardar processamento
+            sleep(1);
+            
+            // ETAPA 3: Enviar type_of_failure da modal (se fornecido)
             if (!empty($additionalData) && isset($additionalData['solutionCode'])) {
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: ETAPA 2 - Enviando type_of_failure da modal");
+                    Toolbox::logDebug("SnowClient: ETAPA 3 - Enviando type_of_failure da modal");
                 }
                 
-                // Aguardar um momento para garantir que a resolução foi processada
-                sleep(1);
-                
-                $customFieldsData = [
+                $typeOfFailureData = [
                     'u_bk_type_of_failure' => $additionalData['solutionCode']
                 ];
                 
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Type of failure: " . json_encode($customFieldsData));
+                    Toolbox::logDebug("SnowClient: Type of failure: " . json_encode($typeOfFailureData));
                 }
                 
                 try {
-                    $customResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $customFieldsData);
+                    $failureResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $typeOfFailureData);
                     
                     if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: Type of failure enviado com sucesso");
+                        Toolbox::logDebug("SnowClient: ETAPA 3 - Type of failure enviado com sucesso");
                     }
                 } catch (Exception $e) {
-                    // Log do erro mas não falha a operação principal
                     if ($this->debug_mode) {
-                        Toolbox::logError("SnowClient: Erro ao enviar type_of_failure (não crítico): " . $e->getMessage());
+                        Toolbox::logError("SnowClient: ETAPA 3 - Erro ao enviar type_of_failure (não crítico): " . $e->getMessage());
                     }
                 }
             } else {
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: ETAPA 2 - Nenhum type_of_failure fornecido pela modal, pulando");
+                    Toolbox::logDebug("SnowClient: ETAPA 3 - Nenhum type_of_failure fornecido pela modal, pulando");
                 }
             }
             
