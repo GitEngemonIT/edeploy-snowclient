@@ -31,27 +31,31 @@ function plugin_snowclient_pre_item_add($item)
         $ticket = new Ticket();
         if ($ticket->getFromDB($item->input['items_id'])) {
             if (PluginSnowclientConfig::isTicketFromServiceNow($ticket)) {
-                // Verificar se tem os dados adicionais do ServiceNow
-                $snowData = isset($_SESSION['snowclient_solution_data']) ? 
-                    json_decode($_SESSION['snowclient_solution_data'], true) : null;
-
-                // Verificar se os dados são para este ticket específico
-                if (!$snowData || $snowData['ticketId'] != $item->input['items_id']) {
-                    Session::addMessageAfterRedirect(
-                        __('É necessário preencher os dados adicionais de solução para o ServiceNow', 'snowclient'),
-                        true,
-                        ERROR
-                    );
-                    return false;
+                error_log("SnowClient: pre_item_add - Solução sendo adicionada ao ticket ServiceNow: " . $ticket->fields['id']);
+                
+                // Verificar se tem os dados adicionais do ServiceNow na sessão
+                if (isset($_SESSION['snowclient_solution_data'])) {
+                    $snowData = is_array($_SESSION['snowclient_solution_data']) ? 
+                        $_SESSION['snowclient_solution_data'] : 
+                        json_decode($_SESSION['snowclient_solution_data'], true);
+                    
+                    error_log("SnowClient: pre_item_add - Dados da sessão encontrados: " . print_r($snowData, true));
+                    
+                    // Verificar se os dados são para este ticket específico
+                    if ($snowData && isset($snowData['ticketId']) && $snowData['ticketId'] == $item->input['items_id']) {
+                        error_log("SnowClient: pre_item_add - Dados validados para o ticket correto");
+                    } else {
+                        error_log("SnowClient: pre_item_add - AVISO: Dados da sessão não correspondem ao ticket atual");
+                    }
+                } else {
+                    error_log("SnowClient: pre_item_add - AVISO: Dados adicionais do ServiceNow não encontrados na sessão");
+                    // NÃO bloquear - permitir que a solução seja salva de qualquer forma
+                    // O hook item_add irá usar dados padrão se necessário
                 }
-
-                // Anexar dados adicionais ao input da solução
-                $item->input['snow_data'] = $snowData;
-                unset($_SESSION['snowclient_solution_data']); // Limpar dados da sessão após uso
             }
         }
     }
-    return true;
+    return true; // Sempre permitir a adição
 }
 
 function plugin_snowclient_item_add($item)

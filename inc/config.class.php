@@ -821,13 +821,28 @@ class PluginSnowclientConfig extends CommonDBTM
             // Recuperar dados adicionais da sessão se disponíveis
             $additionalData = [];
             if (isset($_SESSION['snowclient_solution_data'])) {
-                $sessionData = json_decode($_SESSION['snowclient_solution_data'], true);
-                if ($sessionData && isset($sessionData['solutionCode'])) {
+                error_log("SnowClient: Dados encontrados na sessão");
+                
+                $sessionData = $_SESSION['snowclient_solution_data'];
+                
+                // Se for string JSON, decodificar
+                if (is_string($sessionData)) {
+                    $sessionData = json_decode($sessionData, true);
+                    error_log("SnowClient: Dados decodificados de JSON");
+                }
+                
+                if (is_array($sessionData) && isset($sessionData['solutionCode'])) {
                     $additionalData['solutionCode'] = $sessionData['solutionCode'];
                     error_log("SnowClient: Dados adicionais recuperados da sessão: " . json_encode($additionalData));
+                } else {
+                    error_log("SnowClient: AVISO - Dados da sessão não contêm solutionCode: " . print_r($sessionData, true));
                 }
+                
                 // Limpar dados da sessão após uso
                 unset($_SESSION['snowclient_solution_data']);
+                error_log("SnowClient: Dados removidos da sessão");
+            } else {
+                error_log("SnowClient: AVISO - Nenhum dado adicional encontrado na sessão");
             }
             
             $api = new PluginSnowclientApi();
