@@ -107,6 +107,7 @@ function plugin_init_snowclient()
         ];
 
         // Hook para adicionar recursos do modal de solução
+        include_once __DIR__ . '/inc/solution_resources.php';
         $PLUGIN_HOOKS['post_item_form']['snowclient'] = [
             'Ticket' => 'plugin_snowclient_add_solution_resources'
         ];

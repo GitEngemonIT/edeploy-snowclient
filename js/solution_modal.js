@@ -109,18 +109,54 @@ class SolutionModal {
     }
 }
 
-// Inicializar quando documento estiver pronto
-document.addEventListener('DOMContentLoaded', () => {
-    window.SolutionModal = new SolutionModal();
+// Função de inicialização que será chamada quando necessário
+function initSolutionModal() {
+    console.log('SnowClient: Inicializando modal de solução...');
     
-    // Interceptar submit do form de solução
-    const solutionForm = document.querySelector('#solution-container form');
-    if (solutionForm) {
-        solutionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const ticketId = new URLSearchParams(window.location.search).get('id');
-            await window.SolutionModal.open(ticketId);
+    if (!window.SolutionModal) {
+        window.SolutionModal = new SolutionModal();
+    }
+    
+    // Observer para detectar quando o formulário de solução é carregado
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                const solutionForm = document.querySelector('#solution-container form');
+                if (solutionForm && !solutionForm.dataset.snowclientInit) {
+                    console.log('SnowClient: Form de solução detectado, adicionando listener...');
+                    
+                    solutionForm.dataset.snowclientInit = 'true';
+                    solutionForm.addEventListener('submit', async (e) => {
+                        console.log('SnowClient: Form de solução submetido...');
+                        e.preventDefault();
+                        
+                        const ticketId = new URLSearchParams(window.location.search).get('id');
+                        console.log('SnowClient: Abrindo modal para ticket:', ticketId);
+                        await window.SolutionModal.open(ticketId);
+                    });
+                }
+            }
+        });
+    });
+    
+    // Observar o container principal do GLPI
+    const container = document.querySelector('#page');
+    if (container) {
+        console.log('SnowClient: Iniciando observação do container...');
+        observer.observe(container, { 
+            childList: true, 
+            subtree: true 
         });
     }
-});
+}
+
+// Inicializar quando documento estiver pronto e quando houver navegação via AJAX
+document.addEventListener('DOMContentLoaded', initSolutionModal);
+
+// Tentar capturar eventos de carregamento AJAX do GLPI
+if (typeof($) !== 'undefined') {
+    $(document).ajaxComplete(function() {
+        console.log('SnowClient: Ajax completado, verificando necessidade de inicialização...');
+        initSolutionModal();
+    });
+}
