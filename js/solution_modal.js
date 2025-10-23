@@ -305,81 +305,67 @@ class SolutionModal {
      * Handler para o submit do formulário da modal
      */
     async handleSubmit(form) {
-        // Prevenir múltiplos submits
-        if (this.isSubmitting) {
-            console.log('SnowClient Modal: Submit já em andamento, ignorando...');
-            return;
-        }
-        
-        this.isSubmitting = true;
-        console.log('SnowClient Modal: Processando submit do formulário');
+        if (this.isSubmitting) return;
         
         try {
-            // Validar campos obrigatórios
+            this.isSubmitting = true;
+            console.log('SnowClient Modal: Processando submit do formulário');
+
+            // 1. Validar código de solução
             const solutionCode = form.querySelector('#snow-solution-code');
-            if (!solutionCode || !solutionCode.value) {
+            if (!solutionCode?.value) {
                 solutionCode.classList.add('is-invalid');
                 alert('Por favor, selecione um código de solução.');
-                this.isSubmitting = false;
                 return;
             }
-            
-            // Verificar se o formulário original ainda existe
-            if (!this.originalForm || !document.body.contains(this.originalForm)) {
-                throw new Error('Formulário original do GLPI não encontrado ou foi removido');
-            }
-            
-            // Verificar se o botão de submit existe
-            const submitButton = this.originalForm.querySelector('button[name="add"], input[name="add"]');
-            if (!submitButton) {
-                throw new Error('Botão de submit do GLPI não encontrado');
-            }
-            
-            // Desabilitar o botão de submit da modal
-            const modalSubmitBtn = form.querySelector('button[type="submit"]');
-            if (modalSubmitBtn) {
-                modalSubmitBtn.disabled = true;
-            }
-            
-            // Coletar dados do formulário
+
+            // 2. Coletar e salvar dados ANTES de qualquer manipulação do DOM
             const formData = {
                 ticketId: this.ticketId,
                 solution: form.querySelector('#snow-solution').value,
                 closeType: form.querySelector('#snow-close-type').value,
                 solutionClass: form.querySelector('#snow-solution-class').value,
                 solutionCode: solutionCode.value,
-                timestamp: Date.now() // Adicionar timestamp para prevenir processamento duplicado
+                timestamp: Date.now()
             };
-            
-            // Salvar dados do ServiceNow em sessão
+
+            console.log('SnowClient Modal: Salvando dados na sessão:', formData);
             sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
-            
-            // Remover listeners da modal para prevenir reabertura
-            const modal = form.closest('.modal');
+
+            // 3. Verificar formulário original
+            if (!this.originalForm?.isConnected) {
+                throw new Error('Formulário original do GLPI não encontrado');
+            }
+
+            const submitButton = this.originalForm.querySelector('button[name="add"], input[name="add"]');
+            if (!submitButton) {
+                throw new Error('Botão de submit do GLPI não encontrado');
+            }
+
+            // 4. Fechar modal com limpeza
+            const modal = document.querySelector('#snowclient-solution-modal');
             if (modal) {
                 const bsModal = bootstrap.Modal.getInstance(modal);
                 if (bsModal) {
-                    // Remover todos os event listeners
-                    const clone = modal.cloneNode(true);
-                    modal.parentNode.replaceChild(clone, modal);
                     bsModal.hide();
+                    bsModal.dispose();
                 }
+                modal.remove();
             }
-            
-            // Pequeno delay para garantir que a modal fechou
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
-            // Flag para indicar que o submit está sendo feito pelo plugin
-            this.originalForm.setAttribute('data-snowclient-submitting', 'true');
-            
-            // Submeter o formulário original
+
+            // 5. Aguardar fechamento da modal
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // 6. Submeter formulário original
+            console.log('SnowClient Modal: Submetendo formulário original...');
             submitButton.click();
-            
-            console.log('SnowClient Modal: Submit concluído com sucesso');
             
         } catch (error) {
             console.error('SnowClient Modal: Erro ao processar submit:', error);
             alert('Erro ao salvar solução: ' + error.message);
+            
+            // Remover dados da sessão em caso de erro
+            sessionStorage.removeItem('snowclient_solution_data');
         } finally {
             this.isSubmitting = false;
         }
