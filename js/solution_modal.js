@@ -400,12 +400,11 @@ function initSolutionModal() {
     
     // Função para interceptar o formulário de solução
     function interceptSolutionForm() {
-        // Encontrar o formulário de solução
-        const forms = document.querySelectorAll('form');
+        // Encontrar o formulário de solução (ITILSolution)
+        const forms = document.querySelectorAll('form[name*="itilsolution"]');
         forms.forEach(form => {
-            // Verificar se é um formulário de solução com campo de conteúdo
-            const contentField = form.querySelector('textarea[name="content"]');
-            if (contentField && !form.dataset.snowclientInit) {
+            // Verificar se o formulário não foi inicializado ainda
+            if (!form.dataset.snowclientInit) {
                 console.log('SnowClient: Form de solução encontrado, adicionando interceptador');
                 
                 // Marcar formulário como inicializado
