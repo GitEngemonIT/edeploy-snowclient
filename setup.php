@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.1.9');
+define('PLUGIN_SNOWCLIENT_VERSION', '1.1.10');
 // Minimal GLPI version
 define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -68,6 +68,11 @@ function plugin_init_snowclient()
         Plugin::registerClass('PluginSnowclientProfile', ['addtabon' => 'Profile']);
         Plugin::registerClass('PluginSnowclientConfig', ['addtabon' => 'Config']);
         Plugin::registerClass('PluginSnowclientApi');
+
+        // Hook pre_item_add para interceptar antes da adição
+        $PLUGIN_HOOKS['pre_item_add']['snowclient'] = [
+            'ITILSolution' => 'plugin_snowclient_pre_item_add'
+        ];
 
         $PLUGIN_HOOKS['item_add']['snowclient'] = [
             'Ticket' => 'plugin_snowclient_item_add',

@@ -1,30 +1,31 @@
 <!-- Modal de solução para ServiceNow -->
-<div id="snowclient-solution-modal" class="modal" style="display: none;">
-    <div class="modal-dialog">
+<div id="snowclient-solution-modal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Complemento de Solução - ServiceNow</h3>
+                <h5 class="modal-title">Complemento de Solução - ServiceNow</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
             <div class="modal-body">
                 <form id="snow-solution-form">
-                    <div class="form-group">
-                        <label for="snow-solution">Solução</label>
-                        <textarea id="snow-solution" name="u_bk_solucao" class="form-control" readonly></textarea>
+                    <div class="mb-3">
+                        <label for="snow-solution" class="form-label">Solução GLPI</label>
+                        <textarea id="snow-solution" name="u_bk_solucao" class="form-control" readonly rows="4"></textarea>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="snow-close-type">Tipo de Encerramento</label>
+                    <div class="mb-3">
+                        <label for="snow-close-type" class="form-label">Tipo de Encerramento</label>
                         <input type="text" id="snow-close-type" name="u_bk_tipo_encerramento" class="form-control" readonly>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="snow-solution-class">Classificação da Solução</label>
+                    <div class="mb-3">
+                        <label for="snow-solution-class" class="form-label">Classificação da Solução</label>
                         <input type="text" id="snow-solution-class" name="u_bk_ic_impactado" class="form-control" readonly>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="snow-solution-code">Código de Solução</label>
+                    <div class="mb-3">
+                        <label for="snow-solution-code" class="form-label">Código de Solução *</label>
                         <select id="snow-solution-code" name="u_bk_type_of_failure" class="form-control" required>
                             <option value="">Selecione...</option>
                             <option value="Manutenção de cabeamento">Manutenção de cabeamento</option>
@@ -33,13 +34,21 @@
                             <option value="Substituição de cabeamento">Substituição de cabeamento</option>
                             <option value="Substituição do equipamento">Substituição do equipamento</option>
                         </select>
+                        <div class="form-text">
+                            Este campo é obrigatório para a sincronização com o ServiceNow
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Os campos readonly serão preenchidos automaticamente com base na solução inserida no GLPI
                     </div>
                 </form>
             </div>
             
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary js-cancel">Cancelar</button>
-                <button type="submit" form="snow-solution-form" class="btn btn-primary">Confirmar</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="snow-solution-form" class="btn btn-primary">Confirmar Solução</button>
             </div>
         </div>
     </div>

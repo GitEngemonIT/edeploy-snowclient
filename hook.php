@@ -24,6 +24,31 @@
 
 // Functions moved to setup.php to avoid duplication
 
+function plugin_snowclient_pre_item_add($item) 
+{
+    if ($item::getType() === ITILSolution::getType()) {
+        // Verificar se é um ticket do ServiceNow
+        $ticket = new Ticket();
+        if ($ticket->getFromDB($item->input['items_id'])) {
+            if (PluginSnowclientConfig::isTicketFromServiceNow($ticket)) {
+                // Verificar se tem os dados adicionais do ServiceNow
+                if (!isset($_SESSION['snowclient_solution_data'])) {
+                    Session::addMessageAfterRedirect(
+                        __('É necessário preencher os dados adicionais de solução para o ServiceNow', 'snowclient'),
+                        true,
+                        ERROR
+                    );
+                    return false;
+                }
+                // Anexar dados adicionais ao input da solução
+                $item->input['snow_data'] = $_SESSION['snowclient_solution_data'];
+                unset($_SESSION['snowclient_solution_data']); // Limpar dados da sessão
+            }
+        }
+    }
+    return true;
+}
+
 function plugin_snowclient_item_add($item)
 {
     if ($item::getType() === Ticket::getType()) {
@@ -35,19 +60,9 @@ function plugin_snowclient_item_add($item)
     }
 
     if ($item::getType() === ITILSolution::getType()) {
-        // Verificar se existem dados da modal na sessão
-        if (isset($_SESSION['snowclient_solution_data'])) {
-            $additionalData = $_SESSION['snowclient_solution_data'];
-            unset($_SESSION['snowclient_solution_data']); // Limpar dados da sessão
-            PluginSnowclientConfig::afterTicketSolution($item, $additionalData);
-        } else {
-            // Se não houver dados da modal, interromper o processo
-            Session::addMessageAfterRedirect(
-                __('É necessário preencher os dados adicionais de solução para o ServiceNow', 'snowclient'),
-                true,
-                ERROR
-            );
-            return false;
+        // Se houver dados do ServiceNow anexados ao input
+        if (isset($item->input['snow_data'])) {
+            PluginSnowclientConfig::afterTicketSolution($item, $item->input['snow_data']);
         }
     }
 
