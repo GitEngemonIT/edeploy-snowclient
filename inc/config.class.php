@@ -818,8 +818,20 @@ class PluginSnowclientConfig extends CommonDBTM
             
             error_log("SnowClient: Enviando solução para ServiceNow...");
             
+            // Recuperar dados adicionais da sessão se disponíveis
+            $additionalData = [];
+            if (isset($_SESSION['snowclient_solution_data'])) {
+                $sessionData = json_decode($_SESSION['snowclient_solution_data'], true);
+                if ($sessionData && isset($sessionData['solutionCode'])) {
+                    $additionalData['solutionCode'] = $sessionData['solutionCode'];
+                    error_log("SnowClient: Dados adicionais recuperados da sessão: " . json_encode($additionalData));
+                }
+                // Limpar dados da sessão após uso
+                unset($_SESSION['snowclient_solution_data']);
+            }
+            
             $api = new PluginSnowclientApi();
-            $result = $api->addSolution($solution);
+            $result = $api->addSolution($solution, $additionalData);
             
             if ($result) {
                 error_log("SnowClient: Solução enviada com sucesso para ServiceNow");

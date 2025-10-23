@@ -550,65 +550,69 @@ class PluginSnowclientApi
                 }
             }
             
-            // Construir nota de solução com campos customizados
-            $customFieldsInfo = '';
-            if (!empty($additionalData)) {
-                $customFieldsInfo .= "\n\nInformações adicionais:";
-                if (isset($additionalData['u_bk_solucao'])) {
-                    $customFieldsInfo .= "\nSolução: " . $additionalData['u_bk_solucao'];
-                }
-                if (isset($additionalData['u_bk_tipo_encerramento'])) {
-                    $customFieldsInfo .= "\nTipo de Encerramento: " . $additionalData['u_bk_tipo_encerramento'];
-                }
-                if (isset($additionalData['u_bk_ic_impactado'])) {
-                    $customFieldsInfo .= "\nIC Impactado: " . $additionalData['u_bk_ic_impactado'];
-                }
-                if (isset($additionalData['u_bk_type_of_failure'])) {
-                    $customFieldsInfo .= "\nTipo de Falha: " . $additionalData['u_bk_type_of_failure'];
-                }
-            }
-            
             $solutionNote = sprintf(
-                "[GLPI - SOLUÇÃO por %s em %s]%s\n\n%s%s", 
+                "[GLPI - SOLUÇÃO por %s em %s]%s\n\n%s", 
                 $userName, 
                 $timestamp,
                 $solutionTypeInfo,
-                $content,
-                $customFieldsInfo
+                $content
             );
             
-            // Preparar dados de atualização para o ServiceNow
-            $updateData = [
+            // ETAPA 1: Resolver o incidente com dados mockados fixos
+            $resolveData = [
                 'work_notes' => $solutionNote,
                 'state' => 6, // Resolved
-                'close_code' => 'Resolved',
+                'close_code' => 'Definitiva',
+                'u_bk_tipo_encerramento' => 'Presencial',
+                'u_bk_ic_impactado' => 'Hardware',
                 'resolved_by' => $userName,
-                'u_resolved_by_group' => 'GLPI',
                 'resolved_at' => $timestamp
             ];
             
-            // Adicionar campos customizados ao payload
-            if (!empty($additionalData)) {
-                // Valores mockados fixos
-                $updateData['close_code'] = 'Definitiva';
-                $updateData['u_bk_tipo_encerramento'] = 'Presencial';
-                $updateData['u_bk_ic_impactado'] = 'Hardware';
-                
-                // Campo que realmente vem da modal
-                if (isset($additionalData['u_bk_type_of_failure'])) {
-                    $updateData['u_bk_type_of_failure'] = $additionalData['u_bk_type_of_failure'];
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: ETAPA 1 - Resolvendo incidente $cleanSnowId com dados mockados");
+                Toolbox::logDebug("SnowClient: Dados de resolução: " . json_encode($resolveData));
+            }
+            
+            $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $resolveData);
+            
+            if ($this->debug_mode) {
+                Toolbox::logDebug("SnowClient: Incidente $cleanSnowId resolvido com sucesso");
+            }
+            
+            // ETAPA 2: Enviar type_of_failure em requisição separada (se fornecido pela modal)
+            if (!empty($additionalData) && isset($additionalData['solutionCode'])) {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: ETAPA 2 - Enviando type_of_failure da modal");
                 }
-            }
-            
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Adicionando solução e campos customizados ao incidente $cleanSnowId");
-                Toolbox::logDebug("SnowClient: Dados de atualização: " . json_encode($updateData));
-            }
-            
-            $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
-            
-            if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Solução adicionada com sucesso ao incidente $cleanSnowId");
+                
+                // Aguardar um momento para garantir que a resolução foi processada
+                sleep(1);
+                
+                $customFieldsData = [
+                    'u_bk_type_of_failure' => $additionalData['solutionCode']
+                ];
+                
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: Type of failure: " . json_encode($customFieldsData));
+                }
+                
+                try {
+                    $customResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $customFieldsData);
+                    
+                    if ($this->debug_mode) {
+                        Toolbox::logDebug("SnowClient: Type of failure enviado com sucesso");
+                    }
+                } catch (Exception $e) {
+                    // Log do erro mas não falha a operação principal
+                    if ($this->debug_mode) {
+                        Toolbox::logError("SnowClient: Erro ao enviar type_of_failure (não crítico): " . $e->getMessage());
+                    }
+                }
+            } else {
+                if ($this->debug_mode) {
+                    Toolbox::logDebug("SnowClient: ETAPA 2 - Nenhum type_of_failure fornecido pela modal, pulando");
+                }
             }
             
             return $result['result'] ?? null;
