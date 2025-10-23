@@ -390,7 +390,9 @@ class SolutionModal {
                     url: baseUrl,
                     method: 'POST',
                     data: { 
-                        data: JSON.stringify(formData)
+                        ticketId: formData.ticketId,
+                        solutionCode: formData.solutionCode,
+                        timestamp: formData.timestamp
                     },
                     dataType: 'json'
                 });
