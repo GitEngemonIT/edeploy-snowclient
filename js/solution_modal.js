@@ -305,6 +305,13 @@ class SolutionModal {
      * Handler para o submit do formulário da modal
      */
     async handleSubmit(form) {
+        // Prevenir múltiplos submits
+        if (this.isSubmitting) {
+            console.log('SnowClient Modal: Submit já em andamento, ignorando...');
+            return;
+        }
+        
+        this.isSubmitting = true;
         console.log('SnowClient Modal: Processando submit do formulário');
         
         try {
@@ -313,6 +320,7 @@ class SolutionModal {
             if (!solutionCode || !solutionCode.value) {
                 solutionCode.classList.add('is-invalid');
                 alert('Por favor, selecione um código de solução.');
+                this.isSubmitting = false;
                 return;
             }
             
@@ -327,29 +335,42 @@ class SolutionModal {
                 throw new Error('Botão de submit do GLPI não encontrado');
             }
             
+            // Desabilitar o botão de submit da modal
+            const modalSubmitBtn = form.querySelector('button[type="submit"]');
+            if (modalSubmitBtn) {
+                modalSubmitBtn.disabled = true;
+            }
+            
             // Coletar dados do formulário
             const formData = {
                 ticketId: this.ticketId,
                 solution: form.querySelector('#snow-solution').value,
                 closeType: form.querySelector('#snow-close-type').value,
                 solutionClass: form.querySelector('#snow-solution-class').value,
-                solutionCode: solutionCode.value
+                solutionCode: solutionCode.value,
+                timestamp: Date.now() // Adicionar timestamp para prevenir processamento duplicado
             };
             
             // Salvar dados do ServiceNow em sessão
             sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
             
-            // Fechar a modal antes de submeter
+            // Remover listeners da modal para prevenir reabertura
             const modal = form.closest('.modal');
             if (modal) {
                 const bsModal = bootstrap.Modal.getInstance(modal);
                 if (bsModal) {
+                    // Remover todos os event listeners
+                    const clone = modal.cloneNode(true);
+                    modal.parentNode.replaceChild(clone, modal);
                     bsModal.hide();
                 }
             }
             
             // Pequeno delay para garantir que a modal fechou
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Flag para indicar que o submit está sendo feito pelo plugin
+            this.originalForm.setAttribute('data-snowclient-submitting', 'true');
             
             // Submeter o formulário original
             submitButton.click();
@@ -359,6 +380,8 @@ class SolutionModal {
         } catch (error) {
             console.error('SnowClient Modal: Erro ao processar submit:', error);
             alert('Erro ao salvar solução: ' + error.message);
+        } finally {
+            this.isSubmitting = false;
         }
     }
 }
