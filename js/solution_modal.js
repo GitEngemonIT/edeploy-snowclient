@@ -390,110 +390,159 @@ class SolutionModal {
     }
 }
 
+// Variável global para controlar se já foi inicializado
+window.snowClientInitialized = false;
+window.snowClientTicketChecked = false;
+window.snowClientIsServiceNowTicket = false;
+
 // Função de inicialização que será chamada quando necessário
 function initSolutionModal() {
     console.log('SnowClient: Inicializando manipulador da modal de solução...');
+    
+    // Evitar múltiplas inicializações
+    if (window.snowClientInitialized) {
+        console.log('SnowClient: Já inicializado, ignorando');
+        return;
+    }
+    window.snowClientInitialized = true;
     
     if (!window.SolutionModal) {
         window.SolutionModal = new SolutionModal();
     }
     
-    // Função para interceptar o formulário de solução
-    function interceptSolutionForm() {
-        console.log('SnowClient: Procurando formulário de solução...');
-        
-        // Pegar ID do ticket da URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const ticketId = urlParams.get('id');
-        
-        if (!ticketId) {
-            console.log('SnowClient: ID do ticket não encontrado na URL');
-            return;
-        }
+    // Pegar ID do ticket da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const ticketId = urlParams.get('id');
+    
+    if (!ticketId) {
+        console.log('SnowClient: ID do ticket não encontrado na URL');
+        return;
+    }
 
-        // Encontrar o botão "Adicionar uma solução"
-        const solutionButtons = document.querySelectorAll('[data-bs-toggle="collapse"][title*="Adicionar uma solução"]');
+    // Verificar UMA VEZ se é ticket do ServiceNow
+    if (!window.snowClientTicketChecked) {
+        window.snowClientTicketChecked = true;
+        console.log('SnowClient: Verificando se ticket é do ServiceNow...');
         
-        solutionButtons.forEach(button => {
-            if (!button.dataset.snowclientInit) {
-                console.log('SnowClient: Botão de solução encontrado, adicionando interceptador');
-                button.dataset.snowclientInit = 'true';
-
-                // Verificar se é ticket do ServiceNow
-                $.ajax({
-                    url: '../plugins/snowclient/ajax/check_return_button.php',
-                    method: 'POST',
-                    data: { ticket_id: ticketId },
-                    success: function(response) {
-                        if (response.success && response.show_button) {
-                            console.log('SnowClient: Ticket é do ServiceNow, interceptando formulário');
-                            
-                            // Adicionar listener para quando o formulário for carregado
-                            const targetId = button.getAttribute('data-bs-target');
-                            if (targetId) {
-                                const target = document.querySelector(targetId);
-                                if (target) {
-                                    const observer = new MutationObserver((mutations) => {
-                                        mutations.forEach((mutation) => {
-                                            if (mutation.addedNodes.length) {
-                                                const form = target.querySelector('form');
-                                                if (form && !form.dataset.snowclientInit) {
-                                                    console.log('SnowClient: Formulário de solução detectado, adicionando evento');
-                                                    form.dataset.snowclientInit = 'true';
-                                                    
-                                                    form.addEventListener('submit', function(e) {
-                                                        console.log('SnowClient: Submit do formulário interceptado');
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        window.SolutionModal.open(ticketId, form);
-                                                        return false;
-                                                    });
-                                                }
-                                            }
-                                        });
-                                    });
-
-                                    observer.observe(target, {
-                                        childList: true,
-                                        subtree: true
-                                    });
-                                    
-                                    console.log('SnowClient: Observer configurado para detectar formulário');
-                                }
-                            }
-                        } else {
-                            console.log('SnowClient: Ticket não é do ServiceNow, modal não será ativado');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('SnowClient: Erro ao verificar ticket:', error);
-                    }
-                });
+        $.ajax({
+            url: '../plugins/snowclient/ajax/check_return_button.php',
+            method: 'POST',
+            data: { ticket_id: ticketId },
+            success: function(response) {
+                window.snowClientIsServiceNowTicket = response.success && response.show_button;
+                console.log('SnowClient: Ticket do ServiceNow:', window.snowClientIsServiceNowTicket);
+                
+                if (window.snowClientIsServiceNowTicket) {
+                    // Iniciar interceptação de formulário
+                    setupFormInterceptor(ticketId);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('SnowClient: Erro ao verificar ticket:', error);
             }
         });
     }
+}
+
+// Função para configurar interceptação do formulário
+function setupFormInterceptor(ticketId) {
+    console.log('SnowClient: Configurando interceptação de formulário para ticket:', ticketId);
     
-    // Observar mudanças no DOM para detectar quando o formulário é adicionado
+    // Encontrar o botão "Adicionar uma solução"
+    const solutionButton = document.querySelector('[data-bs-toggle="collapse"][title*="Adicionar uma solução"], [data-bs-toggle="collapse"][title*="adicionar uma solução"], button[title*="solução"]');
+    
+    if (!solutionButton) {
+        console.log('SnowClient: Botão de solução não encontrado, tentando novamente em 500ms');
+        setTimeout(() => setupFormInterceptor(ticketId), 500);
+        return;
+    }
+    
+    if (solutionButton.dataset.snowclientInit) {
+        console.log('SnowClient: Botão já foi inicializado');
+        return;
+    }
+    
+    solutionButton.dataset.snowclientInit = 'true';
+    console.log('SnowClient: Botão de solução encontrado:', solutionButton);
+    
+    // Pegar o ID do collapse target
+    const targetId = solutionButton.getAttribute('data-bs-target');
+    if (!targetId) {
+        console.error('SnowClient: Target do collapse não encontrado no botão');
+        return;
+    }
+    
+    console.log('SnowClient: Target ID:', targetId);
+    
+    const target = document.querySelector(targetId);
+    if (!target) {
+        console.error('SnowClient: Elemento target não encontrado:', targetId);
+        return;
+    }
+    
+    console.log('SnowClient: Elemento target encontrado:', target);
+    
+    // Verificar se o formulário já existe
+    let form = target.querySelector('form');
+    if (form && !form.dataset.snowclientInit) {
+        console.log('SnowClient: Formulário já existe no DOM, interceptando imediatamente');
+        interceptFormSubmit(form, ticketId);
+        return;
+    }
+    
+    // Usar MutationObserver APENAS no target específico
+    let observerDisconnected = false;
     const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length) {
-                interceptSolutionForm();
-            }
-        });
+        if (observerDisconnected) return;
+        
+        const form = target.querySelector('form');
+        if (form && !form.dataset.snowclientInit) {
+            console.log('SnowClient: Formulário de solução detectado via observer');
+            
+            // Desconectar observer imediatamente
+            observerDisconnected = true;
+            observer.disconnect();
+            
+            interceptFormSubmit(form, ticketId);
+        }
     });
     
-    // Iniciar observação
-    const container = document.querySelector('#page');
-    if (container) {
-        observer.observe(container, { 
-            childList: true, 
-            subtree: true 
-        });
-        console.log('SnowClient: Observer do DOM inicializado');
-    }
+    // Observar APENAS o target específico
+    observer.observe(target, {
+        childList: true,
+        subtree: false
+    });
     
-    // Verificar formulários existentes
-    interceptSolutionForm();
+    console.log('SnowClient: Observer configurado para o collapse target');
+}
+
+// Função para interceptar submit do formulário
+function interceptFormSubmit(form, ticketId) {
+    console.log('SnowClient: Interceptando submit do formulário');
+    form.dataset.snowclientInit = 'true';
+    
+    // Interceptar submit com capture = true para garantir prioridade
+    form.addEventListener('submit', function(e) {
+        console.log('SnowClient: ===== SUBMIT INTERCEPTADO =====');
+        console.log('SnowClient: Prevenindo submit padrão');
+        
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        console.log('SnowClient: Abrindo modal de solução');
+        
+        try {
+            window.SolutionModal.open(ticketId, form);
+        } catch (error) {
+            console.error('SnowClient: Erro ao abrir modal:', error);
+            alert('Erro ao abrir modal de solução: ' + error.message);
+        }
+        
+        return false;
+    }, true);
+    
+    console.log('SnowClient: Interceptação configurada com sucesso');
 }
 
 // Inicializar quando o documento estiver pronto
@@ -508,9 +557,3 @@ if (typeof jQuery !== 'undefined') {
         initSolutionModal();
     });
 }
-
-// Reinicializar após carregamentos AJAX
-$(document).ajaxComplete(function() {
-    console.log('SnowClient: Ajax completado, reinicializando...');
-    initSolutionModal();
-});
