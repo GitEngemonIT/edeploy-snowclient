@@ -192,99 +192,100 @@ class SolutionModal {
 
 // Função de inicialização que será chamada quando necessário
 function initSolutionModal() {
-    console.log('SnowClient: Inicializando modal de solução...');
+    console.log('SnowClient: Inicializando manipulador da modal de solução...');
     
     if (!window.SolutionModal) {
         window.SolutionModal = new SolutionModal();
     }
     
-    // Observer para detectar quando o botão de solução é carregado
+    // Função para interceptar o formulário de solução
+    function interceptSolutionForm() {
+        // Encontrar o formulário de solução
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            // Verificar se é um formulário de solução
+            if (form.querySelector('textarea[name="content"]') && 
+                !form.dataset.snowclientInit) {
+                
+                console.log('SnowClient: Form de solução encontrado, adicionando interceptador');
+                form.dataset.snowclientInit = 'true';
+                
+                // Interceptar o submit
+                form.addEventListener('submit', async function(e) {
+                    // Verificar se é um ticket do ServiceNow
+                    const ticketId = new URLSearchParams(window.location.search).get('id');
+                    if (!ticketId) return; // Deixar continuar normalmente se não for um ticket
+                    
+                    // Fazer uma verificação AJAX para confirmar se é um ticket do ServiceNow
+                    try {
+                        const response = await fetch('../plugins/snowclient/ajax/check_return_button.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'ticket_id=' + ticketId
+                        });
+                        
+                        const data = await response.json();
+                        if (data.success && data.show_button) { // Se é um ticket do ServiceNow
+                            console.log('SnowClient: Ticket do ServiceNow detectado, interceptando submit');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            try {
+                                await window.SolutionModal.open(ticketId, form);
+                            } catch (error) {
+                                console.error('SnowClient: Erro ao abrir modal:', error);
+                                alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
+                            }
+                        } else {
+                            console.log('SnowClient: Não é um ticket do ServiceNow, continuando normalmente');
+                        }
+                    } catch (error) {
+                        console.error('SnowClient: Erro ao verificar ticket:', error);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Observar mudanças no DOM para detectar quando o formulário é adicionado
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                // Procurar pelo botão de solução
-                const solutionBtn = document.querySelector('[name="add_solution"]');
-                if (solutionBtn && !solutionBtn.dataset.snowclientInit) {
-                    console.log('SnowClient: Botão de solução detectado, adicionando listener...');
-                    
-                    solutionBtn.dataset.snowclientInit = 'true';
-                    solutionBtn.addEventListener('click', async (e) => {
-                        // Aguardar o carregamento do form de solução
-                        setTimeout(() => {
-                            const solutionForm = document.querySelector('#solution-container form');
-                            if (solutionForm && !solutionForm.dataset.snowclientInit) {
-                                console.log('SnowClient: Form de solução detectado após clique');
-                                
-                                solutionForm.dataset.snowclientInit = 'true';
-                                solutionForm.addEventListener('submit', async (e) => {
-                                    console.log('SnowClient: Form de solução submetido');
-                                    e.preventDefault();
-                                    
-                                    const ticketId = new URLSearchParams(window.location.search).get('id');
-                                    try {
-                                        console.log('SnowClient: Tentando abrir modal para ticket:', ticketId);
-                                        await window.SolutionModal.open(ticketId, solutionForm);
-                                    } catch (error) {
-                                        console.error('SnowClient: Erro ao abrir modal:', error);
-                                        alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
-                                    }
-                                });
-                            }
-                        }, 500); // Aguardar 500ms para o form ser carregado
-                    });
-                }
-                
-                // Verificar se já existe um form de solução (quando a página é carregada com o form aberto)
-                const solutionForm = document.querySelector('#solution-container form');
-                if (solutionForm && !solutionForm.dataset.snowclientInit) {
-                    console.log('SnowClient: Form de solução já existe na página');
-                    
-                    solutionForm.dataset.snowclientInit = 'true';
-                    solutionForm.addEventListener('submit', async (e) => {
-                        console.log('SnowClient: Form de solução existente submetido');
-                        e.preventDefault();
-                        
-                        const ticketId = new URLSearchParams(window.location.search).get('id');
-                        try {
-                            console.log('SnowClient: Tentando abrir modal para ticket existente:', ticketId);
-                            await window.SolutionModal.open(ticketId, solutionForm);
-                        } catch (error) {
-                            console.error('SnowClient: Erro ao abrir modal:', error);
-                            alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
-                        }
-                    });
-                }
+            if (mutation.addedNodes.length) {
+                interceptSolutionForm();
             }
         });
     });
     
-    // Observar o container principal do GLPI
+    // Iniciar observação
     const container = document.querySelector('#page');
     if (container) {
-        console.log('SnowClient: Iniciando observação do container...');
         observer.observe(container, { 
             childList: true, 
             subtree: true 
         });
     }
+    
+    // Verificar formulários existentes
+    interceptSolutionForm();
 }
 
-// Verificar dados da sessão ao carregar
-window.addEventListener('load', () => {
-    const savedData = sessionStorage.getItem('snowclient_solution_data');
-    if (savedData) {
-        console.log('SnowClient: Dados de solução encontrados na sessão');
-        const data = JSON.parse(savedData);
-        // Limpar dados após uso
-        sessionStorage.removeItem('snowclient_solution_data');
-    }
-});
-
-// Inicializar quando documento estiver pronto
-document.addEventListener('DOMContentLoaded', initSolutionModal);
+// Inicializar quando o documento estiver pronto
+if (typeof jQuery !== 'undefined') {
+    jQuery(document).ready(function() {
+        console.log('SnowClient: Documento pronto, inicializando...');
+        initSolutionModal();
+    });
+} else {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('SnowClient: DOM carregado, inicializando...');
+        initSolutionModal();
+    });
+}
 
 // Reinicializar após carregamentos AJAX
 $(document).ajaxComplete(function() {
-    console.log('SnowClient: Ajax completado, verificando necessidade de inicialização...');
+    console.log('SnowClient: Ajax completado, reinicializando...');
     initSolutionModal();
 });
