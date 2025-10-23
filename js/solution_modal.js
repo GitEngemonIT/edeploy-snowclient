@@ -86,10 +86,6 @@ class SolutionModal {
     async open(ticketId, originalForm) {
         console.log('SnowClient Modal: Abrindo modal para ticket', ticketId);
         try {
-            if (!this.initialized) {
-                await this.init();
-            }
-            
             this.ticketId = ticketId;
             this.originalForm = originalForm;
             
@@ -97,37 +93,104 @@ class SolutionModal {
             let modal = document.querySelector('#snowclient-solution-modal');
             if (!modal) {
                 console.log('SnowClient Modal: Modal não encontrada, carregando template...');
-                const response = await $.ajax({
-                    url: '../plugins/snowclient/ajax/get_solution_modal.php',
-                    method: 'GET'
-                });
                 
-                // Adicionar modal ao DOM
-                $('body').append(response);
-                modal = document.querySelector('#snowclient-solution-modal');
-                
-                if (!modal) {
-                    throw new Error('Falha ao carregar template da modal');
+                // Carregar template da modal
+                try {
+                    const response = await $.ajax({
+                        url: '../plugins/snowclient/ajax/get_solution_modal.php',
+                        method: 'GET'
+                    });
+                    
+                    // Adicionar modal ao DOM
+                    $('body').append(response);
+                    
+                    // Referenciar a modal recém-adicionada
+                    modal = document.querySelector('#snowclient-solution-modal');
+                    
+                    if (!modal) {
+                        throw new Error('Modal não encontrada após inserção no DOM');
+                    }
+                    
+                    // Inicializar eventos da modal
+                    this.bindModalEvents(modal);
+                    
+                } catch (error) {
+                    console.error('SnowClient Modal: Erro ao carregar template:', error);
+                    throw new Error('Falha ao carregar modal de solução');
                 }
-                
-                // Inicializar eventos da modal
-                this.bindEvents();
             }
             
-            // Mostrar modal usando jQuery (mais compatível com GLPI)
-            $(modal).modal('show');
+            // Atualizar conteúdo da modal
+            if (this.originalForm) {
+                const content = this.originalForm.querySelector('textarea[name="content"]');
+                if (content) {
+                    modal.querySelector('#snow-solution').value = content.value;
+                }
+            }
             
-            // Preencher campos readonly
-            this.fillReadOnlyFields();
+            // Mostrar modal usando Bootstrap
+            const bsModal = new bootstrap.Modal(modal, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            
+            bsModal.show();
             
             // Focar no primeiro campo editável
-            const firstInput = modal.querySelector('select, input:not([readonly]), textarea:not([readonly])');
-            if (firstInput) firstInput.focus();
+            const firstInput = modal.querySelector('select:not([readonly])');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 500);
+            }
             
             console.log('SnowClient Modal: Modal aberta com sucesso');
+            
         } catch (error) {
             console.error('SnowClient Modal: Erro ao abrir modal:', error);
+            alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
             throw error;
+        }
+    }
+
+    /**
+     * Inicializar eventos específicos da modal
+     */
+    bindModalEvents(modal) {
+        console.log('SnowClient Modal: Inicializando eventos da modal');
+        
+        try {
+            // Form submit
+            const form = modal.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSubmit(form);
+                });
+            }
+            
+            // Botão cancelar
+            const cancelBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                });
+            }
+            
+            // Select do código de solução
+            const solutionCode = modal.querySelector('#snow-solution-code');
+            if (solutionCode) {
+                solutionCode.addEventListener('change', () => {
+                    solutionCode.classList.remove('is-invalid');
+                });
+            }
+            
+            console.log('SnowClient Modal: Eventos inicializados com sucesso');
+            
+        } catch (error) {
+            console.error('SnowClient Modal: Erro ao inicializar eventos:', error);
+            throw new Error('Falha ao inicializar eventos da modal');
         }
     }
 
