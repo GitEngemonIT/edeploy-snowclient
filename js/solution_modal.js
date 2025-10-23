@@ -116,16 +116,6 @@ class SolutionModal {
                 }
             }
             
-            // Remover eventos anteriores se existirem
-            const oldForm = modal.querySelector('#snow-solution-form');
-            if (oldForm) {
-                const newForm = oldForm.cloneNode(true);
-                oldForm.parentNode.replaceChild(newForm, oldForm);
-            }
-            
-            // Inicializar eventos da modal
-            this.bindModalEvents(modal);
-            
             // Atualizar conteúdo da modal
             if (this.originalForm) {
                 // Preencher a solução do GLPI
@@ -153,38 +143,55 @@ class SolutionModal {
                 console.warn('SnowClient Modal: Formulário original não encontrado');
             }
             
-            // Inicializar select2 no campo de código de solução
-            try {
-                const solutionCode = modal.querySelector('#snow-solution-code');
-                if (solutionCode) {
-                    $(solutionCode).select2({
-                        dropdownParent: modal,
-                        width: '100%',
-                        placeholder: 'Selecione...'
-                    });
+            // Remover select2 anterior se existir
+            const solutionCode = modal.querySelector('#snow-solution-code');
+            if (solutionCode) {
+                try {
+                    $(solutionCode).select2('destroy');
+                } catch (e) {
+                    // Ignora erro se select2 não existir
                 }
-            } catch (error) {
-                console.warn('SnowClient Modal: Erro ao inicializar select2:', error);
+            }
+
+            // Limpar seleção anterior
+            if (solutionCode) {
+                solutionCode.value = '';
+                solutionCode.classList.remove('is-valid', 'is-invalid');
             }
             
-            // Mostrar modal usando Bootstrap
-            let bsModal = bootstrap.Modal.getInstance(modal);
-            if (!bsModal) {
-                bsModal = new bootstrap.Modal(modal, {
-                    backdrop: 'static',
-                    keyboard: false
+            // Remover eventos anteriores
+            const form = modal.querySelector('#snow-solution-form');
+            if (form) {
+                const newForm = form.cloneNode(true);
+                form.parentNode.replaceChild(newForm, form);
+                this.bindModalEvents(modal);
+            }
+            
+            // Reinicializar select2
+            if (solutionCode) {
+                $(solutionCode).select2({
+                    dropdownParent: modal,
+                    width: '100%',
+                    placeholder: 'Selecione...',
+                    minimumResultsForSearch: -1 // Desabilita busca
+                }).on('change', () => {
+                    if (solutionCode.value) {
+                        solutionCode.classList.remove('is-invalid');
+                        solutionCode.classList.add('is-valid');
+                    } else {
+                        solutionCode.classList.remove('is-valid');
+                        solutionCode.classList.add('is-invalid');
+                    }
                 });
             }
             
-            bsModal.show();
-            
-            // Focar no campo de código de solução após a modal estar visível
-            modal.addEventListener('shown.bs.modal', () => {
-                const solutionCode = modal.querySelector('#snow-solution-code');
-                if (solutionCode) {
-                    solutionCode.focus();
-                }
+            // Mostrar modal usando Bootstrap
+            const bsModal = new bootstrap.Modal(modal, {
+                backdrop: 'static',
+                keyboard: false
             });
+            
+            bsModal.show();
             
             console.log('SnowClient Modal: Modal aberta com sucesso');
             
@@ -305,7 +312,19 @@ class SolutionModal {
             const solutionCode = form.querySelector('#snow-solution-code');
             if (!solutionCode || !solutionCode.value) {
                 solutionCode.classList.add('is-invalid');
-                throw new Error('Código de solução é obrigatório');
+                alert('Por favor, selecione um código de solução.');
+                return;
+            }
+            
+            // Verificar se o formulário original ainda existe
+            if (!this.originalForm || !document.body.contains(this.originalForm)) {
+                throw new Error('Formulário original do GLPI não encontrado ou foi removido');
+            }
+            
+            // Verificar se o botão de submit existe
+            const submitButton = this.originalForm.querySelector('button[name="add"], input[name="add"]');
+            if (!submitButton) {
+                throw new Error('Botão de submit do GLPI não encontrado');
             }
             
             // Coletar dados do formulário
@@ -320,32 +339,26 @@ class SolutionModal {
             // Salvar dados do ServiceNow em sessão
             sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
             
-            // Submeter o formulário original do GLPI
-            if (this.originalForm) {
-                // Verificar se temos o botão de submit original
-                const submitButton = this.originalForm.querySelector('button[name="add"]');
-                if (submitButton) {
-                    // Fechar a modal
-                    const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
-                    if (modal) {
-                        modal.hide();
-                    }
-                    
-                    // Submeter o formulário original
-                    submitButton.click();
-                    
-                    console.log('SnowClient Modal: Submit concluído com sucesso');
-                } else {
-                    throw new Error('Botão de submit do GLPI não encontrado');
+            // Fechar a modal antes de submeter
+            const modal = form.closest('.modal');
+            if (modal) {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) {
+                    bsModal.hide();
                 }
-            } else {
-                throw new Error('Formulário original do GLPI não encontrado');
             }
+            
+            // Pequeno delay para garantir que a modal fechou
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Submeter o formulário original
+            submitButton.click();
+            
+            console.log('SnowClient Modal: Submit concluído com sucesso');
             
         } catch (error) {
             console.error('SnowClient Modal: Erro ao processar submit:', error);
-            alert('Erro ao salvar solução. Por favor, tente novamente.');
-            throw error;
+            alert('Erro ao salvar solução: ' + error.message);
         }
     }
 }
