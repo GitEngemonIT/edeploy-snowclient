@@ -185,13 +185,26 @@ class SolutionModal {
                 });
             }
             
-            // Mostrar modal usando Bootstrap
-            const bsModal = new bootstrap.Modal(modal, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            
-            bsModal.show();
+            // Mostrar modal usando Bootstrap se disponível
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    console.log('SnowClient Modal: Abrindo via Bootstrap Modal');
+                    const bsModal = new bootstrap.Modal(modal, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                    bsModal.show();
+                } else {
+                    console.log('SnowClient Modal: Bootstrap não disponível, mostrando diretamente');
+                    modal.style.display = 'block';
+                    modal.classList.add('show');
+                }
+            } catch (error) {
+                console.error('SnowClient Modal: Erro ao abrir modal com Bootstrap:', error);
+                // Fallback: mostrar diretamente
+                modal.style.display = 'block';
+                modal.classList.add('show');
+            }
             
             console.log('SnowClient Modal: Modal aberta com sucesso');
             
@@ -325,61 +338,78 @@ class SolutionModal {
 
             // 2. Verificar e preparar formulário original
             if (!this.originalForm?.isConnected) {
+                console.error('SnowClient Modal: Formulário original não está conectado ao DOM');
                 throw new Error('Formulário original do GLPI não encontrado');
             }
 
             const submitButton = this.originalForm.querySelector('button[name="add"], input[name="add"]');
             if (!submitButton) {
+                console.error('SnowClient Modal: Botão de submit não encontrado no formulário');
                 throw new Error('Botão de submit do GLPI não encontrado');
             }
+
+            console.log('SnowClient Modal: Formulário e botão encontrados');
 
             // 3. Coletar dados do formulário
             const formData = {
                 ticketId: this.ticketId,
-                solution: form.querySelector('#snow-solution').value,
-                closeType: form.querySelector('#snow-close-type').value,
-                solutionClass: form.querySelector('#snow-solution-class').value,
                 solutionCode: solutionCode.value,
                 timestamp: Date.now()
             };
 
-            // 4. Remover modal existente antes de qualquer ação
+            console.log('SnowClient Modal: Dados coletados:', formData);
+
+            // 4. Salvar dados na sessão via AJAX
+            console.log('SnowClient Modal: Salvando dados na sessão...');
+            
+            try {
+                await $.ajax({
+                    url: '../plugins/snowclient/ajax/save_session_data.php',
+                    method: 'POST',
+                    data: { 
+                        data: JSON.stringify(formData)
+                    }
+                });
+                console.log('SnowClient Modal: Dados salvos na sessão com sucesso');
+            } catch (ajaxError) {
+                console.error('SnowClient Modal: Erro ao salvar na sessão:', ajaxError);
+                throw new Error('Falha ao salvar dados na sessão');
+            }
+
+            // 5. Fechar e remover modal
+            console.log('SnowClient Modal: Fechando modal...');
             const existingModal = document.querySelector('#snowclient-solution-modal');
             if (existingModal) {
-                const bsModal = bootstrap.Modal.getInstance(existingModal);
-                if (bsModal) {
-                    bsModal.dispose();
+                try {
+                    // Tentar usar Bootstrap se disponível
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const bsModal = bootstrap.Modal.getInstance(existingModal);
+                        if (bsModal) {
+                            bsModal.hide();
+                        }
+                    }
+                } catch (e) {
+                    console.warn('SnowClient Modal: Erro ao fechar via Bootstrap, removendo diretamente');
                 }
+                // Remover do DOM
                 existingModal.remove();
             }
 
-            // 5. Salvar dados na sessão DEPOIS de remover a modal
-            console.log('SnowClient Modal: Salvando dados na sessão:', formData);
-            // Salvar no sessionStorage do navegador E na sessão do PHP
-            sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
-            
-            // Enviar para a sessão PHP via AJAX
-            await $.ajax({
-                url: '../plugins/snowclient/ajax/save_session_data.php',
-                method: 'POST',
-                data: { 
-                    data: JSON.stringify(formData)
-                }
-            });
+            // 6. Aguardar um momento
+            await new Promise(resolve => setTimeout(resolve, 200));
 
-            // 6. Submeter o formulário original diretamente
-            console.log('SnowClient Modal: Submetendo formulário original...');
-            
-            // Marcar que estamos submetendo via modal para não interceptar novamente
+            // 7. Marcar formulário e submeter
+            console.log('SnowClient Modal: Marcando formulário para submit...');
             this.originalForm.dataset.snowclientSubmitting = 'true';
             
-            // Submeter o formulário
+            console.log('SnowClient Modal: Clicando no botão de submit...');
             submitButton.click();
+            
+            console.log('SnowClient Modal: Submit concluído');
             
         } catch (error) {
             console.error('SnowClient Modal: Erro ao processar submit:', error);
             alert('Erro ao salvar solução: ' + error.message);
-            sessionStorage.removeItem('snowclient_solution_data');
             this.isSubmitting = false;
         }
     }
