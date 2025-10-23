@@ -110,37 +110,65 @@ class SolutionModal {
                     if (!modal) {
                         throw new Error('Modal não encontrada após inserção no DOM');
                     }
-                    
-                    // Inicializar eventos da modal
-                    this.bindModalEvents(modal);
-                    
                 } catch (error) {
                     console.error('SnowClient Modal: Erro ao carregar template:', error);
                     throw new Error('Falha ao carregar modal de solução');
                 }
             }
             
+            // Remover eventos anteriores se existirem
+            const oldForm = modal.querySelector('#snow-solution-form');
+            if (oldForm) {
+                const newForm = oldForm.cloneNode(true);
+                oldForm.parentNode.replaceChild(newForm, oldForm);
+            }
+            
+            // Inicializar eventos da modal
+            this.bindModalEvents(modal);
+            
             // Atualizar conteúdo da modal
             if (this.originalForm) {
                 const content = this.originalForm.querySelector('textarea[name="content"]');
                 if (content) {
-                    modal.querySelector('#snow-solution').value = content.value;
+                    const solutionTextarea = modal.querySelector('#snow-solution');
+                    if (solutionTextarea) {
+                        solutionTextarea.value = content.value;
+                    }
                 }
             }
             
+            // Inicializar select2 no campo de código de solução
+            try {
+                const solutionCode = modal.querySelector('#snow-solution-code');
+                if (solutionCode) {
+                    $(solutionCode).select2({
+                        dropdownParent: modal,
+                        width: '100%',
+                        placeholder: 'Selecione...'
+                    });
+                }
+            } catch (error) {
+                console.warn('SnowClient Modal: Erro ao inicializar select2:', error);
+            }
+            
             // Mostrar modal usando Bootstrap
-            const bsModal = new bootstrap.Modal(modal, {
-                backdrop: 'static',
-                keyboard: false
-            });
+            let bsModal = bootstrap.Modal.getInstance(modal);
+            if (!bsModal) {
+                bsModal = new bootstrap.Modal(modal, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
             
             bsModal.show();
             
-            // Focar no primeiro campo editável
-            const firstInput = modal.querySelector('select:not([readonly])');
-            if (firstInput) {
-                setTimeout(() => firstInput.focus(), 500);
-            }
+            // Focar no campo de código de solução após a modal estar visível
+            modal.addEventListener('shown.bs.modal', () => {
+                const solutionCode = modal.querySelector('#snow-solution-code');
+                if (solutionCode) {
+                    solutionCode.focus();
+                }
+            });
             
             console.log('SnowClient Modal: Modal aberta com sucesso');
             
@@ -159,30 +187,54 @@ class SolutionModal {
         
         try {
             // Form submit
-            const form = modal.querySelector('form');
+            const form = modal.querySelector('#snow-solution-form');
             if (form) {
-                form.addEventListener('submit', (e) => {
+                // Remover eventos anteriores
+                const newForm = form.cloneNode(true);
+                form.parentNode.replaceChild(newForm, form);
+                
+                // Adicionar novo evento de submit
+                newForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.handleSubmit(form);
+                    this.handleSubmit(newForm);
                 });
+                
+                // Adicionar validação em tempo real
+                const solutionCode = newForm.querySelector('#snow-solution-code');
+                if (solutionCode) {
+                    solutionCode.addEventListener('change', () => {
+                        if (solutionCode.value) {
+                            solutionCode.classList.remove('is-invalid');
+                            solutionCode.classList.add('is-valid');
+                        } else {
+                            solutionCode.classList.remove('is-valid');
+                            solutionCode.classList.add('is-invalid');
+                        }
+                    });
+                }
             }
             
-            // Botão cancelar
+            // Botões de ação
+            const confirmBtn = modal.querySelector('button[type="submit"]');
             const cancelBtn = modal.querySelector('[data-bs-dismiss="modal"]');
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', () => {
-                    const bsModal = bootstrap.Modal.getInstance(modal);
-                    if (bsModal) {
-                        bsModal.hide();
+            
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', () => {
+                    const form = modal.querySelector('#snow-solution-form');
+                    if (form) {
+                        form.dispatchEvent(new Event('submit'));
                     }
                 });
             }
             
-            // Select do código de solução
-            const solutionCode = modal.querySelector('#snow-solution-code');
-            if (solutionCode) {
-                solutionCode.addEventListener('change', () => {
-                    solutionCode.classList.remove('is-invalid');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) {
+                        if (confirm('Tem certeza que deseja cancelar? As alterações não salvas serão perdidas.')) {
+                            bsModal.hide();
+                        }
+                    }
                 });
             }
             
