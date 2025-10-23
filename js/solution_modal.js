@@ -319,20 +319,7 @@ class SolutionModal {
                 return;
             }
 
-            // 2. Coletar e salvar dados ANTES de qualquer manipulação do DOM
-            const formData = {
-                ticketId: this.ticketId,
-                solution: form.querySelector('#snow-solution').value,
-                closeType: form.querySelector('#snow-close-type').value,
-                solutionClass: form.querySelector('#snow-solution-class').value,
-                solutionCode: solutionCode.value,
-                timestamp: Date.now()
-            };
-
-            console.log('SnowClient Modal: Salvando dados na sessão:', formData);
-            sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
-
-            // 3. Verificar formulário original
+            // 2. Verificar e preparar formulário original
             if (!this.originalForm?.isConnected) {
                 throw new Error('Formulário original do GLPI não encontrado');
             }
@@ -342,29 +329,50 @@ class SolutionModal {
                 throw new Error('Botão de submit do GLPI não encontrado');
             }
 
-            // 4. Fechar modal com limpeza
-            const modal = document.querySelector('#snowclient-solution-modal');
-            if (modal) {
-                const bsModal = bootstrap.Modal.getInstance(modal);
+            // 3. Coletar dados do formulário
+            const formData = {
+                ticketId: this.ticketId,
+                solution: form.querySelector('#snow-solution').value,
+                closeType: form.querySelector('#snow-close-type').value,
+                solutionClass: form.querySelector('#snow-solution-class').value,
+                solutionCode: solutionCode.value,
+                timestamp: Date.now()
+            };
+
+            // 4. Remover modal existente antes de qualquer ação
+            const existingModal = document.querySelector('#snowclient-solution-modal');
+            if (existingModal) {
+                const bsModal = bootstrap.Modal.getInstance(existingModal);
                 if (bsModal) {
-                    bsModal.hide();
                     bsModal.dispose();
                 }
-                modal.remove();
+                existingModal.remove();
             }
 
-            // 5. Aguardar fechamento da modal
+            // 5. Salvar dados na sessão DEPOIS de remover a modal
+            console.log('SnowClient Modal: Salvando dados na sessão:', formData);
+            sessionStorage.setItem('snowclient_solution_data', JSON.stringify(formData));
+
+            // 6. Remover evento de submit do formulário original
+            const clonedForm = this.originalForm.cloneNode(true);
+            this.originalForm.parentNode.replaceChild(clonedForm, this.originalForm);
+            
+            // 7. Aguardar um momento para garantir que tudo foi limpo
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // 6. Submeter formulário original
-            console.log('SnowClient Modal: Submetendo formulário original...');
-            submitButton.click();
+            // 8. Pegar o novo botão de submit do formulário clonado
+            const newSubmitButton = clonedForm.querySelector('button[name="add"], input[name="add"]');
+            if (!newSubmitButton) {
+                throw new Error('Botão de submit não encontrado após clonagem');
+            }
+
+            // 9. Submeter o formulário clonado
+            console.log('SnowClient Modal: Submetendo formulário...');
+            newSubmitButton.click();
             
         } catch (error) {
             console.error('SnowClient Modal: Erro ao processar submit:', error);
             alert('Erro ao salvar solução: ' + error.message);
-            
-            // Remover dados da sessão em caso de erro
             sessionStorage.removeItem('snowclient_solution_data');
         } finally {
             this.isSubmitting = false;
