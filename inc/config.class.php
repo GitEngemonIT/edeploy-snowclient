@@ -344,8 +344,8 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             }
         }
 
-        // Validate username
-        if (isset($input['username']) && empty($input['username'])) {
+        // Validate username - only if it's being submitted in the form
+        if (array_key_exists('username', $input) && empty($input['username'])) {
             Session::addMessageAfterRedirect(__('Username cannot be empty', 'edeploysnowclient'), false, ERROR);
             return false;
         }
