@@ -5,7 +5,7 @@ include ('../../../inc/includes.php');
 Session::checkLoginUser();
 
 // Carregar template
-$template = file_get_contents(GLPI_ROOT . '/plugins/snowclient/templates/solution_modal.html.twig');
+$template = file_get_contents(GLPI_ROOT . '/plugins/edeploysnowclient/templates/solution_modal.html.twig');
 
 // Enviar template
 header('Content-Type: text/html');

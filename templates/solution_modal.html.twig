@@ -10,24 +10,49 @@
             <div class="modal-body">
                 <form id="snow-solution-form">
                     <div class="mb-3">
+                        <label for="snow-close-code" class="form-label">Solução</label>
+                        <input type="text" id="snow-close-code" name="close_code" class="form-control" value="Definitiva" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="snow-close-type" class="form-label">Tipo de Encerramento</label>
-                        <input type="text" id="snow-close-type" name="u_bk_tipo_encerramento" class="form-control" readonly>
+                        <input type="text" id="snow-close-type" name="u_bk_tipo_encerramento" class="form-control" value="Remoto" readonly>
                     </div>
                     
                     <div class="mb-3">
                         <label for="snow-solution-class" class="form-label">Classificação da Solução</label>
-                        <input type="text" id="snow-solution-class" name="u_bk_ic_impactado" class="form-control" readonly>
+                        <input type="text" id="snow-solution-class" name="u_bk_ic_impactado" class="form-control" value="Aplicação (Software)" readonly>
                     </div>
                     
                     <div class="mb-3">
                         <label for="snow-solution-code" class="form-label">Código de Solução *</label>
                         <select id="snow-solution-code" name="u_bk_type_of_failure" class="form-control" required>
                             <option value="">Selecione...</option>
-                            <option value="Manutenção de cabeamento">Manutenção de cabeamento</option>
-                            <option value="Manutenção do equipamento">Manutenção do equipamento</option>
+                            <option value="Rollback / Plano de Retorno">Rollback / Plano de Retorno</option>
+                            <option value="Restart de Serviços">Restart de Serviços</option>
+                            <option value="Reset de senha">Reset de senha</option>
+                            <option value="Reprocessamento de Loja">Reprocessamento de Loja</option>
+                            <option value="Reprocessamento de Logs">Reprocessamento de Logs</option>
+                            <option value="Reprocessamento de Extrato">Reprocessamento de Extrato</option>
+                            <option value="Reprocessamento de Dados">Reprocessamento de Dados</option>
+                            <option value="Reprocessamento de Arquivo">Reprocessamento de Arquivo</option>
+                            <option value="Reiniciada aplicação">Reiniciada aplicação</option>
+                            <option value="Processamento de pedidos">Processamento de pedidos</option>
+                            <option value="Parametrização">Parametrização</option>
+                            <option value="Outros">Outros</option>
+                            <option value="Orientação Operacional">Orientação Operacional</option>
                             <option value="Normalizado sem intervenção">Normalizado sem intervenção</option>
-                            <option value="Substituição de cabeamento">Substituição de cabeamento</option>
-                            <option value="Substituição do equipamento">Substituição do equipamento</option>
+                            <option value="Manutenção Fornecedor">Manutenção Fornecedor</option>
+                            <option value="Indexação de itens">Indexação de itens</option>
+                            <option value="Duplicado">Duplicado</option>
+                            <option value="Criação de Perfil">Criação de Perfil</option>
+                            <option value="Configuração do serviços">Configuração do serviços</option>
+                            <option value="Configuração de Monitoração">Configuração de Monitoração</option>
+                            <option value="Cadastro de API">Cadastro de API</option>
+                            <option value="Alteração de dados cadastrais">Alteração de dados cadastrais</option>
+                            <option value="Ajuste de permissão">Ajuste de permissão</option>
+                            <option value="Ajuste de Performace">Ajuste de Performace</option>
+                            <option value="Ajuste de Perfil">Ajuste de Perfil</option>
                         </select>
                         <div class="form-text">
                             Este campo é obrigatório para a sincronização com o ServiceNow

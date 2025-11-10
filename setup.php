@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '1.1.20');
+define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '1.2.0');
 // Minimal GLPI version
 define('PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
@@ -305,14 +305,19 @@ function plugin_edeploysnowclient_update($current_version)
         
         $table = 'glpi_plugin_edeploysnowclient_configs';
         if ($DB->tableExists($table)) {
+            // Adicionar campo para valor padrão de close_code (Solução)
+            if (!$DB->fieldExists($table, 'default_close_code')) {
+                $migration->addField($table, 'default_close_code', 'varchar(255) DEFAULT "Definitiva"');
+            }
+            
             // Adicionar campo para valor padrão do tipo de encerramento
             if (!$DB->fieldExists($table, 'default_close_type')) {
-                $migration->addField($table, 'default_close_type', 'varchar(255) DEFAULT "Definitiva"');
+                $migration->addField($table, 'default_close_type', 'varchar(255) DEFAULT "Remoto"');
             }
             
             // Adicionar campo para valor padrão da classificação da solução
             if (!$DB->fieldExists($table, 'default_solution_class')) {
-                $migration->addField($table, 'default_solution_class', 'varchar(255) DEFAULT "Presencial/Hardware"');
+                $migration->addField($table, 'default_solution_class', 'varchar(255) DEFAULT "Aplicação (Software)"');
             }
             
             // Adicionar campo para armazenar as opções do código de solução
@@ -320,11 +325,31 @@ function plugin_edeploysnowclient_update($current_version)
                 $migration->addField($table, 'solution_codes', 'text', [
                     'after' => 'default_solution_class',
                     'value' => json_encode([
-                        'Manutenção de cabeamento',
-                        'Manutenção do equipamento',
+                        'Rollback / Plano de Retorno',
+                        'Restart de Serviços',
+                        'Reset de senha',
+                        'Reprocessamento de Loja',
+                        'Reprocessamento de Logs',
+                        'Reprocessamento de Extrato',
+                        'Reprocessamento de Dados',
+                        'Reprocessamento de Arquivo',
+                        'Reiniciada aplicação',
+                        'Processamento de pedidos',
+                        'Parametrização',
+                        'Outros',
+                        'Orientação Operacional',
                         'Normalizado sem intervenção',
-                        'Substituição de cabeamento',
-                        'Substituição do equipamento'
+                        'Manutenção Fornecedor',
+                        'Indexação de itens',
+                        'Duplicado',
+                        'Criação de Perfil',
+                        'Configuração do serviços',
+                        'Configuração de Monitoração',
+                        'Cadastro de API',
+                        'Alteração de dados cadastrais',
+                        'Ajuste de permissão',
+                        'Ajuste de Performace',
+                        'Ajuste de Perfil'
                     ])
                 ]);
             }
@@ -429,27 +454,64 @@ function plugin_edeploysnowclient_upgrade($migrations)
                 break;
             
             case '1.1.6':
+            case '1.2.0':
                 // Garantir que os campos customizados do ServiceNow existem
                 if ($DB->tableExists($table)) {
+                    $migration->displayMessage("Updating to 1.2.0 - Adding eDeploy ServiceNow custom fields");
+                    
+                    if (!$DB->fieldExists($table, 'default_close_code')) {
+                        $migration->addField($table, 'default_close_code', 'varchar(255) DEFAULT "Definitiva"', ['after' => 'debug_mode']);
+                        $migration->displayMessage("Added field: default_close_code");
+                    }
                     if (!$DB->fieldExists($table, 'default_close_type')) {
-                        $migration->addField($table, 'default_close_type', 'varchar(255) DEFAULT "Definitiva"');
+                        $migration->addField($table, 'default_close_type', 'varchar(255) DEFAULT "Remoto"', ['after' => 'default_close_code']);
+                        $migration->displayMessage("Added field: default_close_type");
                     }
                     if (!$DB->fieldExists($table, 'default_solution_class')) {
-                        $migration->addField($table, 'default_solution_class', 'varchar(255) DEFAULT "Presencial/Hardware"');
+                        $migration->addField($table, 'default_solution_class', 'varchar(255) DEFAULT "Aplicação (Software)"', ['after' => 'default_close_type']);
+                        $migration->displayMessage("Added field: default_solution_class");
                     }
                     if (!$DB->fieldExists($table, 'solution_codes')) {
                         $migration->addField($table, 'solution_codes', 'text', [
-                            'after' => 'default_solution_class',
-                            'value' => json_encode([
-                                'Manutenção de cabeamento',
-                                'Manutenção do equipamento',
-                                'Normalizado sem intervenção',
-                                'Substituição de cabeamento',
-                                'Substituição do equipamento'
-                            ])
+                            'after' => 'default_solution_class'
                         ]);
+                        
+                        // Atualizar com os valores padrão
+                        $DB->updateOrDie($table, [
+                            'solution_codes' => json_encode([
+                                'Rollback / Plano de Retorno',
+                                'Restart de Serviços',
+                                'Reset de senha',
+                                'Reprocessamento de Loja',
+                                'Reprocessamento de Logs',
+                                'Reprocessamento de Extrato',
+                                'Reprocessamento de Dados',
+                                'Reprocessamento de Arquivo',
+                                'Reiniciada aplicação',
+                                'Processamento de pedidos',
+                                'Parametrização',
+                                'Outros',
+                                'Orientação Operacional',
+                                'Normalizado sem intervenção',
+                                'Manutenção Fornecedor',
+                                'Indexação de itens',
+                                'Duplicado',
+                                'Criação de Perfil',
+                                'Configuração do serviços',
+                                'Configuração de Monitoração',
+                                'Cadastro de API',
+                                'Alteração de dados cadastrais',
+                                'Ajuste de permissão',
+                                'Ajuste de Performace',
+                                'Ajuste de Perfil'
+                            ])
+                        ], ['id' => 1]);
+                        
+                        $migration->displayMessage("Added field: solution_codes with default values");
                     }
+                    
                     $migration->migrationOneTable($table);
+                    $migration->displayMessage("eDeploy ServiceNow custom fields configuration completed");
                 }
                 break;
         }
