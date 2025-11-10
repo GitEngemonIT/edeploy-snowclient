@@ -3,11 +3,11 @@
    ------------------------------------------------------------------------
    Plugin ServiceNow Client
    Copyright (C) 2025 by EngemonIT
-   https://github.com/engemon/snowclient
+   https://github.com/GitEngemonIT/edeploy-snowclient
    ------------------------------------------------------------------------
  */
 
-$LANG['snowclient'] = [
+$LANG['edeploysnowclient'] = [
     // Plugin general
     'ServiceNow Client' => 'ServiceNow Client',
     'ServiceNow Integration' => 'ServiceNow Integration',

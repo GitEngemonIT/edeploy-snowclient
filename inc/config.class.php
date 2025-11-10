@@ -1,13 +1,13 @@
 <?php
 
 /**
- * ServiceNow Configuration Class
+ * eDeploy ServiceNow Configuration Class
  * Manages the configuration settings for ServiceNow integration
  */
-class PluginSnowclientConfig extends CommonDBTM
+class PluginEdeploysnowclientConfig extends CommonDBTM
 {
     static $rightname = 'config';
-    static $table = 'glpi_plugin_snowclient_configs';
+    static $table = 'glpi_plugin_edeploysnowclient_configs';
 
     // ServiceNow ticket types
     const INCIDENT = 1;
@@ -17,7 +17,7 @@ class PluginSnowclientConfig extends CommonDBTM
 
     static function getTypeName($nb = 0)
     {
-        return __('ServiceNow Configuration', 'snowclient');
+        return __('ServiceNow Configuration', 'edeploysnowclient');
     }
 
     static function canCreate()
@@ -109,13 +109,13 @@ class PluginSnowclientConfig extends CommonDBTM
                 return $decrypted;
             } catch (Exception $e) {
                 if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                    error_log("SnowClient DEBUG: Falha na descriptografia Sodium, usando fallback base64");
+                    error_log("eDeploySnowClient DEBUG: Falha na descriptografia Sodium, usando fallback base64");
                 }
                 return base64_decode($this->fields['password']);
             }
         } else {
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                error_log("SnowClient DEBUG: Sodium não disponível, usando base64");
+                error_log("eDeploySnowClient DEBUG: Sodium não disponível, usando base64");
             }
             return base64_decode($this->fields['password']);
         }
@@ -164,9 +164,9 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "<tr class='tab_bg_2'>";
         echo "<td colspan='2' class='center'>";
         echo "<div style='background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 10px 0;'>";
-        echo "<strong style='color: #1976d2;'>🔄 " . __('Integration Flow', 'snowclient') . "</strong><br>";
+        echo "<strong style='color: #1976d2;'>🔄 " . __('Integration Flow', 'edeploysnowclient') . "</strong><br>";
         echo "<span style='color: #424242;'>";
-        echo __('1. ServiceNow creates ticket → 2. Plugin replicates to GLPI → 3. Technician updates only in GLPI → 4. Plugin syncs back to ServiceNow', 'snowclient');
+        echo __('1. ServiceNow creates ticket → 2. Plugin replicates to GLPI → 3. Technician updates only in GLPI → 4. Plugin syncs back to ServiceNow', 'edeploysnowclient');
         echo "</span>";
         echo "</div>";
         echo "</td>";
@@ -174,7 +174,7 @@ class PluginSnowclientConfig extends CommonDBTM
 
         // ServiceNow connection settings
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('ServiceNow Instance URL', 'snowclient') . "</td>";
+        echo "<td>" . __('ServiceNow Instance URL', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'instance_url', [
             'placeholder' => 'https://your-instance.service-now.com'
@@ -183,69 +183,69 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Username', 'snowclient') . "</td>";
+        echo "<td>" . __('Username', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'username');
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Password', 'snowclient') . "</td>";
+        echo "<td>" . __('Password', 'edeploysnowclient') . "</td>";
         echo "<td>";
-        echo "<input type='password' name='password' value='' placeholder='" . __('Enter password to change', 'snowclient') . "' />";
+        echo "<input type='password' name='password' value='' placeholder='" . __('Enter password to change', 'edeploysnowclient') . "' />";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Default Assignment Group', 'snowclient') . "</td>";
+        echo "<td>" . __('Default Assignment Group', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'assignment_group');
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Return Queue Group ID', 'snowclient') . "</td>";
+        echo "<td>" . __('Return Queue Group ID', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'return_queue_group', [
-            'placeholder' => __('sys_id of the group for returned tickets', 'snowclient')
+            'placeholder' => __('sys_id of the group for returned tickets', 'edeploysnowclient')
         ]);
-        echo "<br><span class='small'>" . __('ServiceNow sys_id of the group that will receive returned tickets', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('ServiceNow sys_id of the group that will receive returned tickets', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         // Entity configuration
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Integration Entity', 'snowclient') . "</td>";
+        echo "<td>" . __('Integration Entity', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Entity::dropdown([
             'name' => 'entities_id',
             'value' => $this->fields['entities_id'],
             'comments' => false,
             'entity' => -1,  // Mostrar todas as entidades
-            'emptylabel' => __('Select an entity...', 'snowclient'),
+            'emptylabel' => __('Select an entity...', 'edeploysnowclient'),
             'display_emptychoice' => true
         ]);
-        echo "<br><span class='small'>" . __('Only tickets from this entity and its children will be synchronized', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Only tickets from this entity and its children will be synchronized', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('ServiceNow Request Type', 'snowclient') . "</td>";
+        echo "<td>" . __('ServiceNow Request Type', 'edeploysnowclient') . "</td>";
         echo "<td>";
         RequestType::dropdown([
             'name' => 'request_type',
             'value' => $this->fields['request_type'],
             'comments' => false,
             'entity' => -1,  // Mostrar todos os tipos de solicitação
-            'emptylabel' => __('Select a request type...', 'snowclient'),
+            'emptylabel' => __('Select a request type...', 'edeploysnowclient'),
             'display_emptychoice' => true
         ]);
-        echo "<br><span class='small'>" . __('Request type used to identify tickets from ServiceNow', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Request type used to identify tickets from ServiceNow', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('ServiceNow API User', 'snowclient') . "</td>";
+        echo "<td>" . __('ServiceNow API User', 'edeploysnowclient') . "</td>";
         echo "<td>";
         User::dropdown([
             'name' => 'api_user',
@@ -255,60 +255,60 @@ class PluginSnowclientConfig extends CommonDBTM
             'entity_sons' => true,
             'right' => 'all',
             'width' => '80%',
-            'emptylabel' => __('Select a user...', 'snowclient'),
+            'emptylabel' => __('Select a user...', 'edeploysnowclient'),
             'display_emptychoice' => true
         ]);
-        echo "<br><span class='small'>" . __('User for API operations and follow-ups', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('User for API operations and follow-ups', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         // Sync options
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='2' class='center tab_bg_2'>";
-        echo "<strong>" . __('Synchronization Options', 'snowclient') . "</strong>";
+        echo "<strong>" . __('Synchronization Options', 'edeploysnowclient') . "</strong>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sync Tickets', 'snowclient') . "</td>";
+        echo "<td>" . __('Sync Tickets', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_tickets', $this->fields['sync_tickets']);
-        echo "<br><span class='small'>" . __('Enable bidirectional ticket synchronization', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Enable bidirectional ticket synchronization', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sync Follow-ups', 'snowclient') . "</td>";
+        echo "<td>" . __('Sync Follow-ups', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_followups', $this->fields['sync_followups']);
-        echo "<br><span class='small'>" . __('Send GLPI updates back to ServiceNow as work notes', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Send GLPI updates back to ServiceNow as work notes', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sync Status Changes', 'snowclient') . "</td>";
+        echo "<td>" . __('Sync Status Changes', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_status', $this->fields['sync_status']);
-        echo "<br><span class='small'>" . __('Update ServiceNow ticket status when changed in GLPI', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Update ServiceNow ticket status when changed in GLPI', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sync Documents', 'snowclient') . "</td>";
+        echo "<td>" . __('Sync Documents', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_documents', $this->fields['sync_documents']);
-        echo "<br><span class='small'>" . __('Synchronize attachments between GLPI and ServiceNow', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Synchronize attachments between GLPI and ServiceNow', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Default Ticket Type', 'snowclient') . "</td>";
+        echo "<td>" . __('Default Ticket Type', 'edeploysnowclient') . "</td>";
         echo "<td>";
         $types = [
-            self::INCIDENT => __('Incident', 'snowclient'),
-            self::REQUEST => __('Service Request', 'snowclient'),
-            self::CHANGE => __('Change Request', 'snowclient'),
-            self::PROBLEM => __('Problem', 'snowclient'),
+            self::INCIDENT => __('Incident', 'edeploysnowclient'),
+            self::REQUEST => __('Service Request', 'edeploysnowclient'),
+            self::CHANGE => __('Change Request', 'edeploysnowclient'),
+            self::PROBLEM => __('Problem', 'edeploysnowclient'),
         ];
         Dropdown::showFromArray('default_type', $types, [
             'value' => $this->fields['default_type']
@@ -317,7 +317,7 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Enable Debug Mode', 'snowclient') . "</td>";
+        echo "<td>" . __('Enable Debug Mode', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('debug_mode', $this->fields['debug_mode']);
         echo "</td>";
@@ -326,7 +326,7 @@ class PluginSnowclientConfig extends CommonDBTM
         // Test connection button
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='2' class='center'>";
-        echo "<input type='submit' name='test_connection' value='" . __('Test ServiceNow Connection', 'snowclient') . "' class='btn btn-info' style='background-color: #17a2b8; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;'>";
+        echo "<input type='submit' name='test_connection' value='" . __('Test ServiceNow Connection', 'edeploysnowclient') . "' class='btn btn-info' style='background-color: #17a2b8; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;'>";
         echo "</td>";
         echo "</tr>";
 
@@ -339,14 +339,14 @@ class PluginSnowclientConfig extends CommonDBTM
         // Validate URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
-                Session::addMessageAfterRedirect(__('Invalid URL', 'snowclient'), false, ERROR);
+                Session::addMessageAfterRedirect(__('Invalid URL', 'edeploysnowclient'), false, ERROR);
                 return false;
             }
         }
 
         // Validate username
         if (isset($input['username']) && empty($input['username'])) {
-            Session::addMessageAfterRedirect(__('Username cannot be empty', 'snowclient'), false, ERROR);
+            Session::addMessageAfterRedirect(__('Username cannot be empty', 'edeploysnowclient'), false, ERROR);
             return false;
         }
 
@@ -456,14 +456,14 @@ class PluginSnowclientConfig extends CommonDBTM
             
             if (empty($this->fields['instance_url']) || empty($this->fields['username']) || empty($this->fields['password'])) {
                 Session::addMessageAfterRedirect(
-                    __('Please configure ServiceNow URL, username and password before testing connection.', 'snowclient'), 
+                    __('Please configure ServiceNow URL, username and password before testing connection.', 'edeploysnowclient'), 
                     false, 
                     ERROR
                 );
                 return;
             }
             
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $result = $api->testConnection();
             
             if ($result['success']) {
@@ -473,7 +473,7 @@ class PluginSnowclientConfig extends CommonDBTM
             }
         } catch (Exception $e) {
             Session::addMessageAfterRedirect(
-                sprintf(__('Error testing connection: %s', 'snowclient'), $e->getMessage()), 
+                sprintf(__('Error testing connection: %s', 'edeploysnowclient'), $e->getMessage()), 
                 false, 
                 ERROR
             );
@@ -487,7 +487,7 @@ class PluginSnowclientConfig extends CommonDBTM
         
         if (!self::shouldSyncTicket($ticket)) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket {$ticket->fields['id']} not in configured entity hierarchy. Skipping.");
+                error_log("eDeploySnowClient: Ticket {$ticket->fields['id']} not in configured entity hierarchy. Skipping.");
             }
             return false;
         }
@@ -507,26 +507,26 @@ class PluginSnowclientConfig extends CommonDBTM
         // Verificar se deve pular sincronização (ex: devolução)
         if (self::shouldSkipSyncHooks()) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Pulando sincronização de afterTicketUpdate (flag ativa) para ticket ID: " . $ticket->fields['id']);
+                error_log("eDeploySnowClient: Pulando sincronização de afterTicketUpdate (flag ativa) para ticket ID: " . $ticket->fields['id']);
             }
             return false;
         }
         
         if ($config->fields['debug_mode']) {
-            error_log("SnowClient: afterTicketUpdate chamado para ticket ID: " . $ticket->fields['id']);
+            error_log("eDeploySnowClient: afterTicketUpdate chamado para ticket ID: " . $ticket->fields['id']);
         }
         
         // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
         if (!self::shouldSyncTicket($ticket)) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket não está na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando atualização.");
+                error_log("eDeploySnowClient: Ticket não está na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando atualização.");
             }
             return false;
         }
         
         if (!self::isTicketFromServiceNow($ticket)) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket não é do ServiceNow, ignorando atualização");
+                error_log("eDeploySnowClient: Ticket não é do ServiceNow, ignorando atualização");
             }
             return false;
         }
@@ -543,7 +543,7 @@ class PluginSnowclientConfig extends CommonDBTM
             $statusName = ($ticket->fields['status'] == Ticket::SOLVED) ? 'SOLVED' : 'CLOSED';
             
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket {$ticket->fields['id']} alterado para {$statusName} pelo usuário da API ({$currentUser}). Assumindo que veio do ServiceNow, ignorando sincronização para evitar loop.");
+                error_log("eDeploySnowClient: Ticket {$ticket->fields['id']} alterado para {$statusName} pelo usuário da API ({$currentUser}). Assumindo que veio do ServiceNow, ignorando sincronização para evitar loop.");
             }
             
             return false;
@@ -551,14 +551,14 @@ class PluginSnowclientConfig extends CommonDBTM
         
         if ($config->fields['sync_tickets']) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Enviando atualização do ticket para ServiceNow...");
+                error_log("eDeploySnowClient: Enviando atualização do ticket para ServiceNow...");
             }
             
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $result = $api->updateIncident($ticket);
             
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Resultado da atualização: " . ($result ? 'sucesso' : 'falha'));
+                error_log("eDeploySnowClient: Resultado da atualização: " . ($result ? 'sucesso' : 'falha'));
             }
             
             return $result;
@@ -574,40 +574,40 @@ class PluginSnowclientConfig extends CommonDBTM
         // Verificar se deve pular sincronização (ex: devolução)
         if (self::shouldSkipSyncHooks()) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Pulando sincronização de afterTicketDelete (flag ativa) para ticket ID: " . $ticket->fields['id']);
+                error_log("eDeploySnowClient: Pulando sincronização de afterTicketDelete (flag ativa) para ticket ID: " . $ticket->fields['id']);
             }
             return false;
         }
         
         if ($config->fields['debug_mode']) {
-            error_log("SnowClient: afterTicketDelete chamado para ticket ID: " . $ticket->fields['id']);
+            error_log("eDeploySnowClient: afterTicketDelete chamado para ticket ID: " . $ticket->fields['id']);
         }
         
         // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
         if (!self::shouldSyncTicket($ticket)) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket não está na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando exclusão.");
+                error_log("eDeploySnowClient: Ticket não está na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando exclusão.");
             }
             return false;
         }
         
         if (!self::isTicketFromServiceNow($ticket)) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket não é do ServiceNow, ignorando exclusão");
+                error_log("eDeploySnowClient: Ticket não é do ServiceNow, ignorando exclusão");
             }
             return false;
         }
         
         if ($config->fields['sync_tickets']) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Enviando exclusão do ticket para ServiceNow...");
+                error_log("eDeploySnowClient: Enviando exclusão do ticket para ServiceNow...");
             }
             
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $result = $api->deleteIncident($ticket);
             
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Resultado da exclusão: " . ($result ? 'sucesso' : 'falha'));
+                error_log("eDeploySnowClient: Resultado da exclusão: " . ($result ? 'sucesso' : 'falha'));
             }
             
             return $result;
@@ -620,48 +620,48 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
-        error_log("SnowClient: afterTicketFollowUp chamado para followup ID: " . $followup->fields['id']);
+        error_log("eDeploySnowClient: afterTicketFollowUp chamado para followup ID: " . $followup->fields['id']);
         
         if (!$config->fields['sync_followups']) {
-            error_log("SnowClient: Sincronização de followups está desabilitada");
+            error_log("eDeploySnowClient: Sincronização de followups está desabilitada");
             return false;
         }
         
         $ticket = new Ticket();
         if ($ticket->getFromDB($followup->fields['items_id'])) {
-            error_log("SnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
+            error_log("eDeploySnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
             
             // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
             if (!self::shouldSyncTicket($ticket)) {
-                error_log("SnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando followup.");
+                error_log("eDeploySnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando followup.");
                 return false;
             }
             
             if (!self::isTicketFromServiceNow($ticket)) {
-                error_log("SnowClient: Ticket não é do ServiceNow, ignorando followup");
+                error_log("eDeploySnowClient: Ticket não é do ServiceNow, ignorando followup");
                 return false;
             }
             
             // Skip if followup is from API user to avoid loops
             if ($followup->fields['users_id'] == $config->fields['api_user']) {
-                error_log("SnowClient: Followup é do usuário API, ignorando para evitar loop");
+                error_log("eDeploySnowClient: Followup é do usuário API, ignorando para evitar loop");
                 return false;
             }
             
-            error_log("SnowClient: Enviando followup para ServiceNow...");
+            error_log("eDeploySnowClient: Enviando followup para ServiceNow...");
             
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $result = $api->addWorkNote($followup);
             
             if ($result) {
-                error_log("SnowClient: Followup enviado com sucesso para ServiceNow");
+                error_log("eDeploySnowClient: Followup enviado com sucesso para ServiceNow");
             } else {
-                error_log("SnowClient: ERRO - Falha ao enviar followup para ServiceNow");
+                error_log("eDeploySnowClient: ERRO - Falha ao enviar followup para ServiceNow");
             }
             
             return $result;
         } else {
-            error_log("SnowClient: ERRO - Não foi possível carregar ticket ID: " . $followup->fields['items_id']);
+            error_log("eDeploySnowClient: ERRO - Não foi possível carregar ticket ID: " . $followup->fields['items_id']);
         }
         
         return false;
@@ -673,13 +673,13 @@ class PluginSnowclientConfig extends CommonDBTM
         
         if (!$config->fields['sync_documents']) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Sincronização de documentos está desabilitada");
+                error_log("eDeploySnowClient: Sincronização de documentos está desabilitada");
             }
             return false;
         }
         
         if ($config->fields['debug_mode']) {
-            error_log("SnowClient: afterDocumentAdd chamado para documento ID: " . $document->fields['id']);
+            error_log("eDeploySnowClient: afterDocumentAdd chamado para documento ID: " . $document->fields['id']);
         }
         
         // Verificar se o documento está associado diretamente a um ticket
@@ -691,15 +691,15 @@ class PluginSnowclientConfig extends CommonDBTM
                     $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
                     
                     if ($config->fields['debug_mode']) {
-                        error_log("SnowClient: Snow sys_id obtido: " . ($snowSysId ?? 'null'));
+                        error_log("eDeploySnowClient: Snow sys_id obtido: " . ($snowSysId ?? 'null'));
                     }
                     
                     if ($snowSysId) {
-                        $api = new PluginSnowclientApi();
+                        $api = new PluginEdeploysnowclientApi();
                         $result = $api->attachDocument($document, $snowSysId);
                         
                         if ($config->fields['debug_mode']) {
-                            error_log("SnowClient: Resultado do anexo: " . ($result ? 'sucesso' : 'falha'));
+                            error_log("eDeploySnowClient: Resultado do anexo: " . ($result ? 'sucesso' : 'falha'));
                         }
                     }
                 }
@@ -713,13 +713,13 @@ class PluginSnowclientConfig extends CommonDBTM
         
         if (!$config->fields['sync_documents']) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Sincronização de documentos está desabilitada");
+                error_log("eDeploySnowClient: Sincronização de documentos está desabilitada");
             }
             return false;
         }
         
         if ($config->fields['debug_mode']) {
-            error_log("SnowClient: afterDocumentItemAdd chamado - itemtype: {$documentItem->fields['itemtype']}, items_id: {$documentItem->fields['items_id']}, documents_id: {$documentItem->fields['documents_id']}");
+            error_log("eDeploySnowClient: afterDocumentItemAdd chamado - itemtype: {$documentItem->fields['itemtype']}, items_id: {$documentItem->fields['items_id']}, documents_id: {$documentItem->fields['documents_id']}");
         }
         
         // Verificar se o anexo é para um ticket diretamente
@@ -731,17 +731,17 @@ class PluginSnowclientConfig extends CommonDBTM
                     $snowSysId = self::getSnowSysIdFromTicket($ticket->fields['id']);
                     
                     if ($config->fields['debug_mode']) {
-                        error_log("SnowClient: Snow sys_id obtido: " . ($snowSysId ?? 'null'));
+                        error_log("eDeploySnowClient: Snow sys_id obtido: " . ($snowSysId ?? 'null'));
                     }
                     
                     if ($snowSysId) {
                         $document = new Document();
                         if ($document->getFromDB($documentItem->fields['documents_id'])) {
-                            $api = new PluginSnowclientApi();
+                            $api = new PluginEdeploysnowclientApi();
                             $result = $api->attachDocument($document, $snowSysId);
                             
                             if ($config->fields['debug_mode']) {
-                                error_log("SnowClient: Resultado do envio: " . ($result ? 'sucesso' : 'falha'));
+                                error_log("eDeploySnowClient: Resultado do envio: " . ($result ? 'sucesso' : 'falha'));
                             }
                         }
                     }
@@ -758,7 +758,7 @@ class PluginSnowclientConfig extends CommonDBTM
                     // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
                     if (!self::shouldSyncTicket($ticket)) {
                         if ($config->fields['debug_mode']) {
-                            error_log("SnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando documento de followup.");
+                            error_log("eDeploySnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando documento de followup.");
                         }
                         return false;
                     }
@@ -770,11 +770,11 @@ class PluginSnowclientConfig extends CommonDBTM
                         if ($snowSysId) {
                             $document = new Document();
                             if ($document->getFromDB($documentItem->fields['documents_id'])) {
-                                $api = new PluginSnowclientApi();
+                                $api = new PluginEdeploysnowclientApi();
                                 $result = $api->attachDocument($document, $snowSysId);
                                 
                                 if ($config->fields['debug_mode']) {
-                                    error_log("SnowClient: Anexo do followup enviado - resultado: " . ($result ? 'sucesso' : 'falha'));
+                                    error_log("eDeploySnowClient: Anexo do followup enviado - resultado: " . ($result ? 'sucesso' : 'falha'));
                                 }
                             }
                         }
@@ -788,75 +788,75 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
-        error_log("SnowClient: afterTicketSolution chamado para solution ID: " . $solution->fields['id']);
+        error_log("eDeploySnowClient: afterTicketSolution chamado para solution ID: " . $solution->fields['id']);
         
         if (!$config->fields['sync_followups']) {
-            error_log("SnowClient: Sincronização de followups está desabilitada (soluções usam a mesma configuração)");
+            error_log("eDeploySnowClient: Sincronização de followups está desabilitada (soluções usam a mesma configuração)");
             return false;
         }
         
         $ticket = new Ticket();
         if ($ticket->getFromDB($solution->fields['items_id'])) {
-            error_log("SnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
+            error_log("eDeploySnowClient: Ticket carregado: " . $ticket->fields['id'] . " - " . $ticket->fields['name']);
             
             // VERIFICAÇÃO CRÍTICA: Revalida se ticket ainda está na entidade configurada
             if (!self::shouldSyncTicket($ticket)) {
-                error_log("SnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando solução.");
+                error_log("eDeploySnowClient: Ticket não está mais na entidade configurada (entidade atual: {$ticket->fields['entities_id']}). Ignorando solução.");
                 return false;
             }
             
             if (!self::isTicketFromServiceNow($ticket)) {
-                error_log("SnowClient: Ticket não é do ServiceNow, ignorando solução");
+                error_log("eDeploySnowClient: Ticket não é do ServiceNow, ignorando solução");
                 return false;
             }
             
             // Skip if solution is from API user to avoid loops
             if ($solution->fields['users_id'] == $config->fields['api_user']) {
-                error_log("SnowClient: Solução é do usuário API, ignorando para evitar loop");
+                error_log("eDeploySnowClient: Solução é do usuário API, ignorando para evitar loop");
                 return false;
             }
             
-            error_log("SnowClient: Enviando solução para ServiceNow...");
+            error_log("eDeploySnowClient: Enviando solução para ServiceNow...");
             
             // Recuperar dados adicionais da sessão se disponíveis
             $additionalData = [];
             if (isset($_SESSION['snowclient_solution_data'])) {
-                error_log("SnowClient: Dados encontrados na sessão");
+                error_log("eDeploySnowClient: Dados encontrados na sessão");
                 
                 $sessionData = $_SESSION['snowclient_solution_data'];
                 
                 // Se for string JSON, decodificar
                 if (is_string($sessionData)) {
                     $sessionData = json_decode($sessionData, true);
-                    error_log("SnowClient: Dados decodificados de JSON");
+                    error_log("eDeploySnowClient: Dados decodificados de JSON");
                 }
                 
                 if (is_array($sessionData) && isset($sessionData['solutionCode'])) {
                     $additionalData['solutionCode'] = $sessionData['solutionCode'];
-                    error_log("SnowClient: Dados adicionais recuperados da sessão: " . json_encode($additionalData));
+                    error_log("eDeploySnowClient: Dados adicionais recuperados da sessão: " . json_encode($additionalData));
                 } else {
-                    error_log("SnowClient: AVISO - Dados da sessão não contêm solutionCode: " . print_r($sessionData, true));
+                    error_log("eDeploySnowClient: AVISO - Dados da sessão não contêm solutionCode: " . print_r($sessionData, true));
                 }
                 
                 // Limpar dados da sessão após uso
                 unset($_SESSION['snowclient_solution_data']);
-                error_log("SnowClient: Dados removidos da sessão");
+                error_log("eDeploySnowClient: Dados removidos da sessão");
             } else {
-                error_log("SnowClient: AVISO - Nenhum dado adicional encontrado na sessão");
+                error_log("eDeploySnowClient: AVISO - Nenhum dado adicional encontrado na sessão");
             }
             
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $result = $api->addSolution($solution, $additionalData);
             
             if ($result) {
-                error_log("SnowClient: Solução enviada com sucesso para ServiceNow");
+                error_log("eDeploySnowClient: Solução enviada com sucesso para ServiceNow");
             } else {
-                error_log("SnowClient: ERRO - Falha ao enviar solução para ServiceNow");
+                error_log("eDeploySnowClient: ERRO - Falha ao enviar solução para ServiceNow");
             }
             
             return $result;
         } else {
-            error_log("SnowClient: ERRO - Não foi possível carregar ticket ID: " . $solution->fields['items_id']);
+            error_log("eDeploySnowClient: ERRO - Não foi possível carregar ticket ID: " . $solution->fields['items_id']);
         }
         
         return false;
@@ -869,22 +869,22 @@ class PluginSnowclientConfig extends CommonDBTM
         $configEntityId = $config->fields['entities_id'];
         $ticketEntityId = $ticket->fields['entities_id'];
         
-        error_log("SnowClient: shouldSyncTicket - config entity: $configEntityId");
-        error_log("SnowClient: shouldSyncTicket - ticket entity: $ticketEntityId");
+        error_log("eDeploySnowClient: shouldSyncTicket - config entity: $configEntityId");
+        error_log("eDeploySnowClient: shouldSyncTicket - ticket entity: $ticketEntityId");
         
         if (empty($configEntityId)) {
-            error_log("SnowClient: shouldSyncTicket - config entity is empty");
+            error_log("eDeploySnowClient: shouldSyncTicket - config entity is empty");
             return false;
         }
         
         if ($ticketEntityId == $configEntityId) {
-            error_log("SnowClient: shouldSyncTicket - exact match, returning true");
+            error_log("eDeploySnowClient: shouldSyncTicket - exact match, returning true");
             return true;
         }
         
         $descendants = getSonsOf('glpi_entities', $configEntityId);
         $inDescendants = in_array($ticketEntityId, $descendants);
-        error_log("SnowClient: shouldSyncTicket - checking descendants: " . ($inDescendants ? 'true' : 'false'));
+        error_log("eDeploySnowClient: shouldSyncTicket - checking descendants: " . ($inDescendants ? 'true' : 'false'));
         
         return $inDescendants;
     }
@@ -893,7 +893,7 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $snowId = self::extractServiceNowId($ticket);
         $isFromSnow = $snowId !== false;
-        error_log("SnowClient: isTicketFromServiceNow - ticket " . $ticket->getID() . " snow_id: " . ($snowId ? $snowId : 'none') . " - result: " . ($isFromSnow ? 'true' : 'false'));
+        error_log("eDeploySnowClient: isTicketFromServiceNow - ticket " . $ticket->getID() . " snow_id: " . ($snowId ? $snowId : 'none') . " - result: " . ($isFromSnow ? 'true' : 'false'));
         return $isFromSnow;
     }
 
@@ -917,7 +917,7 @@ class PluginSnowclientConfig extends CommonDBTM
             $cleanSnowId = ltrim($snowId, '#');
             
             global $DB;
-            $mappingTable = 'glpi_plugin_snowclient_mappings';
+            $mappingTable = 'glpi_plugin_edeploysnowclient_mappings';
             
             $existing = $DB->request([
                 'FROM' => $mappingTable,
@@ -933,7 +933,7 @@ class PluginSnowclientConfig extends CommonDBTM
                 ]);
                 
                 if ($config->fields['debug_mode']) {
-                    error_log("SnowClient: Mapped GLPI ticket {$ticket->fields['id']} to ServiceNow {$cleanSnowId}");
+                    error_log("eDeploySnowClient: Mapped GLPI ticket {$ticket->fields['id']} to ServiceNow {$cleanSnowId}");
                 }
             }
         }
@@ -956,7 +956,7 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         global $DB;
         
-        $mappingTable = 'glpi_plugin_snowclient_mappings';
+        $mappingTable = 'glpi_plugin_edeploysnowclient_mappings';
         
         $result = $DB->request([
             'FROM' => $mappingTable,
@@ -969,12 +969,12 @@ class PluginSnowclientConfig extends CommonDBTM
             
             // Se o valor armazenado é um número de incidente (INC1234567), buscar o sys_id real via API
             if (preg_match('/^(INC|REQ|CHG|PRB)\d{7}$/', $storedValue)) {
-                $api = new PluginSnowclientApi();
+                $api = new PluginEdeploysnowclientApi();
                 $realSysId = $api->getSysIdFromIncidentNumber($storedValue);
                 
                 $config = self::getInstance();
                 if ($config->fields['debug_mode']) {
-                    error_log("SnowClient: Convertendo {$storedValue} para sys_id: " . ($realSysId ?? 'null'));
+                    error_log("eDeploySnowClient: Convertendo {$storedValue} para sys_id: " . ($realSysId ?? 'null'));
                 }
                 
                 return $realSysId;
@@ -996,29 +996,29 @@ class PluginSnowclientConfig extends CommonDBTM
     {
         $config = self::getInstance();
         
-        error_log("SnowClient: shouldShowReturnButton - ticket ID: " . $ticket->getID());
-        error_log("SnowClient: shouldShowReturnButton - ticket entity: " . $ticket->fields['entities_id']);
-        error_log("SnowClient: shouldShowReturnButton - config entity: " . $config->fields['entities_id']);
-        error_log("SnowClient: shouldShowReturnButton - ticket status: " . $ticket->fields['status']);
+        error_log("eDeploySnowClient: shouldShowReturnButton - ticket ID: " . $ticket->getID());
+        error_log("eDeploySnowClient: shouldShowReturnButton - ticket entity: " . $ticket->fields['entities_id']);
+        error_log("eDeploySnowClient: shouldShowReturnButton - config entity: " . $config->fields['entities_id']);
+        error_log("eDeploySnowClient: shouldShowReturnButton - ticket status: " . $ticket->fields['status']);
         
         // Verificar se o ticket é do ServiceNow e está na entidade configurada
         if (!self::shouldSyncTicket($ticket)) {
-            error_log("SnowClient: shouldShowReturnButton - shouldSyncTicket returned false");
+            error_log("eDeploySnowClient: shouldShowReturnButton - shouldSyncTicket returned false");
             return false;
         }
         
         if (!self::isTicketFromServiceNow($ticket)) {
-            error_log("SnowClient: shouldShowReturnButton - isTicketFromServiceNow returned false");
+            error_log("eDeploySnowClient: shouldShowReturnButton - isTicketFromServiceNow returned false");
             return false;
         }
         
         // Verificar se o ticket não está resolvido/fechado
         if (in_array($ticket->fields['status'], [Ticket::SOLVED, Ticket::CLOSED])) {
-            error_log("SnowClient: shouldShowReturnButton - ticket is solved/closed");
+            error_log("eDeploySnowClient: shouldShowReturnButton - ticket is solved/closed");
             return false;
         }
         
-        error_log("SnowClient: shouldShowReturnButton - returning true");
+        error_log("eDeploySnowClient: shouldShowReturnButton - returning true");
         return true;
     }
 
@@ -1030,24 +1030,24 @@ class PluginSnowclientConfig extends CommonDBTM
         global $CFG_GLPI;
         
         if (!$ticket->canUpdate()) {
-            error_log("SnowClient: showReturnButton - user cannot update ticket");
+            error_log("eDeploySnowClient: showReturnButton - user cannot update ticket");
             return;
         }
         
-        error_log("SnowClient: showReturnButton - adding JavaScript for ticket " . $ticket->getID());
+        error_log("eDeploySnowClient: showReturnButton - adding JavaScript for ticket " . $ticket->getID());
         
         // Apenas injetar um sinal para o JavaScript saber que deve mostrar o botão
         echo "<script type='text/javascript'>
-        console.log('SnowClient: Definindo variáveis para ticket {$ticket->getID()}');
+        console.log('eDeploySnowClient: Definindo variáveis para ticket {$ticket->getID()}');
         
         // Adicionar uma variável global indicando que o botão deve ser mostrado
         window.snowclient_show_return_button = true;
         window.snowclient_ticket_id = {$ticket->getID()};
         
-        console.log('SnowClient: Variáveis definidas - show_button:', window.snowclient_show_return_button, 'ticket_id:', window.snowclient_ticket_id);
+        console.log('eDeploySnowClient: Variáveis definidas - show_button:', window.snowclient_show_return_button, 'ticket_id:', window.snowclient_ticket_id);
         
         $(document).ready(function() {
-            console.log('SnowClient: Document ready - Return button should be shown for ticket {$ticket->getID()}');
+            console.log('eDeploySnowClient: Document ready - Return button should be shown for ticket {$ticket->getID()}');
         });
         </script>";
     }
@@ -1100,8 +1100,8 @@ class PluginSnowclientConfig extends CommonDBTM
             self::setSkipSyncHooks(false);
             
             // 4. Enviar alteração para o ServiceNow (sem resolver lá)
-            $api = new PluginSnowclientApi();
-            error_log("SnowClient RETURN: Chamando API para devolver ticket {$ticket->getID()} ao ServiceNow");
+            $api = new PluginEdeploysnowclientApi();
+            error_log("eDeploySnowClient RETURN: Chamando API para devolver ticket {$ticket->getID()} ao ServiceNow");
             
             $snowResult = $api->returnTicketToQueue($ticket, $reason);
             
@@ -1114,7 +1114,7 @@ class PluginSnowclientConfig extends CommonDBTM
                     // Verificar se a correlação existe
                     if (!$api->canUpdateIncident($ticket, $sysId)) {
                         $correlationError = true;
-                        error_log("SnowClient RETURN: ERRO - Correlação não encontrada para ticket {$ticket->getID()}");
+                        error_log("eDeploySnowClient RETURN: ERRO - Correlação não encontrada para ticket {$ticket->getID()}");
                     }
                 }
                 
@@ -1134,7 +1134,7 @@ class PluginSnowclientConfig extends CommonDBTM
                 }
                 
                 // Log do erro mas não falha a operação local se não foi erro de correlação
-                error_log("SnowClient RETURN: FALHA - Erro ao enviar devolução para ServiceNow - Ticket ID: " . $ticket->getID());
+                error_log("eDeploySnowClient RETURN: FALHA - Erro ao enviar devolução para ServiceNow - Ticket ID: " . $ticket->getID());
                 
                 // Reativar flag para adicionar followup de erro
                 self::setSkipSyncHooks(true);
@@ -1153,7 +1153,7 @@ class PluginSnowclientConfig extends CommonDBTM
                 // Desativar flag novamente
                 self::setSkipSyncHooks(false);
             } else {
-                error_log("SnowClient RETURN: SUCESSO - Ticket devolvido com sucesso ao ServiceNow");
+                error_log("eDeploySnowClient RETURN: SUCESSO - Ticket devolvido com sucesso ao ServiceNow");
             }
             
             return [
@@ -1166,7 +1166,7 @@ class PluginSnowclientConfig extends CommonDBTM
             // Garantir que a flag seja desativada em caso de erro
             self::setSkipSyncHooks(false);
             
-            error_log("SnowClient returnTicketToServiceNow Error: " . $e->getMessage());
+            error_log("eDeploySnowClient returnTicketToServiceNow Error: " . $e->getMessage());
             return [
                 'success' => false, 
                 'message' => 'Erro ao processar devolução: ' . $e->getMessage()

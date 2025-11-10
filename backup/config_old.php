@@ -24,13 +24,13 @@
 
 include ('../../../inc/includes.php');
 
-//Session::checkRight("plugin_snowclient_config", READ);
+//Session::checkRight("plugin_edeploysnowclient_config", READ);
 
 if (empty($_GET["id"])) {
    $_GET["id"] = 1;
 }
 
-$config = new PluginSnowclientConfig();
+$config = new PluginEdeploysnowclientConfig();
 
 if (isset($_POST["add"])) {
    $config->check(-1, CREATE, $_POST);
@@ -66,7 +66,7 @@ if (isset($_POST["add"])) {
 
 } else if (isset($_POST["update"])) {
    if (!isset($_POST['id']) || empty($_POST['id'])) {
-      Session::addMessageAfterRedirect(__('ID de configuração ausente. Não foi possível salvar.', 'snowclient'), false, ERROR);
+      Session::addMessageAfterRedirect(__('ID de configuração ausente. Não foi possível salvar.', 'edeploysnowclient'), false, ERROR);
       Html::back();
       exit;
    }
@@ -81,9 +81,9 @@ if (isset($_POST["add"])) {
    Toolbox::logDebug("Resultado da atualização: " . ($result ? "sucesso" : "falha"));
 
    if ($result) {
-      Session::addMessageAfterRedirect(__('Configuração atualizada com sucesso!', 'snowclient'), false, INFO);
+      Session::addMessageAfterRedirect(__('Configuração atualizada com sucesso!', 'edeploysnowclient'), false, INFO);
    } else {
-      Session::addMessageAfterRedirect(__('Erro ao atualizar configuração. Verifique os logs.', 'snowclient'), false, ERROR);
+      Session::addMessageAfterRedirect(__('Erro ao atualizar configuração. Verifique os logs.', 'edeploysnowclient'), false, ERROR);
    }
    Event::log($_POST['id'], "snowclientconfig", 4, "setup",
               sprintf(__('%1$s updates the item %2$s'), $_SESSION["glpiname"],
@@ -98,7 +98,7 @@ if (isset($_POST["add"])) {
    
    try {
       // Test ServiceNow connection using current saved configuration
-      $api = new PluginSnowclientApi();
+      $api = new PluginEdeploysnowclientApi();
       $result = $api->testConnection();
       
       if ($result['success']) {
@@ -108,7 +108,7 @@ if (isset($_POST["add"])) {
       }
    } catch (Exception $e) {
       Session::addMessageAfterRedirect(
-         "❌ " . sprintf(__('Erro ao testar conexão: %s', 'snowclient'), $e->getMessage()), 
+         "❌ " . sprintf(__('Erro ao testar conexão: %s', 'edeploysnowclient'), $e->getMessage()), 
          false, 
          ERROR
       );
@@ -116,7 +116,7 @@ if (isset($_POST["add"])) {
    Html::back();
 
 } else {
-   Html::header(PluginSnowclientConfig::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], "config", "plugins");
+   Html::header(PluginEdeploysnowclientConfig::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], "config", "plugins");
    $config->display($_GET);
    Html::footer();
 }

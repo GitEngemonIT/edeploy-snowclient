@@ -24,10 +24,10 @@
 
 include ('../../../inc/includes.php');
 
-Session::checkRight("plugin_snowclient_config", READ);
+Session::checkRight("plugin_edeploysnowclient_config", READ);
 
 Html::header(__('ServiceNow Client Configuration', 'snowclient'), $_SERVER['PHP_SELF'], "config", "plugins");
 
-Search::show('PluginSnowclientConfig');
+Search::show('PluginEdeploysnowclientConfig');
 
 Html::footer();

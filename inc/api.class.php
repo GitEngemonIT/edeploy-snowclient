@@ -3,7 +3,7 @@
    -----------------------------------------------------------------------------------------
    Plugin ServiceNow Client
    Copyright (C) 2025 by EngemonIT
-   https://github.com/engemon/snowclient
+   https://github.com/GitEngemonIT/edeploy-snowclient
    ------------------------------------------------------------------------
    LICENSE
    This file is part of Plugin ServiceNow Client project.
@@ -17,7 +17,7 @@
    @co-author
    @copyright Copyright (c) 2025 ServiceNow Client Plugin Development team
    @license   GPL v3 or later
-   @link      https://github.com/engemon/snowclient
+   @link      https://github.com/GitEngemonIT/edeploy-snowclient
    @since     2025
    ------------------------------------------------------------------------
  */
@@ -27,9 +27,9 @@ if (!defined('GLPI_ROOT')) {
 }
 
 /**
- * Class PluginSnowclientApi
+ * Class PluginEdeploysnowclientApi
  */
-class PluginSnowclientApi
+class PluginEdeploysnowclientApi
 {
     private $config;
     private $instance_url;
@@ -39,7 +39,7 @@ class PluginSnowclientApi
 
     public function __construct()
     {
-        $this->config = PluginSnowclientConfig::getInstance();
+        $this->config = PluginEdeploysnowclientConfig::getInstance();
         $this->instance_url = $this->config->fields['instance_url'];
         $this->username = $this->config->fields['username'];
         
@@ -50,10 +50,10 @@ class PluginSnowclientApi
         
         // Log de debug apenas se modo debug estiver ativo
         if ($this->debug_mode) {
-            error_log("SnowClient API DEBUG: Construtor inicializado");
-            error_log("SnowClient API DEBUG: URL: " . ($this->instance_url ?: 'VAZIA'));
-            error_log("SnowClient API DEBUG: Username: " . ($this->username ?: 'VAZIO'));
-            error_log("SnowClient API DEBUG: Password carregada: " . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
+            error_log("eDeploySnowClient API DEBUG: Construtor inicializado");
+            error_log("eDeploySnowClient API DEBUG: URL: " . ($this->instance_url ?: 'VAZIA'));
+            error_log("eDeploySnowClient API DEBUG: Username: " . ($this->username ?: 'VAZIO'));
+            error_log("eDeploySnowClient API DEBUG: Password carregada: " . (empty($this->password) ? 'NÃO' : 'SIM (' . strlen($this->password) . ' chars)'));
         }
     }
 
@@ -82,10 +82,10 @@ class PluginSnowclientApi
         
         // Log temporário para debug de autenticação
         if ($this->debug_mode) {
-            error_log("SnowClient API DEBUG: URL: " . $url);
-            error_log("SnowClient API DEBUG: Username: " . $this->username);
-            error_log("SnowClient API DEBUG: Password length: " . strlen($this->password));
-            error_log("SnowClient API DEBUG: Password empty: " . (empty($this->password) ? 'YES' : 'NO'));
+            error_log("eDeploySnowClient API DEBUG: URL: " . $url);
+            error_log("eDeploySnowClient API DEBUG: Username: " . $this->username);
+            error_log("eDeploySnowClient API DEBUG: Password length: " . strlen($this->password));
+            error_log("eDeploySnowClient API DEBUG: Password empty: " . (empty($this->password) ? 'YES' : 'NO'));
         }
         
         $ch = curl_init();
@@ -144,7 +144,7 @@ class PluginSnowclientApi
         }
 
         if ($error) {
-            error_log("SnowClient RETURN: ERRO cURL - $error");
+            error_log("eDeploySnowClient RETURN: ERRO cURL - $error");
             throw new Exception("cURL Error: $error");
         }
 
@@ -221,18 +221,18 @@ class PluginSnowclientApi
             if (isset($result['result']) && is_array($result['result'])) {
                 return [
                     'success' => true,
-                    'message' => sprintf(__('Conexão bem-sucedida! Encontrados %d registros.', 'snowclient'), count($result['result']))
+                    'message' => sprintf(__('Conexão bem-sucedida! Encontrados %d registros.', 'edeploysnowclient'), count($result['result']))
                 ];
             } else {
                 return [
                     'success' => false,
-                    'message' => __('Resposta inesperada da API ServiceNow', 'snowclient')
+                    'message' => __('Resposta inesperada da API ServiceNow', 'edeploysnowclient')
                 ];
             }
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => sprintf(__('Erro na conexão: %s', 'snowclient'), $e->getMessage())
+                'message' => sprintf(__('Erro na conexão: %s', 'edeploysnowclient'), $e->getMessage())
             ];
         }
     }
@@ -294,10 +294,10 @@ class PluginSnowclientApi
     public function updateIncident($ticket)
     {
         // Extrair ID do ServiceNow do título do ticket
-        $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
+        $snowId = PluginEdeploysnowclientConfig::extractServiceNowId($ticket);
         if (!$snowId) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
+                Toolbox::logDebug("eDeploySnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
             }
             return false;
         }
@@ -311,7 +311,7 @@ class PluginSnowclientApi
             
             if (empty($searchResult['result'])) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: Incidente $cleanSnowId não encontrado no ServiceNow");
+                    Toolbox::logError("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow");
                 }
                 return false;
             }
@@ -321,14 +321,14 @@ class PluginSnowclientApi
             // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
             if (!$this->canUpdateIncident($ticket, $sysId)) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a atualizar incidente $sysId devido ao correlation_id");
+                    Toolbox::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a atualizar incidente $sysId devido ao correlation_id");
                 }
                 return false;
             }
             
             // Preparar dados de atualização
             $updateData = [
-                'work_notes' => sprintf(__('Ticket atualizado no GLPI por %s em %s', 'snowclient'), 
+                'work_notes' => sprintf(__('Ticket atualizado no GLPI por %s em %s', 'edeploysnowclient'), 
                     getUserName(Session::getLoginUserID()), 
                     date('Y-m-d H:i:s'))
             ];
@@ -362,20 +362,20 @@ class PluginSnowclientApi
             }
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Atualizando incidente $cleanSnowId com dados: " . json_encode($updateData));
+                Toolbox::logDebug("eDeploySnowClient: Atualizando incidente $cleanSnowId com dados: " . json_encode($updateData));
             }
             
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Incidente $cleanSnowId atualizado com sucesso");
+                Toolbox::logDebug("eDeploySnowClient: Incidente $cleanSnowId atualizado com sucesso");
             }
             
             return $result['result'] ?? null;
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("SnowClient: Erro ao atualizar incidente $cleanSnowId: " . $e->getMessage());
+                Toolbox::logError("eDeploySnowClient: Erro ao atualizar incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -389,16 +389,16 @@ class PluginSnowclientApi
         $ticket = new Ticket();
         if (!$ticket->getFromDB($followup->fields['items_id'])) {
             if ($this->debug_mode) {
-                Toolbox::logError("SnowClient: Ticket {$followup->fields['items_id']} não encontrado para followup");
+                Toolbox::logError("eDeploySnowClient: Ticket {$followup->fields['items_id']} não encontrado para followup");
             }
             return false;
         }
         
         // Extrair ID do ServiceNow
-        $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
+        $snowId = PluginEdeploysnowclientConfig::extractServiceNowId($ticket);
         if (!$snowId) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
+                Toolbox::logDebug("eDeploySnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
             }
             return false;
         }
@@ -411,7 +411,7 @@ class PluginSnowclientApi
             
             if (empty($searchResult['result'])) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para followup");
+                    Toolbox::logError("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para followup");
                 }
                 return false;
             }
@@ -421,7 +421,7 @@ class PluginSnowclientApi
             // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
             if (!$this->canUpdateIncident($ticket, $sysId)) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar followup ao incidente $sysId devido ao correlation_id");
+                    Toolbox::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar followup ao incidente $sysId devido ao correlation_id");
                 }
                 return false;
             }
@@ -458,20 +458,20 @@ class PluginSnowclientApi
             ];
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Adicionando work note ao incidente $cleanSnowId");
+                Toolbox::logDebug("eDeploySnowClient: Adicionando work note ao incidente $cleanSnowId");
             }
             
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Work note adicionada com sucesso ao incidente $cleanSnowId");
+                Toolbox::logDebug("eDeploySnowClient: Work note adicionada com sucesso ao incidente $cleanSnowId");
             }
             
             return $result['result'] ?? null;
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("SnowClient: Erro ao adicionar nota de trabalho ao incidente $cleanSnowId: " . $e->getMessage());
+                Toolbox::logError("eDeploySnowClient: Erro ao adicionar nota de trabalho ao incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -485,16 +485,16 @@ class PluginSnowclientApi
         $ticket = new Ticket();
         if (!$ticket->getFromDB($solution->fields['items_id'])) {
             if ($this->debug_mode) {
-                Toolbox::logError("SnowClient: Ticket {$solution->fields['items_id']} não encontrado para solução");
+                Toolbox::logError("eDeploySnowClient: Ticket {$solution->fields['items_id']} não encontrado para solução");
             }
             return false;
         }
         
         // Extrair ID do ServiceNow
-        $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
+        $snowId = PluginEdeploysnowclientConfig::extractServiceNowId($ticket);
         if (!$snowId) {
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
+                Toolbox::logDebug("eDeploySnowClient: Ticket {$ticket->fields['id']} não tem ID ServiceNow no título");
             }
             return false;
         }
@@ -507,7 +507,7 @@ class PluginSnowclientApi
             
             if (empty($searchResult['result'])) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para solução");
+                    Toolbox::logError("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para solução");
                 }
                 return false;
             }
@@ -517,7 +517,7 @@ class PluginSnowclientApi
             // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
             if (!$this->canUpdateIncident($ticket, $sysId)) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar solução ao incidente $sysId devido ao correlation_id");
+                    Toolbox::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar solução ao incidente $sysId devido ao correlation_id");
                 }
                 return false;
             }
@@ -567,14 +567,14 @@ class PluginSnowclientApi
             ];
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: ETAPA 1 - Resolvendo incidente $cleanSnowId");
-                Toolbox::logDebug("SnowClient: Dados de resolução: " . json_encode($resolveData));
+                Toolbox::logDebug("eDeploySnowClient: ETAPA 1 - Resolvendo incidente $cleanSnowId");
+                Toolbox::logDebug("eDeploySnowClient: Dados de resolução: " . json_encode($resolveData));
             }
             
             $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $resolveData);
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: ETAPA 1 - Incidente resolvido com sucesso");
+                Toolbox::logDebug("eDeploySnowClient: ETAPA 1 - Incidente resolvido com sucesso");
             }
             
             // Aguardar processamento
@@ -588,19 +588,19 @@ class PluginSnowclientApi
             ];
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("SnowClient: ETAPA 2 - Enviando dados mockados adicionais");
-                Toolbox::logDebug("SnowClient: Dados mockados: " . json_encode($additionalMockedData));
+                Toolbox::logDebug("eDeploySnowClient: ETAPA 2 - Enviando dados mockados adicionais");
+                Toolbox::logDebug("eDeploySnowClient: Dados mockados: " . json_encode($additionalMockedData));
             }
             
             try {
                 $mockedResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $additionalMockedData);
                 
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: ETAPA 2 - Dados mockados enviados com sucesso");
+                    Toolbox::logDebug("eDeploySnowClient: ETAPA 2 - Dados mockados enviados com sucesso");
                 }
             } catch (Exception $e) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("SnowClient: ETAPA 2 - Erro ao enviar dados mockados (não crítico): " . $e->getMessage());
+                    Toolbox::logError("eDeploySnowClient: ETAPA 2 - Erro ao enviar dados mockados (não crítico): " . $e->getMessage());
                 }
             }
             
@@ -610,7 +610,7 @@ class PluginSnowclientApi
             // ETAPA 3: Enviar type_of_failure da modal (se fornecido)
             if (!empty($additionalData) && isset($additionalData['solutionCode'])) {
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: ETAPA 3 - Enviando type_of_failure da modal");
+                    Toolbox::logDebug("eDeploySnowClient: ETAPA 3 - Enviando type_of_failure da modal");
                 }
                 
                 $typeOfFailureData = [
@@ -618,23 +618,23 @@ class PluginSnowclientApi
                 ];
                 
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: Type of failure: " . json_encode($typeOfFailureData));
+                    Toolbox::logDebug("eDeploySnowClient: Type of failure: " . json_encode($typeOfFailureData));
                 }
                 
                 try {
                     $failureResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $typeOfFailureData);
                     
                     if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: ETAPA 3 - Type of failure enviado com sucesso");
+                        Toolbox::logDebug("eDeploySnowClient: ETAPA 3 - Type of failure enviado com sucesso");
                     }
                 } catch (Exception $e) {
                     if ($this->debug_mode) {
-                        Toolbox::logError("SnowClient: ETAPA 3 - Erro ao enviar type_of_failure (não crítico): " . $e->getMessage());
+                        Toolbox::logError("eDeploySnowClient: ETAPA 3 - Erro ao enviar type_of_failure (não crítico): " . $e->getMessage());
                     }
                 }
             } else {
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("SnowClient: ETAPA 3 - Nenhum type_of_failure fornecido pela modal, pulando");
+                    Toolbox::logDebug("eDeploySnowClient: ETAPA 3 - Nenhum type_of_failure fornecido pela modal, pulando");
                 }
             }
             
@@ -642,7 +642,7 @@ class PluginSnowclientApi
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("SnowClient: Erro ao adicionar solução ao incidente $cleanSnowId: " . $e->getMessage());
+                Toolbox::logError("eDeploySnowClient: Erro ao adicionar solução ao incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -654,7 +654,7 @@ class PluginSnowclientApi
     public function deleteIncident($ticket)
     {
         // Extrair ID do ServiceNow do título do ticket
-        $snowId = PluginSnowclientConfig::extractServiceNowId($ticket);
+        $snowId = PluginEdeploysnowclientConfig::extractServiceNowId($ticket);
         if (!$snowId) {
             return false;
         }
@@ -678,7 +678,7 @@ class PluginSnowclientApi
             // Cancelar incidente (state = 8 = Canceled)
             $updateData = [
                 'state' => 8,
-                'work_notes' => sprintf(__('Ticket cancelado no GLPI por %s', 'snowclient'), 
+                'work_notes' => sprintf(__('Ticket cancelado no GLPI por %s', 'edeploysnowclient'), 
                     getUserName(Session::getLoginUserID()))
             ];
             
@@ -698,45 +698,45 @@ class PluginSnowclientApi
      */
     public function attachDocument($document, $sys_id = null)
     {
-        error_log("SnowClient: attachDocument iniciado - documento ID: {$document->fields['id']}, sys_id: $sys_id");
+        error_log("eDeploySnowClient: attachDocument iniciado - documento ID: {$document->fields['id']}, sys_id: $sys_id");
         
         if (!$sys_id) {
-            error_log("SnowClient: Erro - sys_id não fornecido");
+            error_log("eDeploySnowClient: Erro - sys_id não fornecido");
             return false;
         }
 
-        error_log("SnowClient: Iniciando envio de anexo - documento: {$document->fields['name']}");
-        error_log("SnowClient: Filepath original: {$document->fields['filepath']}");
+        error_log("eDeploySnowClient: Iniciando envio de anexo - documento: {$document->fields['name']}");
+        error_log("eDeploySnowClient: Filepath original: {$document->fields['filepath']}");
 
         // Usar caminho correto do GLPI para documentos
         $filepath = GLPI_ROOT . '/../files/' . $document->fields['filepath'];
         
-        error_log("SnowClient: Caminho construído: $filepath");
+        error_log("eDeploySnowClient: Caminho construído: $filepath");
         
         if (!file_exists($filepath)) {
-            error_log("SnowClient: Arquivo não encontrado: $filepath");
+            error_log("eDeploySnowClient: Arquivo não encontrado: $filepath");
             return false;
         }
 
-        error_log("SnowClient: Arquivo encontrado: $filepath (tamanho: " . filesize($filepath) . " bytes)");
+        error_log("eDeploySnowClient: Arquivo encontrado: $filepath (tamanho: " . filesize($filepath) . " bytes)");
 
         try {
             // Passo 1: Upload do arquivo via ServiceNow Attachment API
             $mimeType = $document->fields['mime'] ?? 'application/octet-stream';
-            error_log("SnowClient: Iniciando upload - mime: $mimeType");
+            error_log("eDeploySnowClient: Iniciando upload - mime: $mimeType");
             
             $attachmentSysId = $this->uploadFileToServiceNow($filepath, $document->fields['name'], $mimeType, $sys_id);
             
             if (!$attachmentSysId) {
-                error_log("SnowClient: Falha no upload do arquivo");
+                error_log("eDeploySnowClient: Falha no upload do arquivo");
                 return false;
             }
 
-            error_log("SnowClient: Upload bem-sucedido, attachment sys_id: $attachmentSysId");
+            error_log("eDeploySnowClient: Upload bem-sucedido, attachment sys_id: $attachmentSysId");
             return true;
 
         } catch (Exception $e) {
-            error_log("SnowClient: Exceção ao enviar anexo: " . $e->getMessage());
+            error_log("eDeploySnowClient: Exceção ao enviar anexo: " . $e->getMessage());
             return false;
         }
     }
@@ -746,18 +746,18 @@ class PluginSnowclientApi
      */
     private function uploadFileToServiceNow($filepath, $filename, $mimeType = null, $incidentSysId = null)
     {
-        error_log("SnowClient: Iniciando upload do arquivo: $filename");
+        error_log("eDeploySnowClient: Iniciando upload do arquivo: $filename");
         
         // Verificar se arquivo existe
         if (!file_exists($filepath)) {
-            error_log("SnowClient: Arquivo não encontrado: $filepath");
+            error_log("eDeploySnowClient: Arquivo não encontrado: $filepath");
             return false;
         }
 
         // Ler conteúdo do arquivo
         $fileContent = file_get_contents($filepath);
         if ($fileContent === false) {
-            error_log("SnowClient: Erro ao ler arquivo: $filepath");
+            error_log("eDeploySnowClient: Erro ao ler arquivo: $filepath");
             return false;
         }
 
@@ -774,7 +774,7 @@ class PluginSnowclientApi
         
         $url = rtrim($this->instance_url, '/') . '/api/now/attachment/file?' . http_build_query($params);
         
-        error_log("SnowClient: Fazendo upload para URL: $url");
+        error_log("eDeploySnowClient: Fazendo upload para URL: $url");
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -791,35 +791,35 @@ class PluginSnowclientApi
         // Enviar conteúdo binário diretamente no body
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
 
-        error_log("SnowClient: Enviando request de upload... (tamanho: " . strlen($fileContent) . " bytes)");
+        error_log("eDeploySnowClient: Enviando request de upload... (tamanho: " . strlen($fileContent) . " bytes)");
         
         $response = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
 
-        error_log("SnowClient: Upload response code: $http_code");
-        error_log("SnowClient: Upload response: " . substr($response, 0, 1000));
+        error_log("eDeploySnowClient: Upload response code: $http_code");
+        error_log("eDeploySnowClient: Upload response: " . substr($response, 0, 1000));
 
         if ($error) {
-            error_log("SnowClient: cURL Error no upload: $error");
+            error_log("eDeploySnowClient: cURL Error no upload: $error");
             return false;
         }
 
         if ($http_code >= 400) {
-            error_log("SnowClient: HTTP Error $http_code no upload: $response");
+            error_log("eDeploySnowClient: HTTP Error $http_code no upload: $response");
             return false;
         }
 
         $result = json_decode($response, true);
         
-        error_log("SnowClient: Upload result parsed: " . json_encode($result));
+        error_log("eDeploySnowClient: Upload result parsed: " . json_encode($result));
         
         if (isset($result['result']) && isset($result['result']['sys_id'])) {
-            error_log("SnowClient: Upload bem-sucedido, sys_id: " . $result['result']['sys_id']);
+            error_log("eDeploySnowClient: Upload bem-sucedido, sys_id: " . $result['result']['sys_id']);
             return $result['result']['sys_id'];
         } else {
-            error_log("SnowClient: Upload falhou - resposta inválida");
+            error_log("eDeploySnowClient: Upload falhou - resposta inválida");
             return false;
         }
     }
@@ -840,12 +840,12 @@ class PluginSnowclientApi
                 // Verificar se o correlation_id bate com o ID do ticket GLPI
                 if ($correlationId == $ticket->fields['id']) {
                     if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: Ticket GLPI {$ticket->fields['id']} autorizado a atualizar incidente $sysId (correlation_id: $correlationId)");
+                        Toolbox::logDebug("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} autorizado a atualizar incidente $sysId (correlation_id: $correlationId)");
                     }
                     return true;
                 } else {
                     if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: Ticket GLPI {$ticket->fields['id']} NÃO autorizado a atualizar incidente $sysId (correlation_id no ServiceNow: '$correlationId')");
+                        Toolbox::logDebug("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} NÃO autorizado a atualizar incidente $sysId (correlation_id no ServiceNow: '$correlationId')");
                     }
                     return false;
                 }
@@ -857,20 +857,20 @@ class PluginSnowclientApi
                 // Para devolução de tickets, correlation_id é obrigatório
                 if ($callingMethod === 'returnTicketToQueue') {
                     if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: Incidente $sysId não possui correlation_id. Negando devolução pois correlation_id é obrigatório para esta operação.");
+                        Toolbox::logDebug("eDeploySnowClient: Incidente $sysId não possui correlation_id. Negando devolução pois correlation_id é obrigatório para esta operação.");
                     }
                     return false;
                 } else {
                     // Para outras operações, permitir atualização (compatibilidade com incidentes antigos)
                     if ($this->debug_mode) {
-                        Toolbox::logDebug("SnowClient: Incidente $sysId não possui correlation_id. Permitindo atualização para compatibilidade.");
+                        Toolbox::logDebug("eDeploySnowClient: Incidente $sysId não possui correlation_id. Permitindo atualização para compatibilidade.");
                     }
                     return true;
                 }
             }
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("SnowClient: Erro ao verificar correlation_id para incidente $sysId: " . $e->getMessage());
+                Toolbox::logError("eDeploySnowClient: Erro ao verificar correlation_id para incidente $sysId: " . $e->getMessage());
             }
             // Em caso de erro, permitir atualização para não quebrar funcionalidade existente
             return true;
@@ -1049,25 +1049,25 @@ class PluginSnowclientApi
     {
         try {
             // Log inicial
-            error_log("SnowClient RETURN: Iniciando devolução do ticket GLPI {$ticket->getID()}");
+            error_log("eDeploySnowClient RETURN: Iniciando devolução do ticket GLPI {$ticket->getID()}");
             
             // Buscar o sys_id do ticket no ServiceNow
-            $sysId = PluginSnowclientConfig::getSnowSysIdFromTicket($ticket->getID());
+            $sysId = PluginEdeploysnowclientConfig::getSnowSysIdFromTicket($ticket->getID());
             
             if (!$sysId) {
-                error_log("SnowClient RETURN: ERRO - Não foi possível encontrar sys_id para ticket GLPI {$ticket->getID()}");
+                error_log("eDeploySnowClient RETURN: ERRO - Não foi possível encontrar sys_id para ticket GLPI {$ticket->getID()}");
                 return false;
             }
             
-            error_log("SnowClient RETURN: sys_id encontrado: $sysId para ticket GLPI {$ticket->getID()}");
+            error_log("eDeploySnowClient RETURN: sys_id encontrado: $sysId para ticket GLPI {$ticket->getID()}");
 
             // Verificar se o ticket pode atualizar o incidente (validação de correlation_id)
             if (!$this->canUpdateIncident($ticket, $sysId)) {
-                error_log("SnowClient RETURN: ERRO - Correlação não encontrada para ticket GLPI {$ticket->getID()} / ServiceNow sys_id: $sysId");
+                error_log("eDeploySnowClient RETURN: ERRO - Correlação não encontrada para ticket GLPI {$ticket->getID()} / ServiceNow sys_id: $sysId");
                 return false;
             }
             
-            error_log("SnowClient RETURN: Validação de correlação passou para ticket GLPI {$ticket->getID()}");
+            error_log("eDeploySnowClient RETURN: Validação de correlação passou para ticket GLPI {$ticket->getID()}");
 
             // Preparar dados para atualização
             $updateData = [];
@@ -1084,28 +1084,28 @@ class PluginSnowclientApi
             
             // Usar fila configurada no plugin
             $targetQueue = $this->config->fields['return_queue_group'];
-            error_log("SnowClient RETURN: Fila configurada: " . ($targetQueue ? $targetQueue : '(não configurada)'));
+            error_log("eDeploySnowClient RETURN: Fila configurada: " . ($targetQueue ? $targetQueue : '(não configurada)'));
             
             // Se foi configurada uma fila, definir o assignment_group
             if (!empty($targetQueue)) {
                 // Se é um sys_id (32 caracteres), usar diretamente
                 if (strlen($targetQueue) == 32) {
                     $updateData['assignment_group'] = $targetQueue;
-                    error_log("SnowClient RETURN: Usando sys_id configurado: $targetQueue");
+                    error_log("eDeploySnowClient RETURN: Usando sys_id configurado: $targetQueue");
                 } else {
                     // Tentar buscar por nome
                     $groupSysId = $this->findAssignmentGroupByName($targetQueue);
                     if ($groupSysId) {
                         $updateData['assignment_group'] = $groupSysId;
-                        error_log("SnowClient RETURN: Grupo encontrado: $targetQueue -> $groupSysId");
+                        error_log("eDeploySnowClient RETURN: Grupo encontrado: $targetQueue -> $groupSysId");
                     } else {
                         // Se não encontrou o grupo, adicionar na work note
                         $updateData['work_notes'] .= "\n\nNota: Fila solicitada '$targetQueue' não foi encontrada automaticamente.";
-                        error_log("SnowClient RETURN: AVISO - Grupo '$targetQueue' não encontrado");
+                        error_log("eDeploySnowClient RETURN: AVISO - Grupo '$targetQueue' não encontrado");
                     }
                 }
             } else {
-                error_log("SnowClient RETURN: AVISO - Nenhuma fila de devolução configurada");
+                error_log("eDeploySnowClient RETURN: AVISO - Nenhuma fila de devolução configurada");
                 $updateData['work_notes'] .= "\n\nNota: Nenhuma fila específica configurada para devolução.";
             }
             
@@ -1115,25 +1115,25 @@ class PluginSnowclientApi
             // Limpar assigned_to para forçar redistribuição
             $updateData['assigned_to'] = '';
             
-            error_log("SnowClient RETURN: Dados para envio: " . json_encode($updateData));
+            error_log("eDeploySnowClient RETURN: Dados para envio: " . json_encode($updateData));
             
             // Fazer a requisição de atualização
             $endpoint = "/api/now/table/incident/$sysId";
-            error_log("SnowClient RETURN: Fazendo requisição PATCH para: " . $this->instance_url . $endpoint);
+            error_log("eDeploySnowClient RETURN: Fazendo requisição PATCH para: " . $this->instance_url . $endpoint);
             
             $response = $this->makeRequest($endpoint, 'PATCH', $updateData);
             
             if ($response && isset($response['result'])) {
-                error_log("SnowClient RETURN: SUCESSO - Ticket devolvido com sucesso - sys_id: $sysId");
+                error_log("eDeploySnowClient RETURN: SUCESSO - Ticket devolvido com sucesso - sys_id: $sysId");
                 return true;
             } else {
-                error_log("SnowClient RETURN: ERRO - Resposta da API: " . json_encode($response));
+                error_log("eDeploySnowClient RETURN: ERRO - Resposta da API: " . json_encode($response));
                 return false;
             }
             
         } catch (Exception $e) {
-            error_log("SnowClient RETURN: EXCEÇÃO - " . $e->getMessage());
-            error_log("SnowClient RETURN: Stack trace: " . $e->getTraceAsString());
+            error_log("eDeploySnowClient RETURN: EXCEÇÃO - " . $e->getMessage());
+            error_log("eDeploySnowClient RETURN: Stack trace: " . $e->getTraceAsString());
             return false;
         }
     }
@@ -1155,7 +1155,7 @@ class PluginSnowclientApi
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                error_log("SnowClient: Erro ao buscar grupo '$groupName': " . $e->getMessage());
+                error_log("eDeploySnowClient: Erro ao buscar grupo '$groupName': " . $e->getMessage());
             }
             return null;
         }

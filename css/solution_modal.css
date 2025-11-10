@@ -1,39 +1,39 @@
 /* Estilos para modal de solução */
-#snowclient-solution-modal {
+#edeploysnowclient-solution-modal {
     z-index: 999999 !important;
 }
 
-#snowclient-solution-modal .modal-dialog {
+#edeploysnowclient-solution-modal .modal-dialog {
     max-width: 600px;
 }
 
-#snowclient-solution-modal .modal-header {
+#edeploysnowclient-solution-modal .modal-header {
     padding-bottom: 15px;
     border-bottom: 1px solid #ddd;
 }
 
-#snowclient-solution-modal .modal-header h5 {
+#edeploysnowclient-solution-modal .modal-header h5 {
     margin: 0;
     color: #333;
 }
 
-#snowclient-solution-modal .modal-body {
+#edeploysnowclient-solution-modal .modal-body {
     max-height: calc(100vh - 250px);
     overflow-y: auto;
 }
 
-#snowclient-solution-modal .form-group,
-#snowclient-solution-modal .mb-3 {
+#edeploysnowclient-solution-modal .form-group,
+#edeploysnowclient-solution-modal .mb-3 {
     margin-bottom: 15px;
 }
 
-#snowclient-solution-modal label {
+#edeploysnowclient-solution-modal label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
 }
 
-#snowclient-solution-modal .form-control {
+#edeploysnowclient-solution-modal .form-control {
     width: 100%;
     padding: 8px;
     border: 1px solid #ddd;
@@ -41,18 +41,18 @@
     box-sizing: border-box;
 }
 
-#snowclient-solution-modal textarea.form-control {
+#edeploysnowclient-solution-modal textarea.form-control {
     min-height: 100px;
     resize: vertical;
 }
 
-#snowclient-solution-modal .modal-footer {
+#edeploysnowclient-solution-modal .modal-footer {
     padding-top: 15px;
     border-top: 1px solid #ddd;
     text-align: right;
 }
 
-#snowclient-solution-modal .btn {
+#edeploysnowclient-solution-modal .btn {
     padding: 8px 15px;
     border: none;
     border-radius: 4px;
@@ -60,44 +60,44 @@
     margin-left: 10px;
 }
 
-#snowclient-solution-modal .btn-outline-secondary {
+#edeploysnowclient-solution-modal .btn-outline-secondary {
     background-color: transparent;
     color: #6c757d;
     border: 1px solid #6c757d;
 }
 
-#snowclient-solution-modal .btn-outline-secondary:hover {
+#edeploysnowclient-solution-modal .btn-outline-secondary:hover {
     background-color: #6c757d;
     color: white;
 }
 
-#snowclient-solution-modal .btn-primary {
+#edeploysnowclient-solution-modal .btn-primary {
     background-color: #0275d8;
     color: white;
 }
 
-#snowclient-solution-modal .btn-primary:hover {
+#edeploysnowclient-solution-modal .btn-primary:hover {
     background-color: #025aa5;
 }
 
 /* Campo readonly com fundo diferente */
-#snowclient-solution-modal input[readonly],
-#snowclient-solution-modal textarea[readonly] {
+#edeploysnowclient-solution-modal input[readonly],
+#edeploysnowclient-solution-modal textarea[readonly] {
     background-color: #f8f9fa;
     cursor: not-allowed;
 }
 
 /* Validação de campos */
-#snowclient-solution-modal .is-invalid {
+#edeploysnowclient-solution-modal .is-invalid {
     border-color: #dc3545;
 }
 
-#snowclient-solution-modal .is-valid {
+#edeploysnowclient-solution-modal .is-valid {
     border-color: #28a745;
 }
 
 /* Alert info */
-#snowclient-solution-modal .alert-info {
+#edeploysnowclient-solution-modal .alert-info {
     background-color: #d1ecf1;
     border-color: #bee5eb;
     color: #0c5460;
@@ -106,7 +106,7 @@
     margin-bottom: 0;
 }
 
-#snowclient-solution-modal .form-text {
+#edeploysnowclient-solution-modal .form-text {
     font-size: 0.875em;
     color: #6c757d;
     margin-top: 4px;

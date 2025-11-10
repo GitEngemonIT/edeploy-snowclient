@@ -91,7 +91,7 @@ try {
     }
     
     // Verificar se deve mostrar o botão
-    $shouldShow = PluginSnowclientConfig::shouldShowReturnButton($ticket);
+    $shouldShow = PluginEdeploysnowclientConfig::shouldShowReturnButton($ticket);
     
     $result = null;
     if ($shouldShow) {
@@ -117,7 +117,7 @@ try {
     echo json_encode($result);
     
 } catch (Exception $e) {
-    error_log("SnowClient check_return_button Error: " . $e->getMessage());
+    error_log("eDeploySnowClient check_return_button Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Erro interno do sistema']);
 }
 ?>

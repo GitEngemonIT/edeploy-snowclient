@@ -13,37 +13,37 @@ class SolutionModal {
      * Inicializa a modal
      */
     async init() {
-        console.log('SnowClient Modal: Iniciando inicialização...');
+        console.log('edeploysnowclient Modal: Iniciando inicialização...');
         if (this.initialized) {
-            console.log('SnowClient Modal: Já inicializado');
+            console.log('edeploysnowclient Modal: Já inicializado');
             return;
         }
 
         try {
             // Carregar template da modal
-            console.log('SnowClient Modal: Carregando template...');
-            const response = await fetch('../plugins/snowclient/ajax/get_solution_modal.php');
+            console.log('edeploysnowclient Modal: Carregando template...');
+            const response = await fetch('../plugins/edeploysnowclient/ajax/get_solution_modal.php');
             if (!response.ok) throw new Error('Falha ao carregar template');
             this.modalHtml = await response.text();
             
             // Remover modal anterior se existir
-            const oldModal = document.querySelector('#snowclient-solution-modal');
+            const oldModal = document.querySelector('#edeploysnowclient-solution-modal');
             if (oldModal) {
-                console.log('SnowClient Modal: Removendo modal anterior');
+                console.log('edeploysnowclient Modal: Removendo modal anterior');
                 oldModal.remove();
             }
             
             // Adicionar ao DOM
-            console.log('SnowClient Modal: Adicionando ao DOM');
+            console.log('edeploysnowclient Modal: Adicionando ao DOM');
             document.body.insertAdjacentHTML('beforeend', this.modalHtml);
             
             // Inicializar eventos
             this.bindEvents();
             
             this.initialized = true;
-            console.log('SnowClient Modal: Inicialização completa');
+            console.log('edeploysnowclient Modal: Inicialização completa');
         } catch (error) {
-            console.error('SnowClient Modal: Erro na inicialização:', error);
+            console.error('edeploysnowclient Modal: Erro na inicialização:', error);
             throw error;
         }
     }
@@ -52,29 +52,29 @@ class SolutionModal {
      * Vincular eventos da modal
      */
     bindEvents() {
-        console.log('SnowClient Modal: Vinculando eventos');
-        const modal = document.querySelector('#snowclient-solution-modal');
+        console.log('edeploysnowclient Modal: Vinculando eventos');
+        const modal = document.querySelector('#edeploysnowclient-solution-modal');
         const form = modal.querySelector('form');
         const cancelBtn = modal.querySelector('.js-cancel');
         
         // Fechar modal
         cancelBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('SnowClient Modal: Botão cancelar clicado');
+            console.log('edeploysnowclient Modal: Botão cancelar clicado');
             this.close();
         });
         
         // Submit do form
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            console.log('SnowClient Modal: Form da modal submetido');
+            console.log('edeploysnowclient Modal: Form da modal submetido');
             this.handleSubmit(form);
         });
         
         // Fechar ao clicar fora
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                console.log('SnowClient Modal: Clique fora da modal');
+                console.log('edeploysnowclient Modal: Clique fora da modal');
                 this.close();
             }
         });
@@ -84,24 +84,24 @@ class SolutionModal {
      * Abrir modal para um ticket específico
      */
     async open(originalForm, ticketId) {
-        console.log('SnowClient Modal: Abrindo modal para ticket', ticketId);
-        console.log('SnowClient Modal: Formulário recebido:', originalForm);
+        console.log('edeploysnowclient Modal: Abrindo modal para ticket', ticketId);
+        console.log('edeploysnowclient Modal: Formulário recebido:', originalForm);
         
         try {
             this.ticketId = ticketId;
             this.originalForm = originalForm;
             
             // Verificar se a modal já existe
-            let modal = document.querySelector('#snowclient-solution-modal');
+            let modal = document.querySelector('#edeploysnowclient-solution-modal');
             if (!modal) {
-                console.log('SnowClient Modal: Modal não encontrada, carregando template...');
+                console.log('edeploysnowclient Modal: Modal não encontrada, carregando template...');
                 
                 // Descobrir o caminho correto baseado no location atual
                 const baseUrl = window.location.pathname.includes('/front/') 
-                    ? '../plugins/snowclient/ajax/get_solution_modal.php'
-                    : './plugins/snowclient/ajax/get_solution_modal.php';
+                    ? '../plugins/edeploysnowclient/ajax/get_solution_modal.php'
+                    : './plugins/edeploysnowclient/ajax/get_solution_modal.php';
                 
-                console.log('SnowClient Modal: Carregando template de:', baseUrl);
+                console.log('edeploysnowclient Modal: Carregando template de:', baseUrl);
                 
                 // Carregar template da modal
                 try {
@@ -114,15 +114,15 @@ class SolutionModal {
                     $('body').append(response);
                     
                     // Referenciar a modal recém-adicionada
-                    modal = document.querySelector('#snowclient-solution-modal');
+                    modal = document.querySelector('#edeploysnowclient-solution-modal');
                     
                     if (!modal) {
                         throw new Error('Modal não encontrada após inserção no DOM');
                     }
                 } catch (error) {
-                    console.error('SnowClient Modal: Erro ao carregar template:', error);
-                    console.error('SnowClient Modal: Status:', error.status);
-                    console.error('SnowClient Modal: Response:', error.responseText);
+                    console.error('edeploysnowclient Modal: Erro ao carregar template:', error);
+                    console.error('edeploysnowclient Modal: Status:', error.status);
+                    console.error('edeploysnowclient Modal: Response:', error.responseText);
                     throw new Error('Falha ao carregar modal de solução: ' + (error.responseText || error.statusText));
                 }
             }
@@ -140,9 +140,9 @@ class SolutionModal {
                     solutionClass.value = 'Hardware';  // Valor mockado para u_bk_ic_impactado
                 }
 
-                console.log('SnowClient Modal: Campos mockados preenchidos com sucesso');
+                console.log('edeploysnowclient Modal: Campos mockados preenchidos com sucesso');
             } else {
-                console.warn('SnowClient Modal: Formulário original não encontrado');
+                console.warn('edeploysnowclient Modal: Formulário original não encontrado');
             }
             
             // Remover select2 anterior se existir
@@ -190,28 +190,28 @@ class SolutionModal {
             // Mostrar modal usando Bootstrap se disponível
             try {
                 if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    console.log('SnowClient Modal: Abrindo via Bootstrap Modal');
+                    console.log('edeploysnowclient Modal: Abrindo via Bootstrap Modal');
                     const bsModal = new bootstrap.Modal(modal, {
                         backdrop: 'static',
                         keyboard: false
                     });
                     bsModal.show();
                 } else {
-                    console.log('SnowClient Modal: Bootstrap não disponível, mostrando diretamente');
+                    console.log('edeploysnowclient Modal: Bootstrap não disponível, mostrando diretamente');
                     modal.style.display = 'block';
                     modal.classList.add('show');
                 }
             } catch (error) {
-                console.error('SnowClient Modal: Erro ao abrir modal com Bootstrap:', error);
+                console.error('edeploysnowclient Modal: Erro ao abrir modal com Bootstrap:', error);
                 // Fallback: mostrar diretamente
                 modal.style.display = 'block';
                 modal.classList.add('show');
             }
             
-            console.log('SnowClient Modal: Modal aberta com sucesso');
+            console.log('edeploysnowclient Modal: Modal aberta com sucesso');
             
         } catch (error) {
-            console.error('SnowClient Modal: Erro ao abrir modal:', error);
+            console.error('edeploysnowclient Modal: Erro ao abrir modal:', error);
             alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
             throw error;
         }
@@ -221,7 +221,7 @@ class SolutionModal {
      * Inicializar eventos específicos da modal
      */
     bindModalEvents(modal) {
-        console.log('SnowClient Modal: Inicializando eventos da modal');
+        console.log('edeploysnowclient Modal: Inicializando eventos da modal');
         
         try {
             // Form submit
@@ -276,10 +276,10 @@ class SolutionModal {
                 });
             }
             
-            console.log('SnowClient Modal: Eventos inicializados com sucesso');
+            console.log('edeploysnowclient Modal: Eventos inicializados com sucesso');
             
         } catch (error) {
-            console.error('SnowClient Modal: Erro ao inicializar eventos:', error);
+            console.error('edeploysnowclient Modal: Erro ao inicializar eventos:', error);
             throw new Error('Falha ao inicializar eventos da modal');
         }
     }
@@ -288,15 +288,15 @@ class SolutionModal {
      * Preencher campos somente leitura
      */
     fillReadOnlyFields() {        
-        console.log('SnowClient Modal: Preenchendo campos readonly');
+        console.log('edeploysnowclient Modal: Preenchendo campos readonly');
         try {
             // Preencher campos mockados
             document.querySelector('#snow-close-type').value = 'Presencial';
             document.querySelector('#snow-solution-class').value = 'Hardware';
             
-            console.log('SnowClient Modal: Campos preenchidos');
+            console.log('edeploysnowclient Modal: Campos preenchidos');
         } catch (error) {
-            console.error('SnowClient Modal: Erro ao preencher campos:', error);
+            console.error('edeploysnowclient Modal: Erro ao preencher campos:', error);
         }
     }
 
@@ -304,8 +304,8 @@ class SolutionModal {
      * Fechar modal
      */
     close() {
-        console.log('SnowClient Modal: Fechando modal');
-        const modal = document.querySelector('#snowclient-solution-modal');
+        console.log('edeploysnowclient Modal: Fechando modal');
+        const modal = document.querySelector('#edeploysnowclient-solution-modal');
         if (modal) {
             modal.style.display = 'none';
         }
@@ -316,13 +316,13 @@ class SolutionModal {
      */
     async handleSubmit(form) {
         if (this.isSubmitting) {
-            console.log('SnowClient Modal: Já está submetendo, ignorando');
+            console.log('edeploysnowclient Modal: Já está submetendo, ignorando');
             return;
         }
         
         try {
             this.isSubmitting = true;
-            console.log('SnowClient Modal: Processando submit do formulário');
+            console.log('edeploysnowclient Modal: Processando submit do formulário');
 
             // 1. Validar código de solução
             const solutionCode = form.querySelector('#snow-solution-code');
@@ -335,24 +335,24 @@ class SolutionModal {
 
             // 2. Verificar e preparar formulário original
             if (!this.originalForm?.isConnected) {
-                console.error('SnowClient Modal: Formulário original não está conectado ao DOM');
+                console.error('edeploysnowclient Modal: Formulário original não está conectado ao DOM');
                 throw new Error('Formulário original do GLPI não encontrado');
             }
 
             const submitButton = this.originalForm.querySelector('button[name="add"], input[name="add"]');
             if (!submitButton) {
-                console.error('SnowClient Modal: Botão de submit não encontrado no formulário');
+                console.error('edeploysnowclient Modal: Botão de submit não encontrado no formulário');
                 throw new Error('Botão de submit do GLPI não encontrado');
             }
 
-            console.log('SnowClient Modal: Formulário e botão encontrados');
+            console.log('edeploysnowclient Modal: Formulário e botão encontrados');
 
             // 3. Coletar dados do formulário
             const ticketId = this.ticketId || 'unknown';
             const solutionCodeValue = solutionCode.value || '';
             
-            console.log('SnowClient Modal: ticketId:', ticketId);
-            console.log('SnowClient Modal: solutionCode:', solutionCodeValue);
+            console.log('edeploysnowclient Modal: ticketId:', ticketId);
+            console.log('edeploysnowclient Modal: solutionCode:', solutionCodeValue);
             
             const formData = {
                 ticketId: String(ticketId),
@@ -360,18 +360,18 @@ class SolutionModal {
                 timestamp: Date.now()
             };
 
-            console.log('SnowClient Modal: Dados coletados:', formData);
-            console.log('SnowClient Modal: FormData como JSON:', JSON.stringify(formData));
+            console.log('edeploysnowclient Modal: Dados coletados:', formData);
+            console.log('edeploysnowclient Modal: FormData como JSON:', JSON.stringify(formData));
 
             // 4. Salvar dados na sessão via AJAX
-            console.log('SnowClient Modal: Salvando dados na sessão...');
+            console.log('edeploysnowclient Modal: Salvando dados na sessão...');
             
             // Descobrir o caminho correto baseado no location atual
             const baseUrl = window.location.pathname.includes('/front/') 
-                ? '../plugins/snowclient/ajax/save_session_data.php'
-                : './plugins/snowclient/ajax/save_session_data.php';
+                ? '../plugins/edeploysnowclient/ajax/save_session_data.php'
+                : './plugins/edeploysnowclient/ajax/save_session_data.php';
             
-            console.log('SnowClient Modal: URL da requisição:', baseUrl);
+            console.log('edeploysnowclient Modal: URL da requisição:', baseUrl);
             
             try {
                 const ajaxResponse = await $.ajax({
@@ -384,17 +384,17 @@ class SolutionModal {
                     },
                     dataType: 'json'
                 });
-                console.log('SnowClient Modal: Dados salvos na sessão com sucesso:', ajaxResponse);
+                console.log('edeploysnowclient Modal: Dados salvos na sessão com sucesso:', ajaxResponse);
             } catch (ajaxError) {
-                console.error('SnowClient Modal: Erro ao salvar na sessão:', ajaxError);
-                console.error('SnowClient Modal: Status:', ajaxError.status);
-                console.error('SnowClient Modal: Response:', ajaxError.responseText);
+                console.error('edeploysnowclient Modal: Erro ao salvar na sessão:', ajaxError);
+                console.error('edeploysnowclient Modal: Status:', ajaxError.status);
+                console.error('edeploysnowclient Modal: Response:', ajaxError.responseText);
                 throw new Error('Falha ao salvar dados na sessão: ' + (ajaxError.responseText || ajaxError.statusText));
             }
 
             // 5. Fechar e remover modal
-            console.log('SnowClient Modal: Fechando modal...');
-            const existingModal = document.querySelector('#snowclient-solution-modal');
+            console.log('edeploysnowclient Modal: Fechando modal...');
+            const existingModal = document.querySelector('#edeploysnowclient-solution-modal');
             if (existingModal) {
                 try {
                     // Tentar usar Bootstrap se disponível
@@ -405,7 +405,7 @@ class SolutionModal {
                         }
                     }
                 } catch (e) {
-                    console.warn('SnowClient Modal: Erro ao fechar via Bootstrap, removendo diretamente');
+                    console.warn('edeploysnowclient Modal: Erro ao fechar via Bootstrap, removendo diretamente');
                 }
                 // Remover do DOM
                 existingModal.remove();
@@ -415,21 +415,21 @@ class SolutionModal {
             await new Promise(resolve => setTimeout(resolve, 300));
 
             // 7. Marcar formulário e submeter
-            console.log('SnowClient Modal: Marcando formulário para submit...');
-            this.originalForm.dataset.snowclientSubmitting = 'true';
+            console.log('edeploysnowclient Modal: Marcando formulário para submit...');
+            this.originalForm.dataset.edeploysnowclientSubmitting = 'true';
             
-            console.log('SnowClient Modal: Tentando submeter formulário...');
-            console.log('SnowClient Modal: Submit button:', submitButton);
-            console.log('SnowClient Modal: Submit button type:', submitButton.type);
-            console.log('SnowClient Modal: Submit button name:', submitButton.name);
+            console.log('edeploysnowclient Modal: Tentando submeter formulário...');
+            console.log('edeploysnowclient Modal: Submit button:', submitButton);
+            console.log('edeploysnowclient Modal: Submit button type:', submitButton.type);
+            console.log('edeploysnowclient Modal: Submit button name:', submitButton.name);
             
             // Tentar múltiplas formas de submeter
             try {
                 // Método 1: Click direto no botão
                 submitButton.click();
-                console.log('SnowClient Modal: Click executado no botão');
+                console.log('edeploysnowclient Modal: Click executado no botão');
             } catch (e) {
-                console.error('SnowClient Modal: Erro ao clicar no botão:', e);
+                console.error('edeploysnowclient Modal: Erro ao clicar no botão:', e);
                 
                 // Método 2: Disparar evento de click
                 try {
@@ -439,24 +439,24 @@ class SolutionModal {
                         view: window
                     });
                     submitButton.dispatchEvent(clickEvent);
-                    console.log('SnowClient Modal: Evento de click disparado');
+                    console.log('edeploysnowclient Modal: Evento de click disparado');
                 } catch (e2) {
-                    console.error('SnowClient Modal: Erro ao disparar evento:', e2);
+                    console.error('edeploysnowclient Modal: Erro ao disparar evento:', e2);
                     
                     // Método 3: Submit direto no form
                     try {
                         this.originalForm.submit();
-                        console.log('SnowClient Modal: Form.submit() executado');
+                        console.log('edeploysnowclient Modal: Form.submit() executado');
                     } catch (e3) {
-                        console.error('SnowClient Modal: Erro ao submeter form:', e3);
+                        console.error('edeploysnowclient Modal: Erro ao submeter form:', e3);
                     }
                 }
             }
             
-            console.log('SnowClient Modal: Submit concluído');
+            console.log('edeploysnowclient Modal: Submit concluído');
             
         } catch (error) {
-            console.error('SnowClient Modal: Erro ao processar submit:', error);
+            console.error('edeploysnowclient Modal: Erro ao processar submit:', error);
             alert('Erro ao salvar solução: ' + error.message);
             this.isSubmitting = false;
         }
@@ -465,7 +465,7 @@ class SolutionModal {
 
 // Função de inicialização que será chamada quando necessário
 function initSolutionModal() {
-    console.log('SnowClient: Inicializando manipulador da modal de solução...');
+    console.log('edeploysnowclient: Inicializando manipulador da modal de solução...');
     
     if (!window.SolutionModal) {
         window.SolutionModal = new SolutionModal();
@@ -477,7 +477,7 @@ function initSolutionModal() {
         const forms = document.querySelectorAll('form');
         forms.forEach(form => {
             // Pular se já foi inicializado
-            if (form.dataset.snowclientInit) {
+            if (form.dataset.edeploysnowclientInit) {
                 return;
             }
             
@@ -497,21 +497,21 @@ function initSolutionModal() {
             // 3. NÃO deve ter botão de followup
             const hasFollowupButton = form.querySelector('button[name="add_followup"], input[name="add_followup"]');
             if (hasFollowupButton) {
-                console.log('SnowClient: Formulário de followup detectado, ignorando');
+                console.log('edeploysnowclient: Formulário de followup detectado, ignorando');
                 return;
             }
             
             // 4. NÃO deve ter botão de tarefa (addtask)
             const hasTaskButton = form.querySelector('button[name="addtask"], input[name="addtask"]');
             if (hasTaskButton) {
-                console.log('SnowClient: Formulário de tarefa detectado, ignorando');
+                console.log('edeploysnowclient: Formulário de tarefa detectado, ignorando');
                 return;
             }
             
             // 5. NÃO deve ter campo de validation_answer (validação)
             const hasValidationAnswer = form.querySelector('[name="validation_answer"]');
             if (hasValidationAnswer) {
-                console.log('SnowClient: Formulário de validação detectado, ignorando');
+                console.log('edeploysnowclient: Formulário de validação detectado, ignorando');
                 return;
             }
             
@@ -521,41 +521,41 @@ function initSolutionModal() {
                 return;
             }
             
-            console.log('SnowClient: ✅ Form de SOLUÇÃO detectado com sucesso!');
-            console.log('SnowClient: - Tem textarea content: sim');
-            console.log('SnowClient: - Tem select solutiontypes_id: sim');
-            console.log('SnowClient: - Tem botão add: sim');
-            console.log('SnowClient: - É followup: não');
-            console.log('SnowClient: - É tarefa: não');
-            console.log('SnowClient: - É validação: não');
+            console.log('edeploysnowclient: ✅ Form de SOLUÇÃO detectado com sucesso!');
+            console.log('edeploysnowclient: - Tem textarea content: sim');
+            console.log('edeploysnowclient: - Tem select solutiontypes_id: sim');
+            console.log('edeploysnowclient: - Tem botão add: sim');
+            console.log('edeploysnowclient: - É followup: não');
+            console.log('edeploysnowclient: - É tarefa: não');
+            console.log('edeploysnowclient: - É validação: não');
             
             // Marcar formulário como inicializado
-            form.dataset.snowclientInit = 'true';
+            form.dataset.edeploysnowclientInit = 'true';
             
             // Pegar ID do ticket da URL
             const urlParams = new URLSearchParams(window.location.search);
             const ticketId = urlParams.get('id');
             
             if (!ticketId) {
-                console.log('SnowClient: ID do ticket não encontrado na URL');
+                console.log('edeploysnowclient: ID do ticket não encontrado na URL');
                 return;
             }
             
             // Verificar se é um ticket do ServiceNow via Ajax antes de adicionar o interceptador
             $.ajax({
-                url: '../plugins/snowclient/ajax/check_return_button.php',
+                url: '../plugins/edeploysnowclient/ajax/check_return_button.php',
                 method: 'POST',
                 data: { ticket_id: ticketId },
                 success: function(response) {
                     if (response.success && response.show_button) {
-                        console.log('SnowClient: Ticket confirmado como ServiceNow, adicionando interceptador de submit');
+                        console.log('edeploysnowclient: Ticket confirmado como ServiceNow, adicionando interceptador de submit');
                         
                         // Adicionar interceptador de submit
                         form.addEventListener('submit', function(e) {
                             // Verificar se está sendo submetido pela modal
-                            if (form.dataset.snowclientSubmitting === 'true') {
-                                console.log('SnowClient: Submit sendo feito pela modal, permitindo');
-                                delete form.dataset.snowclientSubmitting;
+                            if (form.dataset.edeploysnowclientSubmitting === 'true') {
+                                console.log('edeploysnowclient: Submit sendo feito pela modal, permitindo');
+                                delete form.dataset.edeploysnowclientSubmitting;
                                 return true;
                             }
                             
@@ -563,22 +563,22 @@ function initSolutionModal() {
                             e.stopPropagation();
                             e.stopImmediatePropagation();
                             
-                            console.log('SnowClient: Submit interceptado, abrindo modal');
+                            console.log('edeploysnowclient: Submit interceptado, abrindo modal');
                             window.SolutionModal.open(form, ticketId).catch(function(error) {
-                                console.error('SnowClient: Erro ao abrir modal:', error);
+                                console.error('edeploysnowclient: Erro ao abrir modal:', error);
                                 alert('Erro ao abrir modal de solução. Por favor, tente novamente.');
                             });
                             
                             return false;
                         }, true);
                         
-                        console.log('SnowClient: Interceptador adicionado com sucesso');
+                        console.log('edeploysnowclient: Interceptador adicionado com sucesso');
                     } else {
-                        console.log('SnowClient: Ticket não é do ServiceNow, ignorando');
+                        console.log('edeploysnowclient: Ticket não é do ServiceNow, ignorando');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('SnowClient: Erro ao verificar ticket:', error);
+                    console.error('edeploysnowclient: Erro ao verificar ticket:', error);
                 }
             });
         });
@@ -609,18 +609,18 @@ function initSolutionModal() {
 // Inicializar quando o documento estiver pronto
 if (typeof jQuery !== 'undefined') {
     jQuery(document).ready(function() {
-        console.log('SnowClient: Documento pronto, inicializando...');
+        console.log('edeploysnowclient: Documento pronto, inicializando...');
         initSolutionModal();
     });
 } else {
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('SnowClient: DOM carregado, inicializando...');
+        console.log('edeploysnowclient: DOM carregado, inicializando...');
         initSolutionModal();
     });
 }
 
 // Reinicializar após carregamentos AJAX
 $(document).ajaxComplete(function() {
-    console.log('SnowClient: Ajax completado, reinicializando...');
+    console.log('edeploysnowclient: Ajax completado, reinicializando...');
     initSolutionModal();
 });

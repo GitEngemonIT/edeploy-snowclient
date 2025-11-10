@@ -15,7 +15,7 @@ if (!$plugin->isActivated('snowclient')) {
 echo "<h3>Status Atual:</h3>";
 
 global $DB;
-$table = 'glpi_plugin_snowclient_configs';
+$table = 'glpi_plugin_edeploysnowclient_configs';
 
 // Verificar se a tabela existe
 if (!$DB->tableExists($table)) {
@@ -84,7 +84,7 @@ try {
 if ($fieldExists || $DB->fieldExists($table, 'return_queue_group')) {
     echo "<h3>Teste de Persistência:</h3>";
     
-    $config = new PluginSnowclientConfig();
+    $config = new PluginEdeploysnowclientConfig();
     if ($config->getFromDB(1)) {
         $testValue = 'test_group_' . time();
         

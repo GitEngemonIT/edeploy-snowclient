@@ -28,7 +28,7 @@ if (!defined('GLPI_ROOT')) {
 /**
  * ServiceNow Client Configuration Class
  */
-class PluginSnowclientConfig extends CommonDBTM
+class PluginEdeploysnowclientConfig extends CommonDBTM
 {
     // ServiceNow ticket types
     public const INCIDENT = 1;
@@ -39,7 +39,7 @@ class PluginSnowclientConfig extends CommonDBTM
     private static $_instance = null;
 
     /**
-     * PluginSnowclientConfig constructor.
+     * PluginEdeploysnowclientConfig constructor.
      */
     function __construct()
     {
@@ -72,7 +72,7 @@ class PluginSnowclientConfig extends CommonDBTM
      */
     static function getTypeName($nb = 0)
     {
-        return __('Cliente ServiceNow', 'snowclient');
+        return __('Cliente ServiceNow', 'edeploysnowclient');
     }
 
     /**
@@ -89,7 +89,7 @@ class PluginSnowclientConfig extends CommonDBTM
 
         $tab[] = [
             'id'                 => '1',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'name',
             'name'               => __('Nome'),
             'datatype'           => 'itemlink',
@@ -98,18 +98,18 @@ class PluginSnowclientConfig extends CommonDBTM
 
         $tab[] = [
             'id'                 => '2',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'snow_url',
-            'name'               => __('URL do ServiceNow', 'snowclient'),
+            'name'               => __('URL do ServiceNow', 'edeploysnowclient'),
             'datatype'           => 'string',
             'massiveaction'      => false
         ];
 
         $tab[] = [
             'id'                 => '3',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'snow_username',
-            'name'               => __('Usuário ServiceNow', 'snowclient'),
+            'name'               => __('Usuário ServiceNow', 'edeploysnowclient'),
             'datatype'           => 'string',
             'massiveaction'      => false
         ];
@@ -125,34 +125,34 @@ class PluginSnowclientConfig extends CommonDBTM
 
         $tab[] = [
             'id'                 => '5',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'sync_followups',
-            'name'               => __('Sincronizar Acompanhamentos', 'snowclient'),
+            'name'               => __('Sincronizar Acompanhamentos', 'edeploysnowclient'),
             'datatype'           => 'bool',
             'massiveaction'      => false
         ];
 
         $tab[] = [
             'id'                 => '6',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'sync_status',
-            'name'               => __('Sincronizar Status', 'snowclient'),
+            'name'               => __('Sincronizar Status', 'edeploysnowclient'),
             'datatype'           => 'bool',
             'massiveaction'      => false
         ];
 
         $tab[] = [
             'id'                 => '7',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'debug_mode',
-            'name'               => __('Modo Debug', 'snowclient'),
+            'name'               => __('Modo Debug', 'edeploysnowclient'),
             'datatype'           => 'bool',
             'massiveaction'      => false
         ];
 
         $tab[] = [
             'id'                 => '8',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'date_creation',
             'name'               => __('Data de criação'),
             'datatype'           => 'datetime',
@@ -161,7 +161,7 @@ class PluginSnowclientConfig extends CommonDBTM
 
         $tab[] = [
             'id'                 => '9',
-            'table'              => 'glpi_plugin_snowclient_configs',
+            'table'              => 'glpi_plugin_edeploysnowclient_configs',
             'field'              => 'date_mod',
             'name'               => __('Última atualização'),
             'datatype'           => 'datetime',
@@ -185,7 +185,7 @@ class PluginSnowclientConfig extends CommonDBTM
     /**
      * @param bool $update
      *
-     * @return PluginSnowclientConfig
+     * @return PluginEdeploysnowclientConfig
      */
     static function getConfig($update = false)
     {
@@ -225,16 +225,16 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "<tr class='tab_bg_2'>";
         echo "<td colspan='2' class='center'>";
         echo "<div style='background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 10px 0;'>";
-        echo "<strong style='color: #1976d2;'>🔄 " . __('Integration Flow', 'snowclient') . "</strong><br>";
+        echo "<strong style='color: #1976d2;'>🔄 " . __('Integration Flow', 'edeploysnowclient') . "</strong><br>";
         echo "<span style='color: #424242;'>";
-        echo __('1. ServiceNow creates ticket → 2. Plugin replicates to GLPI → 3. Technician updates only in GLPI → 4. Plugin syncs back to ServiceNow', 'snowclient');
+        echo __('1. ServiceNow creates ticket → 2. Plugin replicates to GLPI → 3. Technician updates only in GLPI → 4. Plugin syncs back to ServiceNow', 'edeploysnowclient');
         echo "</span>";
         echo "</div>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('URL da Instância ServiceNow', 'snowclient') . "</td>";
+        echo "<td>" . __('URL da Instância ServiceNow', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'instance_url', [
             'placeholder' => 'https://your-instance.service-now.com'
@@ -243,28 +243,28 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Usuário', 'snowclient') . "</td>";
+        echo "<td>" . __('Usuário', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'username');
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Senha', 'snowclient') . "</td>";
+        echo "<td>" . __('Senha', 'edeploysnowclient') . "</td>";
         echo "<td>";
-        echo "<input type='password' name='password' value='' placeholder='" . __('Digite a senha para alterar', 'snowclient') . "' />";
+        echo "<input type='password' name='password' value='' placeholder='" . __('Digite a senha para alterar', 'edeploysnowclient') . "' />";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Grupo de Atribuição Padrão', 'snowclient') . "</td>";
+        echo "<td>" . __('Grupo de Atribuição Padrão', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Html::autocompletionTextField($this, 'assignment_group');
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Entidade para Integração', 'snowclient') . "</td>";
+        echo "<td>" . __('Entidade para Integração', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Entity::dropdown([
             'name' => 'entities_id',
@@ -272,80 +272,80 @@ class PluginSnowclientConfig extends CommonDBTM
             'comments' => false,
             'toupdate' => false
         ]);
-        echo "<br><span class='small'>" . __('Apenas tickets desta entidade e suas filhas serão sincronizados', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Apenas tickets desta entidade e suas filhas serão sincronizados', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Tipo de Solicitação ServiceNow', 'snowclient') . "</td>";
+        echo "<td>" . __('Tipo de Solicitação ServiceNow', 'edeploysnowclient') . "</td>";
         echo "<td>";
         RequestType::dropdown([
             'name' => 'request_type',
             'value' => $this->fields['request_type'],
             'comments' => false
         ]);
-        echo "<br><span class='small'>" . __('Tipo de solicitação usado para identificar tickets vindos do ServiceNow', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Tipo de solicitação usado para identificar tickets vindos do ServiceNow', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Usuário da API ServiceNow', 'snowclient') . "</td>";
+        echo "<td>" . __('Usuário da API ServiceNow', 'edeploysnowclient') . "</td>";
         echo "<td>";
         User::dropdown([
             'name' => 'api_user',
             'value' => $this->fields['api_user'],
             'comments' => false
         ]);
-        echo "<br><span class='small'>" . __('Usuário usado para operações da API e acompanhamentos', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Usuário usado para operações da API e acompanhamentos', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='2' class='center tab_bg_2'>";
-        echo "<strong>" . __('Opções de Sincronização (ServiceNow → GLPI → ServiceNow)', 'snowclient') . "</strong>";
+        echo "<strong>" . __('Opções de Sincronização (ServiceNow → GLPI → ServiceNow)', 'edeploysnowclient') . "</strong>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sincronizar Tickets', 'snowclient') . "</td>";
+        echo "<td>" . __('Sincronizar Tickets', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_tickets', $this->fields['sync_tickets']);
-        echo "<br><span class='small'>" . __('Habilitar sincronização bidirecional de tickets', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Habilitar sincronização bidirecional de tickets', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sincronizar Acompanhamentos/Atualizações', 'snowclient') . "</td>";
+        echo "<td>" . __('Sincronizar Acompanhamentos/Atualizações', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_followups', $this->fields['sync_followups']);
-        echo "<br><span class='small'>" . __('Enviar atualizações do GLPI de volta para ServiceNow como notas de trabalho', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Enviar atualizações do GLPI de volta para ServiceNow como notas de trabalho', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sincronizar Mudanças de Status', 'snowclient') . "</td>";
+        echo "<td>" . __('Sincronizar Mudanças de Status', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_status', $this->fields['sync_status']);
-        echo "<br><span class='small'>" . __('Atualizar status do ticket ServiceNow quando alterado no GLPI', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Atualizar status do ticket ServiceNow quando alterado no GLPI', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Sincronizar Documentos', 'snowclient') . "</td>";
+        echo "<td>" . __('Sincronizar Documentos', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('sync_documents', $this->fields['sync_documents']);
-        echo "<br><span class='small'>" . __('Sincronizar anexos entre GLPI e ServiceNow', 'snowclient') . "</span>";
+        echo "<br><span class='small'>" . __('Sincronizar anexos entre GLPI e ServiceNow', 'edeploysnowclient') . "</span>";
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Tipo de Ticket Padrão', 'snowclient') . "</td>";
+        echo "<td>" . __('Tipo de Ticket Padrão', 'edeploysnowclient') . "</td>";
         echo "<td>";
         $types = [
-            self::INCIDENT => __('Incidente', 'snowclient'),
-            self::REQUEST => __('Solicitação de Serviço', 'snowclient'),
-            self::CHANGE => __('Solicitação de Mudança', 'snowclient'),
-            self::PROBLEM => __('Problema', 'snowclient'),
+            self::INCIDENT => __('Incidente', 'edeploysnowclient'),
+            self::REQUEST => __('Solicitação de Serviço', 'edeploysnowclient'),
+            self::CHANGE => __('Solicitação de Mudança', 'edeploysnowclient'),
+            self::PROBLEM => __('Problema', 'edeploysnowclient'),
         ];
         Dropdown::showFromArray('default_type', $types, [
             'value' => $this->fields['default_type']
@@ -354,7 +354,7 @@ class PluginSnowclientConfig extends CommonDBTM
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Habilitar Modo Debug', 'snowclient') . "</td>";
+        echo "<td>" . __('Habilitar Modo Debug', 'edeploysnowclient') . "</td>";
         echo "<td>";
         Dropdown::showYesNo('debug_mode', $this->fields['debug_mode']);
         echo "</td>";
@@ -363,7 +363,7 @@ class PluginSnowclientConfig extends CommonDBTM
         // Adicionar botão de teste de conexão
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='2' class='center'>";
-        echo "<input type='submit' name='test_connection' value='" . __('Testar Conexão ServiceNow', 'snowclient') . "' class='btn btn-info' style='background-color: #17a2b8; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;'>";
+        echo "<input type='submit' name='test_connection' value='" . __('Testar Conexão ServiceNow', 'edeploysnowclient') . "' class='btn btn-info' style='background-color: #17a2b8; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;'>";
         echo "</td>";
         echo "</tr>";
 
@@ -377,14 +377,14 @@ class PluginSnowclientConfig extends CommonDBTM
         // Validar URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
-                Session::addMessageAfterRedirect(__('URL inválida', 'snowclient'), false, ERROR);
+                Session::addMessageAfterRedirect(__('URL inválida', 'edeploysnowclient'), false, ERROR);
                 return false;
             }
         }
 
         // Validar usuário
         if (isset($input['username']) && empty($input['username'])) {
-            Session::addMessageAfterRedirect(__('Usuário não pode ser vazio', 'snowclient'), false, ERROR);
+            Session::addMessageAfterRedirect(__('Usuário não pode ser vazio', 'edeploysnowclient'), false, ERROR);
             return false;
         }
 
@@ -426,14 +426,14 @@ class PluginSnowclientConfig extends CommonDBTM
         // Validar URL
         if (isset($input['instance_url']) && !empty($input['instance_url'])) {
             if (!filter_var($input['instance_url'], FILTER_VALIDATE_URL)) {
-                Session::addMessageAfterRedirect(__('URL inválida', 'snowclient'), false, ERROR);
+                Session::addMessageAfterRedirect(__('URL inválida', 'edeploysnowclient'), false, ERROR);
                 return false;
             }
         }
 
         // Validar usuário
         if (isset($input['username']) && empty($input['username'])) {
-            Session::addMessageAfterRedirect(__('Usuário não pode ser vazio', 'snowclient'), false, ERROR);
+            Session::addMessageAfterRedirect(__('Usuário não pode ser vazio', 'edeploysnowclient'), false, ERROR);
             return false;
         }
 
@@ -586,14 +586,14 @@ class PluginSnowclientConfig extends CommonDBTM
             // Verificar se temos os dados necessários
             if (empty($this->fields['instance_url']) || empty($this->fields['username']) || empty($this->fields['password'])) {
                 Session::addMessageAfterRedirect(
-                    __('Configure primeiro a URL, usuário e senha do ServiceNow antes de testar a conexão.', 'snowclient'), 
+                    __('Configure primeiro a URL, usuário e senha do ServiceNow antes de testar a conexão.', 'edeploysnowclient'), 
                     false, 
                     ERROR
                 );
                 return;
             }
             
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $result = $api->testConnection();
             
             if ($result['success']) {
@@ -603,7 +603,7 @@ class PluginSnowclientConfig extends CommonDBTM
             }
         } catch (Exception $e) {
             Session::addMessageAfterRedirect(
-                sprintf(__('Erro ao testar conexão: %s', 'snowclient'), $e->getMessage()), 
+                sprintf(__('Erro ao testar conexão: %s', 'edeploysnowclient'), $e->getMessage()), 
                 false, 
                 ERROR
             );
@@ -617,7 +617,7 @@ class PluginSnowclientConfig extends CommonDBTM
         // First check if ticket is in the right entity hierarchy
         if (!self::shouldSyncTicket($ticket)) {
             if ($config->fields['debug_mode']) {
-                error_log("SnowClient: Ticket {$ticket->fields['id']} not in configured entity hierarchy. Skipping.");
+                error_log("eDeploySnowClient: Ticket {$ticket->fields['id']} not in configured entity hierarchy. Skipping.");
             }
             return false;
         }
@@ -648,7 +648,7 @@ class PluginSnowclientConfig extends CommonDBTM
         }
         
         if ($config->fields['sync_tickets']) {
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $api->updateIncident($ticket);
         }
     }
@@ -668,7 +668,7 @@ class PluginSnowclientConfig extends CommonDBTM
         }
         
         if ($config->fields['sync_tickets']) {
-            $api = new PluginSnowclientApi();
+            $api = new PluginEdeploysnowclientApi();
             $api->deleteIncident($ticket);
         }
     }
@@ -691,7 +691,7 @@ class PluginSnowclientConfig extends CommonDBTM
                     return false;
                 }
                 
-                $api = new PluginSnowclientApi();
+                $api = new PluginEdeploysnowclientApi();
                 $api->addWorkNote($followup);
             }
         }
@@ -705,7 +705,7 @@ class PluginSnowclientConfig extends CommonDBTM
             if (isset($document->fields['items_id']) && $document->fields['itemtype'] == 'Ticket') {
                 $ticket = new Ticket();
                 if ($ticket->getFromDB($document->fields['items_id']) && self::shouldSyncTicket($ticket)) {
-                    $api = new PluginSnowclientApi();
+                    $api = new PluginEdeploysnowclientApi();
                     $api->attachDocument($document);
                 }
             }
@@ -783,7 +783,7 @@ class PluginSnowclientConfig extends CommonDBTM
             // Save mapping for bidirectional sync
             global $DB;
             
-            $mappingTable = 'glpi_plugin_snowclient_mappings';
+            $mappingTable = 'glpi_plugin_edeploysnowclient_mappings';
             
             // Check if mapping already exists
             $existing = $DB->request([
@@ -801,11 +801,11 @@ class PluginSnowclientConfig extends CommonDBTM
                 ]);
                 
                 if ($config->fields['debug_mode']) {
-                    error_log("SnowClient: Mapped GLPI ticket {$ticket->fields['id']} to ServiceNow {$cleanSnowId}");
+                    error_log("eDeploySnowClient: Mapped GLPI ticket {$ticket->fields['id']} to ServiceNow {$cleanSnowId}");
                 }
             } else {
                 if ($config->fields['debug_mode']) {
-                    error_log("SnowClient: Mapping already exists for GLPI ticket {$ticket->fields['id']}");
+                    error_log("eDeploySnowClient: Mapping already exists for GLPI ticket {$ticket->fields['id']}");
                 }
             }
         }

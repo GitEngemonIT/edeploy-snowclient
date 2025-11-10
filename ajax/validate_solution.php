@@ -34,12 +34,12 @@ try {
     }
 
     // Verificar se é um ticket do ServiceNow
-    if (!PluginSnowclientConfig::isTicketFromServiceNow($ticket)) {
+    if (!PluginEdeploysnowclientConfig::isTicketFromServiceNow($ticket)) {
         throw new Exception(__('Este ticket não é originado do ServiceNow', 'snowclient'));
     }
 
     // Validar código de solução contra lista permitida
-    $config = PluginSnowclientConfig::getInstance();
+    $config = PluginEdeploysnowclientConfig::getInstance();
     $allowedCodes = json_decode($config->fields['solution_codes'] ?? '[]', true);
     
     if (!in_array($_POST['u_bk_type_of_failure'], $allowedCodes)) {
@@ -47,7 +47,7 @@ try {
     }
 
     // Armazenar dados na sessão para uso posterior
-    $_SESSION['snowclient_solution_data'] = [
+    $_SESSION['edeploysnowclient_solution_data'] = [
         'u_bk_solucao' => $_POST['u_bk_solucao'],
         'u_bk_tipo_encerramento' => $_POST['u_bk_tipo_encerramento'],
         'u_bk_ic_impactado' => $_POST['u_bk_ic_impactado'],
@@ -59,7 +59,7 @@ try {
         error_log(sprintf(
             "[SnowClient] Dados de solução recebidos para ticket %d: %s",
             $_POST['ticket_id'],
-            json_encode($_SESSION['snowclient_solution_data'])
+            json_encode($_SESSION['edeploysnowclient_solution_data'])
         ));
     }
 

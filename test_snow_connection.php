@@ -11,7 +11,7 @@ include '../../inc/includes.php';
 echo "<h2>🔍 Teste de Conexão ServiceNow - Diagnóstico</h2>";
 
 // Carregar configuração
-$config = PluginSnowclientConfig::getInstance();
+$config = PluginEdeploysnowclientConfig::getInstance();
 
 if (!$config || empty($config->fields)) {
     echo "<p style='color: red;'>❌ Configuração não encontrada</p>";
@@ -30,7 +30,7 @@ echo "</ul>";
 // Testar conexão básica
 echo "<h3>🌐 Teste de Conectividade:</h3>";
 
-$api = new PluginSnowclientApi();
+$api = new PluginEdeploysnowclientApi();
 
 try {
     echo "<p>🔄 Testando conexão com ServiceNow...</p>";

@@ -14,7 +14,7 @@ if (!$plugin->isInstalled('snowclient') || !$plugin->isActivated('snowclient')) 
 
 Session::checkRight('config', UPDATE);
 
-$config = new PluginSnowclientConfig();
+$config = new PluginEdeploysnowclientConfig();
 
 if (isset($_POST['update'])) {
     $config->check($_POST['id'], UPDATE);
@@ -23,4 +23,4 @@ if (isset($_POST['update'])) {
     Html::back();
 }
 
-Html::redirect($CFG_GLPI['root_doc'] . '/front/config.form.php?forcetab=' . urlencode('PluginSnowclientConfig$1'));
+Html::redirect($CFG_GLPI['root_doc'] . '/front/config.form.php?forcetab=' . urlencode('PluginEdeploysnowclientConfig$1'));

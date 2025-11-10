@@ -1,4 +1,4 @@
-# SnowClient - Plugin de Integração GLPI com ServiceNow
+# eDeploy ServiceNow Client - Plugin de Integração GLPI com ServiceNow
 
 Plugin para integração entre GLPI e ServiceNow, permitindo sincronização automática de tickets, acompanhamentos e documentos.
 
@@ -26,9 +26,9 @@ Plugin para integração entre GLPI e ServiceNow, permitindo sincronização aut
 
 ## Instalação
 
-1. Extraia o plugin na pasta `plugins/snowclient` do GLPI
+1. Extraia o plugin na pasta `plugins/edeploysnowclient` do GLPI
 2. Acesse **Configurar > Plugins** no GLPI
-3. Instale e ative o plugin SnowClient
+3. Instale e ative o plugin eDeploy ServiceNow Client
 4. Configure as credenciais do ServiceNow em **Configurar > Geral > Aba ServiceNow Client**
 
 ## Configuração
@@ -110,7 +110,7 @@ O plugin utiliza a API REST do ServiceNow:
 
 ## Logs e Troubleshooting
 
-Os logs são gravados em `files/_log/snowclient.log` quando o modo debug está habilitado.
+Os logs são gravados em `files/_log/edeploysnowclient.log` quando o modo debug está habilitado.
 
 Tipos de log:
 - `ERROR`: Erros de conexão ou API

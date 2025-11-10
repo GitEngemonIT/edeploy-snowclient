@@ -3,7 +3,7 @@
    ------------------------------------------------------------------------
    Plugin ServiceNow Client
    Copyright (C) 2025 by EngemonIT
-   https://github.com/engemon/snowclient
+   https://github.com/GitEngemonIT/edeploy-snowclient
    ------------------------------------------------------------------------
    LICENSE
    This file is part of Plugin ServiceNow Client project.
@@ -17,7 +17,7 @@
    @co-author
    @copyright Copyright (c) 2025 ServiceNow Client Plugin Development team
    @license   GPL v3 or later
-   @link      https://github.com/engemon/snowclient
+   @link      https://github.com/GitEngemonIT/edeploy-snowclient
    @since     2025
    ------------------------------------------------------------------------
  */
@@ -27,9 +27,9 @@ if (!defined('GLPI_ROOT')) {
 }
 
 /**
- * Class PluginSnowclientProfile
+ * Class PluginEdeploysnowclientProfile
  */
-class PluginSnowclientProfile extends CommonDBTM
+class PluginEdeploysnowclientProfile extends CommonDBTM
 {
     static $rightname = "profile";
 
@@ -40,7 +40,7 @@ class PluginSnowclientProfile extends CommonDBTM
      */
     static function getTypeName($nb = 0)
     {
-        return __('ServiceNow Client', 'snowclient');
+        return __('ServiceNow Client', 'edeploysnowclient');
     }
 
     /**
@@ -60,9 +60,9 @@ class PluginSnowclientProfile extends CommonDBTM
     {
         $rights = [
             [
-                'itemtype' => 'PluginSnowclientConfig',
-                'label' => __('ServiceNow Configuration', 'snowclient'),
-                'field' => 'plugin_snowclient_config'
+                'itemtype' => 'PluginEdeploysnowclientConfig',
+                'label' => __('ServiceNow Configuration', 'edeploysnowclient'),
+                'field' => 'plugin_edeploysnowclient_config'
             ],
         ];
 

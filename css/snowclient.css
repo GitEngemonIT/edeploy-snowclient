@@ -1,6 +1,6 @@
 /* ServiceNow Client Plugin CSS */
 
-#snowclient-return-button {
+#edeploysnowclient-return-button {
     background-color: #fd7e14;
     border-color: #fd7e14;
     color: white;
@@ -10,7 +10,7 @@
     transition: all 0.2s ease-in-out;
 }
 
-#snowclient-return-button:hover {
+#edeploysnowclient-return-button:hover {
     background-color: #e76500;
     border-color: #e76500;
     color: white;
@@ -18,16 +18,16 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-#snowclient-return-button:focus {
+#edeploysnowclient-return-button:focus {
     box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
 }
 
-#snowclient-return-button:active {
+#edeploysnowclient-return-button:active {
     transform: translateY(0);
 }
 
 /* Integração com menu lateral do GLPI */
-#snowclient-return-button {
+#edeploysnowclient-return-button {
     margin-left: 10px;
     margin-right: 5px;
     margin-top: 5px;
@@ -39,21 +39,21 @@
 
 /* Modal de devolução */
 
-.snowclient-modal .modal-header {
+.edeploysnowclient-modal .modal-header {
     background-color: #fd7e14;
     color: white;
 }
 
-.snowclient-modal .btn-close {
+.edeploysnowclient-modal .btn-close {
     filter: brightness(0) invert(1);
 }
 
-#snowclientReturnModal .alert-info {
+#edeploysnowclientReturnModal .alert-info {
     border-left: 4px solid #0dcaf0;
 }
 
-#snowclientReturnModal textarea:focus,
-#snowclientReturnModal input:focus {
+#edeploysnowclientReturnModal textarea:focus,
+#edeploysnowclientReturnModal input:focus {
     border-color: #fd7e14;
     box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
 }

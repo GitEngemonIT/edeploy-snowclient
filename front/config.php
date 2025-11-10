@@ -10,7 +10,7 @@ if (empty($_GET["id"])) {
    $_GET["id"] = 1;
 }
 
-$config = new PluginSnowclientConfig();
+$config = new PluginEdeploysnowclientConfig();
 
 if (isset($_POST["add"])) {
    $config->check(-1, CREATE, $_POST);
@@ -50,7 +50,7 @@ if (isset($_POST["add"])) {
    }
    
    try {
-      $api = new PluginSnowclientApi();
+      $api = new PluginEdeploysnowclientApi();
       $result = $api->testConnection();
       
       if ($result['success']) {
@@ -68,7 +68,7 @@ if (isset($_POST["add"])) {
    Html::back();
 
 } else {
-   Html::header(PluginSnowclientConfig::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], "config", "plugins");
+   Html::header(PluginEdeploysnowclientConfig::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], "config", "plugins");
    $config->display($_GET);
    Html::footer();
 }

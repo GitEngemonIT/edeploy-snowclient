@@ -3,7 +3,7 @@
    ------------------------------------------------------------------------
    Plugin ServiceNow Client
    Copyright (C) 2025 by EngemonIT
-   https://github.com/engemon/snowclient
+   https://github.com/GitEngemonIT/edeploy-snowclient
    ------------------------------------------------------------------------
    LICENSE
    This file is part of Plugin ServiceNow Client project.
@@ -17,12 +17,12 @@
    @co-author
    @copyright Copyright (c) 2025 ServiceNow Client Plugin Development team
    @license   GPL v3 or later
-   @link      https://github.com/engemon/snowclient
+   @link      https://github.com/GitEngemonIT/edeploy-snowclient
    @since     2025
    ------------------------------------------------------------------------
  */
 
-$LANG['snowclient'] = [
+$LANG['edeploysnowclient'] = [
     // Plugin general
     'ServiceNow Client' => 'Cliente ServiceNow',
     'ServiceNow Integration' => 'Integração ServiceNow',

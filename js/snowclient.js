@@ -1,7 +1,7 @@
 /* ServiceNow Client Plugin JavaScript */
 
-// Funções globais do SnowClient
-var SnowClient = {
+// Funções globais do Edeployedeploysnowclient
+var Edeployedeploysnowclient = {
     
     // Configurações
     config: {
@@ -11,17 +11,17 @@ var SnowClient = {
     // Função de log para debug
     log: function(message) {
         if (this.config.debug && console) {
-            console.log('[SnowClient] ' + message);
+            console.log('[Edeployedeploysnowclient] ' + message);
         }
     },
     
     // Inicializar plugin
     init: function() {
-        this.log('SnowClient initialized');
+        this.log('Edeployedeploysnowclient initialized');
         
         // Verificar se jQuery está disponível
         if (typeof jQuery === 'undefined') {
-            console.error('SnowClient requires jQuery');
+            console.error('Edeployedeploysnowclient requires jQuery');
             return;
         }
         
@@ -78,7 +78,7 @@ var SnowClient = {
         
         // Fazer requisição AJAX para verificar
         $.ajax({
-            url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/snowclient/ajax/check_return_button.php',
+            url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/Edeployedeploysnowclient/ajax/check_return_button.php',
             method: 'POST',
             data: {
                 ticket_id: ticketId
@@ -87,8 +87,8 @@ var SnowClient = {
             success: function(response) {
                 if (response.success && response.show_button) {
                     self.log('Deve mostrar botão - adicionando...');
-                    window.snowclient_show_return_button = true;
-                    window.snowclient_ticket_id = ticketId;
+                    window.Edeployedeployedeploysnowclient_show_return_button = true;
+                    window.Edeployedeployedeploysnowclient_ticket_id = ticketId;
                     self.addReturnButton();
                 } else {
                     self.log('Não deve mostrar botão: ' + (response.message || 'critérios não atendidos'));
@@ -115,14 +115,14 @@ var SnowClient = {
     addReturnButton: function() {
         var self = this;
         
-        var ticketId = window.snowclient_ticket_id || this.getTicketId();
+        var ticketId = window.Edeployedeployedeploysnowclient_ticket_id || this.getTicketId();
         if (ticketId <= 0) {
             self.log('ID do ticket inválido');
             return;
         }
         
         // Se já existe, não adicionar novamente
-        if ($('#snowclient-return-button').length > 0) {
+        if ($('#Edeployedeploysnowclient-return-button').length > 0) {
             self.log('Botão já existe');
             return;
         }
@@ -144,7 +144,7 @@ var SnowClient = {
                 self.log('Encontrado elemento: ' + targetElements[i]);
                 
                 // Usar o ticket ID já validado
-                var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="snowclient-return-button" data-ticket-id="' + ticketId + '">' +
+                var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="Edeployedeploysnowclient-return-button" data-ticket-id="' + ticketId + '">' +
                     '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
                     '</button>';
                 
@@ -162,7 +162,7 @@ var SnowClient = {
             if (ticketId > 0) {
                 var genericLocation = $('.card-header, .page-header, .header-title').first();
                 if (genericLocation.length > 0) {
-                    var returnButton = '<div style="margin: 10px 0;"><button type="button" class="btn btn-warning" id="snowclient-return-button" data-ticket-id="' + ticketId + '">' +
+                    var returnButton = '<div style="margin: 10px 0;"><button type="button" class="btn btn-warning" id="Edeployedeploysnowclient-return-button" data-ticket-id="' + ticketId + '">' +
                         '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
                         '</button></div>';
                     
@@ -173,7 +173,7 @@ var SnowClient = {
         }
         
         // Adicionar event handler se o botão foi criado
-        if ($('#snowclient-return-button').length > 0) {
+        if ($('#Edeployedeploysnowclient-return-button').length > 0) {
             this.setupReturnButtonHandler();
         }
     },
@@ -202,7 +202,7 @@ var SnowClient = {
     setupReturnButtonHandler: function() {
         var self = this;
         
-        $(document).off('click', '#snowclient-return-button').on('click', '#snowclient-return-button', function(e) {
+        $(document).off('click', '#Edeployedeploysnowclient-return-button').on('click', '#Edeployedeploysnowclient-return-button', function(e) {
             e.preventDefault();
             var ticketId = $(this).data('ticket-id');
             self.log('Botão clicado para ticket: ' + ticketId);
@@ -213,7 +213,7 @@ var SnowClient = {
     // Mostrar modal de devolução
     showReturnModal: function(ticketId) {
         var self = this;
-        var modalHtml = '<div class="modal fade" id="snowclientReturnModal" tabindex="-1">' +
+        var modalHtml = '<div class="modal fade" id="EdeployedeploysnowclientReturnModal" tabindex="-1">' +
             '<div class="modal-dialog modal-lg">' +
                 '<div class="modal-content">' +
                     '<div class="modal-header bg-warning text-white">' +
@@ -221,7 +221,7 @@ var SnowClient = {
                         '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>' +
                     '</div>' +
                     '<div class="modal-body">' +
-                        '<form id="snowclient-return-form">' +
+                        '<form id="Edeployedeploysnowclient-return-form">' +
                             '<input type="hidden" name="ticket_id" value="' + ticketId + '">' +
                             '<div class="mb-3">' +
                                 '<label for="return_reason" class="form-label">Motivo da Devolução *</label>' +
@@ -242,13 +242,13 @@ var SnowClient = {
         '</div>';
         
         // Remover modal existente se houver
-        $('#snowclientReturnModal').remove();
+        $('#EdeployedeploysnowclientReturnModal').remove();
         
         // Adicionar modal ao body
         $('body').append(modalHtml);
         
         // Mostrar modal
-        $('#snowclientReturnModal').modal('show');
+        $('#EdeployedeploysnowclientReturnModal').modal('show');
         
         // Handler para confirmação
         $('#confirm-return').click(function() {
@@ -262,7 +262,7 @@ var SnowClient = {
             
             // AJAX para processar a devolução
             $.ajax({
-                url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/snowclient/ajax/return_ticket.php',
+                url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/Edeployedeploysnowclient/ajax/return_ticket.php',
                 method: 'POST',
                 data: {
                     ticket_id: ticketId,
@@ -272,7 +272,7 @@ var SnowClient = {
                 success: function(response) {
                     if (response.success) {
                         alert('Chamado devolvido com sucesso ao ServiceNow!');
-                        $('#snowclientReturnModal').modal('hide');
+                        $('#EdeployedeploysnowclientReturnModal').modal('hide');
                         location.reload(); // Recarregar página para mostrar status atualizado
                     } else {
                         alert('Erro ao devolver chamado: ' + response.message);
@@ -297,11 +297,11 @@ var SnowClient = {
 // Inicializar quando o documento estiver pronto
 if (typeof jQuery !== 'undefined') {
     jQuery(document).ready(function() {
-        SnowClient.init();
+        Edeployedeploysnowclient.init();
     });
 } else {
     // Fallback para quando jQuery não estiver disponível
     document.addEventListener('DOMContentLoaded', function() {
-        SnowClient.init();
+        Edeployedeploysnowclient.init();
     });
 }

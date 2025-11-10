@@ -42,13 +42,13 @@ try {
     }
     
     // Verificar se é um ticket do ServiceNow
-    if (!PluginSnowclientConfig::shouldShowReturnButton($ticket)) {
+    if (!PluginEdeploysnowclientConfig::shouldShowReturnButton($ticket)) {
         echo json_encode(['success' => false, 'message' => 'Este ticket não pode ser devolvido ao ServiceNow']);
         exit;
     }
     
     // Processar a devolução
-    $result = PluginSnowclientConfig::returnTicketToServiceNow($ticket, $reason);
+    $result = PluginEdeploysnowclientConfig::returnTicketToServiceNow($ticket, $reason);
     
     if ($result['success']) {
         echo json_encode(['success' => true, 'message' => 'Ticket devolvido com sucesso']);
@@ -57,6 +57,6 @@ try {
     }
     
 } catch (Exception $e) {
-    error_log("SnowClient Return Error: " . $e->getMessage());
+    error_log("eDeploySnowClient Return Error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Erro interno do sistema']);
 }

@@ -1,132 +1,132 @@
 <?php
 /*
    ------------------------------------------------------------------------
-   Plugin ServiceNow Client
+   Plugin eDeploy ServiceNow Client
    Copyright (C) 2025 by EngemonIT
-   https://github.com/engemon/snowclient
+   https://github.com/GitEngemonIT/edeploy-snowclient
    ------------------------------------------------------------------------
    LICENSE
-   This file is part of Plugin ServiceNow Client project.
-   Plugin ServiceNow Client is free software: you can redistribute it and/or modify
+   This file is part of Plugin eDeploy ServiceNow Client project.
+   Plugin eDeploy ServiceNow Client is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
    ------------------------------------------------------------------------
-   @package   Plugin ServiceNow Client
+   @package   Plugin eDeploy ServiceNow Client
    @author    EngemonIT
    @co-author
-   @copyright Copyright (c) 2025 ServiceNow Client Plugin Development team
+   @copyright Copyright (c) 2025 eDeploy ServiceNow Client Plugin Development team
    @license   GPL v3 or later
-   @link      https://github.com/engemon/snowclient
+   @link      https://github.com/GitEngemonIT/edeploy-snowclient
    @since     2025
    ------------------------------------------------------------------------
  */
 
 //plugin version
-define('PLUGIN_SNOWCLIENT_VERSION', '1.1.20');
+define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '1.1.20');
 // Minimal GLPI version
-define('PLUGIN_SNOWCLIENT_MIN_GLPI', '9.4');
+define('PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version
-define('PLUGIN_SNOWCLIENT_MAX_GLPI', '10.1.1');
+define('PLUGIN_EDEPLOYSNOWCLIENT_MAX_GLPI', '10.1.1');
 
-define('PLUGIN_SNOWCLIENT_NAME', 'Cliente ServiceNow');
+define('PLUGIN_EDEPLOYSNOWCLIENT_NAME', 'eDeploy ServiceNow Client');
 
-function plugin_version_snowclient()
+function plugin_version_edeploysnowclient()
 {
     return [
-        'name' => PLUGIN_SNOWCLIENT_NAME,
-        'version' => PLUGIN_SNOWCLIENT_VERSION,
+        'name' => PLUGIN_EDEPLOYSNOWCLIENT_NAME,
+        'version' => PLUGIN_EDEPLOYSNOWCLIENT_VERSION,
         'author' => 'EngemonIT',
         'license' => 'GPL v3+',
-        'homepage' => 'https://github.com/engemon/snowclient',
+        'homepage' => 'https://github.com/GitEngemonIT/edeploy-snowclient',
         'requirements' => [
             'glpi' => [
-                'min' => PLUGIN_SNOWCLIENT_MIN_GLPI,
-                'max' => PLUGIN_SNOWCLIENT_MAX_GLPI,
+                'min' => PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI,
+                'max' => PLUGIN_EDEPLOYSNOWCLIENT_MAX_GLPI,
             ],
         ],
     ];
 }
 
-function plugin_init_snowclient()
+function plugin_init_edeploysnowclient()
 {
     global $PLUGIN_HOOKS, $CFG_GLPI;
 
-    $PLUGIN_HOOKS['csrf_compliant']['snowclient'] = true;
+    $PLUGIN_HOOKS['csrf_compliant']['edeploysnowclient'] = true;
     
     // Load translations
-    $PLUGIN_HOOKS['language']['snowclient'] = [
+    $PLUGIN_HOOKS['language']['edeploysnowclient'] = [
         'pt_BR' => __DIR__ . '/locales/pt_BR.php',
         'en_US' => __DIR__ . '/locales/en_US.php',
     ];
 
     $plugin = new Plugin();
 
-    if ($plugin->isActivated('snowclient')) {
-        $PLUGIN_HOOKS['config_page']['snowclient'] = 'front/config.php';
+    if ($plugin->isActivated('edeploysnowclient')) {
+        $PLUGIN_HOOKS['config_page']['edeploysnowclient'] = 'front/config.php';
 
-        Plugin::registerClass('PluginSnowclientProfile', ['addtabon' => 'Profile']);
-        Plugin::registerClass('PluginSnowclientConfig', ['addtabon' => 'Config']);
-        Plugin::registerClass('PluginSnowclientApi');
+        Plugin::registerClass('PluginEdeploysnowclientProfile', ['addtabon' => 'Profile']);
+        Plugin::registerClass('PluginEdeploysnowclientConfig', ['addtabon' => 'Config']);
+        Plugin::registerClass('PluginEdeploysnowclientApi');
 
         // Hook pre_item_add para interceptar antes da adição
-        $PLUGIN_HOOKS['pre_item_add']['snowclient'] = [
-            'ITILSolution' => 'plugin_snowclient_pre_item_add'
+        $PLUGIN_HOOKS['pre_item_add']['edeploysnowclient'] = [
+            'ITILSolution' => 'plugin_edeploysnowclient_pre_item_add'
         ];
 
-        $PLUGIN_HOOKS['item_add']['snowclient'] = [
-            'Ticket' => 'plugin_snowclient_item_add',
-            'ITILFollowup' => 'plugin_snowclient_item_add',
-            'ITILSolution' => 'plugin_snowclient_item_add',
-            'Document' => 'plugin_snowclient_item_add',
-            'Document_Item' => 'plugin_snowclient_item_add',
+        $PLUGIN_HOOKS['item_add']['edeploysnowclient'] = [
+            'Ticket' => 'plugin_edeploysnowclient_item_add',
+            'ITILFollowup' => 'plugin_edeploysnowclient_item_add',
+            'ITILSolution' => 'plugin_edeploysnowclient_item_add',
+            'Document' => 'plugin_edeploysnowclient_item_add',
+            'Document_Item' => 'plugin_edeploysnowclient_item_add',
         ];
 
-        $PLUGIN_HOOKS['item_update']['snowclient'] = [
-            'Ticket' => 'plugin_snowclient_item_update',
-            'ITILFollowup' => 'plugin_snowclient_item_update',
-            'ITILSolution' => 'plugin_snowclient_item_update',
+        $PLUGIN_HOOKS['item_update']['edeploysnowclient'] = [
+            'Ticket' => 'plugin_edeploysnowclient_item_update',
+            'ITILFollowup' => 'plugin_edeploysnowclient_item_update',
+            'ITILSolution' => 'plugin_edeploysnowclient_item_update',
         ];
 
-        $PLUGIN_HOOKS['item_delete']['snowclient'] = [
-            'Ticket' => 'plugin_snowclient_item_delete',
+        $PLUGIN_HOOKS['item_delete']['edeploysnowclient'] = [
+            'Ticket' => 'plugin_edeploysnowclient_item_delete',
         ];
 
         // Add menu item
-        $PLUGIN_HOOKS['menu_toadd']['snowclient'] = [
-            'plugins' => 'PluginSnowclientConfig'
+        $PLUGIN_HOOKS['menu_toadd']['edeploysnowclient'] = [
+            'plugins' => 'PluginEdeploysnowclientConfig'
         ];
 
         // Hook para adicionar botões personalizados na tela de ticket
-        $PLUGIN_HOOKS['use_massive_action']['snowclient'] = 1;
+        $PLUGIN_HOOKS['use_massive_action']['edeploysnowclient'] = 1;
         
         // Hook para adicionar JavaScript e CSS globalmente
-        $PLUGIN_HOOKS['add_javascript']['snowclient'] = [
+        $PLUGIN_HOOKS['add_javascript']['edeploysnowclient'] = [
             'js/snowclient.js',
             'js/solution_modal.js'
         ];
         
-        $PLUGIN_HOOKS['add_css']['snowclient'] = [
+        $PLUGIN_HOOKS['add_css']['edeploysnowclient'] = [
             'css/snowclient.css',
             'css/solution_modal.css'
         ];
 
         // Hook para debug de modal de solução
         include_once __DIR__ . '/inc/solution_resources.php';
-        $PLUGIN_HOOKS['post_item_form']['snowclient'] = [
-            'Ticket' => 'plugin_snowclient_add_solution_resources'
+        $PLUGIN_HOOKS['post_item_form']['edeploysnowclient'] = [
+            'Ticket' => 'plugin_edeploysnowclient_add_solution_resources'
         ];
     }
 }
 
-function plugin_snowclient_check_prerequisites()
+function plugin_edeploysnowclient_check_prerequisites()
 {
-    if (version_compare(GLPI_VERSION, PLUGIN_SNOWCLIENT_MIN_GLPI, 'lt')
-        || version_compare(GLPI_VERSION, PLUGIN_SNOWCLIENT_MAX_GLPI, 'gt')) {
+    if (version_compare(GLPI_VERSION, PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI, 'lt')
+        || version_compare(GLPI_VERSION, PLUGIN_EDEPLOYSNOWCLIENT_MAX_GLPI, 'gt')) {
         echo sprintf(
             __('Este plugin requer uma versão do GLPI entre %s e %s'),
-            PLUGIN_SNOWCLIENT_MIN_GLPI,
-            PLUGIN_SNOWCLIENT_MAX_GLPI
+            PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI,
+            PLUGIN_EDEPLOYSNOWCLIENT_MAX_GLPI
         );
         return false;
     }
@@ -140,7 +140,7 @@ function plugin_snowclient_check_prerequisites()
     return true;
 }
 
-function plugin_snowclient_check_config()
+function plugin_edeploysnowclient_check_config()
 {
     return true;
 }
@@ -148,17 +148,17 @@ function plugin_snowclient_check_config()
 /**
  * Plugin update function
  */
-function plugin_snowclient_update($current_version)
+function plugin_edeploysnowclient_update($current_version)
 {
     global $DB;
     
-    $migration = new Migration(PLUGIN_SNOWCLIENT_VERSION);
-    $migration->displayMessage("Atualizando plugin ServiceNow Client");
+    $migration = new Migration(PLUGIN_EDEPLOYSNOWCLIENT_VERSION);
+    $migration->displayMessage("Atualizando plugin eDeploy ServiceNow Client");
     
     // Verificar se é necessário atualizar a partir de versões anteriores
     if (version_compare($current_version, '1.0.4', '<')) {
         // Atualizar tabela de configuração
-        $table = 'glpi_plugin_snowclient_configs';
+        $table = 'glpi_plugin_edeploysnowclient_configs';
         
         if ($DB->tableExists($table)) {
             // Adicionar campos faltantes se não existirem
@@ -189,7 +189,7 @@ function plugin_snowclient_update($current_version)
         }
         
         // Criar tabela de mappings se não existir
-        $mappingTable = 'glpi_plugin_snowclient_mappings';
+        $mappingTable = 'glpi_plugin_edeploysnowclient_mappings';
         if (!$DB->tableExists($mappingTable)) {
             $migration->displayMessage("Installing $mappingTable");
             $default_charset = DBConnection::getDefaultCharset();
@@ -237,7 +237,7 @@ function plugin_snowclient_update($current_version)
         $migration->displayMessage("Updating to 1.1.0 - Added return ticket functionality");
         
         // Adicionar campo return_queue_group se não existir
-        $table = 'glpi_plugin_snowclient_configs';
+        $table = 'glpi_plugin_edeploysnowclient_configs';
         if ($DB->tableExists($table)) {
             if (!$DB->fieldExists($table, 'return_queue_group')) {
                 $migration->addField($table, 'return_queue_group', 'varchar(255) DEFAULT NULL');
@@ -260,7 +260,7 @@ function plugin_snowclient_update($current_version)
         $migration->displayMessage("Updating to 1.1.1 - Fix return_queue_group field");
         
         // Garantir que o campo return_queue_group existe
-        $table = 'glpi_plugin_snowclient_configs';
+        $table = 'glpi_plugin_edeploysnowclient_configs';
         if ($DB->tableExists($table)) {
             if (!$DB->fieldExists($table, 'return_queue_group')) {
                 $migration->displayMessage("Adding missing return_queue_group field");
@@ -281,7 +281,7 @@ function plugin_snowclient_update($current_version)
     if (version_compare($current_version, '1.1.2', '<')) {
         $migration->displayMessage("Updating to 1.1.2 - Ensure return_queue_group field exists");
         
-        $table = 'glpi_plugin_snowclient_configs';
+        $table = 'glpi_plugin_edeploysnowclient_configs';
         if ($DB->tableExists($table)) {
             if (!$DB->fieldExists($table, 'return_queue_group')) {
                 $migration->displayMessage("Adding missing return_queue_group field to existing installation");
@@ -303,7 +303,7 @@ function plugin_snowclient_update($current_version)
     if (version_compare($current_version, '1.1.6', '<')) {
         $migration->displayMessage("Updating to 1.1.6 - Adding ServiceNow custom fields configuration");
         
-        $table = 'glpi_plugin_snowclient_configs';
+        $table = 'glpi_plugin_edeploysnowclient_configs';
         if ($DB->tableExists($table)) {
             // Adicionar campo para valor padrão do tipo de encerramento
             if (!$DB->fieldExists($table, 'default_close_type')) {
@@ -342,16 +342,16 @@ function plugin_snowclient_update($current_version)
 /**
  * Plugin installation function
  */
-function plugin_snowclient_install()
+function plugin_edeploysnowclient_install()
 {
-    $migration = new Migration(PLUGIN_SNOWCLIENT_VERSION);
+    $migration = new Migration(PLUGIN_EDEPLOYSNOWCLIENT_VERSION);
     
     // Install config table
-    PluginSnowclientConfig::install($migration);
+    PluginEdeploysnowclientConfig::install($migration);
     
     // Install API mapping table directly here
     global $DB;
-    $mappingTable = 'glpi_plugin_snowclient_mappings';
+    $mappingTable = 'glpi_plugin_edeploysnowclient_mappings';
     if (!$DB->tableExists($mappingTable)) {
         $migration->displayMessage("Installing $mappingTable");
         $default_charset = DBConnection::getDefaultCharset();
@@ -383,16 +383,16 @@ function plugin_snowclient_install()
 /**
  * Plugin uninstallation function
  */
-function plugin_snowclient_uninstall()
+function plugin_edeploysnowclient_uninstall()
 {
-    $migration = new Migration(PLUGIN_SNOWCLIENT_VERSION);
+    $migration = new Migration(PLUGIN_EDEPLOYSNOWCLIENT_VERSION);
     
     // Drop config table
-    PluginSnowclientConfig::uninstall($migration);
+    PluginEdeploysnowclientConfig::uninstall($migration);
     
     // Drop mapping table
     global $DB;
-    $mappingTable = 'glpi_plugin_snowclient_mappings';
+    $mappingTable = 'glpi_plugin_edeploysnowclient_mappings';
     if ($DB->tableExists($mappingTable)) {
         $migration->displayMessage("Uninstalling $mappingTable");
         $migration->dropTable($mappingTable);
@@ -405,12 +405,12 @@ function plugin_snowclient_uninstall()
 /**
  * Plugin upgrade function
  */
-function plugin_snowclient_upgrade($migrations)
+function plugin_edeploysnowclient_upgrade($migrations)
 {
     global $DB;
-    $migration = new Migration(PLUGIN_SNOWCLIENT_VERSION);
+    $migration = new Migration(PLUGIN_EDEPLOYSNOWCLIENT_VERSION);
     
-    $table = 'glpi_plugin_snowclient_configs';
+    $table = 'glpi_plugin_edeploysnowclient_configs';
     
     foreach ($migrations as $version) {
         switch ($version) {

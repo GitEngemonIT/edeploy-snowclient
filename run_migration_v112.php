@@ -64,7 +64,7 @@ echo "<h3>Verificação pós-migração:</h3>";
 global $DB;
 
 try {
-    $query = "DESCRIBE glpi_plugin_snowclient_configs";
+    $query = "DESCRIBE glpi_plugin_edeploysnowclient_configs";
     $result = $DB->query($query);
     
     $fields = [];
@@ -89,7 +89,7 @@ try {
         echo "<p style='color: green;'>✅ Campo 'return_queue_group' encontrado na tabela!</p>";
         
         // Testar inserção de valor
-        $config = new PluginSnowclientConfig();
+        $config = new PluginEdeploysnowclientConfig();
         if ($config->getFromDB(1)) {
             echo "<p><strong>Valor atual do return_queue_group:</strong> " . 
                  (empty($config->fields['return_queue_group']) ? '(vazio)' : htmlspecialchars($config->fields['return_queue_group'])) . "</p>";

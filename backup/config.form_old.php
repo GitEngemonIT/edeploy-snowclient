@@ -26,7 +26,7 @@ include '../../../inc/includes.php';
 
 // Check if plugin is activated...
 $plugin = new Plugin();
-if (!$plugin->isInstalled('snowclient') || !$plugin->isActivated('snowclient')) {
+if (!$plugin->isInstalled('edeploysnowclient') || !$plugin->isActivated('edeploysnowclient')) {
     Html::displayNotFoundError();
 }
 
@@ -36,7 +36,7 @@ include_once(GLPI_ROOT . '/plugins/snowclient/inc/api.class.php');
 
 Session::checkRight('config', UPDATE);
 
-$config = new PluginSnowclientConfig();
+$config = new PluginEdeploysnowclientConfig();
 
 if (isset($_POST['update'])) {
     $config->check($_POST['id'], UPDATE);
@@ -64,7 +64,7 @@ if (isset($_POST['update'])) {
     
     $config->update($input);
     
-    Session::addMessageAfterRedirect(__('Configuration updated successfully', 'snowclient'));
+    Session::addMessageAfterRedirect(__('Configuration updated successfully', 'edeploysnowclient'));
     Html::back();
 }
 
@@ -73,7 +73,7 @@ if (isset($_POST['test_connection'])) {
     error_log("POST data received: " . print_r($_POST, true));
     
     // Buscar dados salvos no banco se campos estiverem vazios
-    $config = new PluginSnowclientConfig();
+    $config = new PluginEdeploysnowclientConfig();
     $config->getFromDB(1);
     
     // Preparar dados para teste - usar dados salvos se não fornecidos no formulário
@@ -105,13 +105,13 @@ if (isset($_POST['test_connection'])) {
         if (empty($tempData['password'])) $missing[] = 'Senha';
         
         error_log("Missing fields: " . implode(', ', $missing));
-        Session::addMessageAfterRedirect(__('Erro: campos obrigatórios não encontrados nem no formulário nem na configuração salva', 'snowclient') . ' (' . implode(', ', $missing) . ')', false, ERROR);
+        Session::addMessageAfterRedirect(__('Erro: campos obrigatórios não encontrados nem no formulário nem na configuração salva', 'edeploysnowclient') . ' (' . implode(', ', $missing) . ')', false, ERROR);
         Html::back();
     }
     
     // Validar URL
     if (!filter_var($tempData['instance_url'], FILTER_VALIDATE_URL)) {
-        Session::addMessageAfterRedirect(__('URL inválida', 'snowclient'), false, ERROR);
+        Session::addMessageAfterRedirect(__('URL inválida', 'edeploysnowclient'), false, ERROR);
         Html::back();
     }
     
@@ -145,16 +145,16 @@ if (isset($_POST['test_connection'])) {
     error_log("cURL test - Response: " . substr($response, 0, 500));
     
     if ($error) {
-        Session::addMessageAfterRedirect(__('Erro de conexão: ', 'snowclient') . $error, false, ERROR);
+        Session::addMessageAfterRedirect(__('Erro de conexão: ', 'edeploysnowclient') . $error, false, ERROR);
     } elseif ($httpCode >= 200 && $httpCode < 300) {
-        Session::addMessageAfterRedirect(__('Teste de conexão realizado com sucesso!', 'snowclient'), false, INFO);
+        Session::addMessageAfterRedirect(__('Teste de conexão realizado com sucesso!', 'edeploysnowclient'), false, INFO);
     } else {
         $responseData = json_decode($response, true);
         $errorMsg = isset($responseData['error']['message']) ? $responseData['error']['message'] : "HTTP $httpCode";
-        Session::addMessageAfterRedirect(__('Falha no teste de conexão: ', 'snowclient') . $errorMsg, false, ERROR);
+        Session::addMessageAfterRedirect(__('Falha no teste de conexão: ', 'edeploysnowclient') . $errorMsg, false, ERROR);
     }
     
     Html::back();
 }
 
-Html::redirect($CFG_GLPI['root_doc'] . '/front/config.form.php?forcetab=' . urlencode('PluginSnowclientConfig$1'));
+Html::redirect($CFG_GLPI['root_doc'] . '/front/config.form.php?forcetab=' . urlencode('PluginEdeploysnowclientConfig$1'));
