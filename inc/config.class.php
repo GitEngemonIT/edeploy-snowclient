@@ -344,11 +344,8 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             }
         }
 
-        // Validate username - only if it's being submitted in the form
-        if (array_key_exists('username', $input) && empty($input['username'])) {
-            Session::addMessageAfterRedirect(__('Username cannot be empty', 'edeploysnowclient'), false, ERROR);
-            return false;
-        }
+        // Don't validate username on update - allow partial updates
+        // Username validation only happens on initial creation via prepareInputForAdd
 
         // Decrypt HTML entities BEFORE encrypting password
         if (isset($input['password']) && !empty($input['password'])) {
@@ -377,6 +374,12 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
 
     function prepareInputForAdd($input)
     {
+        // Validate username is required on creation
+        if (!isset($input['username']) || empty($input['username'])) {
+            Session::addMessageAfterRedirect(__('Username cannot be empty', 'edeploysnowclient'), false, ERROR);
+            return false;
+        }
+        
         return $this->prepareInputForUpdate($input);
     }
 
