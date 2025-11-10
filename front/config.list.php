@@ -26,7 +26,7 @@ include ('../../../inc/includes.php');
 
 Session::checkRight("plugin_edeploysnowclient_config", READ);
 
-Html::header(__('ServiceNow Client Configuration', 'snowclient'), $_SERVER['PHP_SELF'], "config", "plugins");
+Html::header(__('ServiceNow Client Configuration', 'edeploysnowclient'), $_SERVER['PHP_SELF'], "config", "plugins");
 
 Search::show('PluginEdeploysnowclientConfig');
 

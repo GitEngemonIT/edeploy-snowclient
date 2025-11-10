@@ -8,7 +8,7 @@ include '../../../inc/includes.php';
 
 // Check if plugin is activated
 $plugin = new Plugin();
-if (!$plugin->isInstalled('snowclient') || !$plugin->isActivated('snowclient')) {
+if (!$plugin->isInstalled('edeploysnowclient') || !$plugin->isActivated('edeploysnowclient')) {
     Html::displayNotFoundError();
 }
 
@@ -19,7 +19,7 @@ $config = new PluginEdeploysnowclientConfig();
 if (isset($_POST['update'])) {
     $config->check($_POST['id'], UPDATE);
     $config->update($_POST);
-    Session::addMessageAfterRedirect(__('Configuration updated successfully', 'snowclient'));
+    Session::addMessageAfterRedirect(__('Configuration updated successfully', 'edeploysnowclient'));
     Html::back();
 }
 

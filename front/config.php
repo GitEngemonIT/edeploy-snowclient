@@ -15,14 +15,14 @@ $config = new PluginEdeploysnowclientConfig();
 if (isset($_POST["add"])) {
    $config->check(-1, CREATE, $_POST);
    if ($config->add($_POST)) {
-      Event::log($_POST['id'], "snowclientconfig", 4, "setup",
+      Event::log($_POST['id'], "edeploysnowclientconfig", 4, "setup",
                  sprintf(__('%1$s adds the item %2$s'), $_SESSION["glpiname"], $_POST["name"]));
    }
    Html::back();
 
 } else if (isset($_POST["update"])) {
    if (!isset($_POST['id']) || empty($_POST['id'])) {
-      Session::addMessageAfterRedirect(__('Configuration ID missing. Could not save.', 'snowclient'), false, ERROR);
+      Session::addMessageAfterRedirect(__('Configuration ID missing. Could not save.', 'edeploysnowclient'), false, ERROR);
       Html::back();
       exit;
    }
@@ -35,11 +35,11 @@ if (isset($_POST["add"])) {
    $result = $config->update($_POST);
 
    if ($result) {
-      Session::addMessageAfterRedirect(__('Configuration updated successfully!', 'snowclient'), false, INFO);
+      Session::addMessageAfterRedirect(__('Configuration updated successfully!', 'edeploysnowclient'), false, INFO);
    } else {
-      Session::addMessageAfterRedirect(__('Error updating configuration. Check logs.', 'snowclient'), false, ERROR);
+      Session::addMessageAfterRedirect(__('Error updating configuration. Check logs.', 'edeploysnowclient'), false, ERROR);
    }
-   Event::log($_POST['id'], "snowclientconfig", 4, "setup",
+   Event::log($_POST['id'], "edeploysnowclientconfig", 4, "setup",
               sprintf(__('%1$s updates the item %2$s'), $_SESSION["glpiname"],
                       $config->fields["name"]));
    Html::back();
@@ -60,7 +60,7 @@ if (isset($_POST["add"])) {
       }
    } catch (Exception $e) {
       Session::addMessageAfterRedirect(
-         "❌ " . sprintf(__('Error testing connection: %s', 'snowclient'), $e->getMessage()), 
+         "❌ " . sprintf(__('Error testing connection: %s', 'edeploysnowclient'), $e->getMessage()), 
          false, 
          ERROR
       );
