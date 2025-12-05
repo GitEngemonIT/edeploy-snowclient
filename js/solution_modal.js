@@ -348,6 +348,7 @@ class SolutionModal {
             console.log('edeploysnowclient Modal: Formulário e botão encontrados');
 
             // 3. Coletar dados do formulário modal
+            const modal = document.querySelector('#edeploysnowclient-solution-modal');
             const ticketId = this.ticketId || 'unknown';
             const closeCode = modal.querySelector('#snow-close-code');
             const closeType = modal.querySelector('#snow-close-type');
