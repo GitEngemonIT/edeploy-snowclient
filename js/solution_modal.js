@@ -132,12 +132,12 @@ class SolutionModal {
                 // Preencher campos readonly com valores mockados do ServiceNow
                 const closeTypeInput = modal.querySelector('#snow-close-type');
                 if (closeTypeInput) {
-                    closeTypeInput.value = 'Presencial';  // Valor mockado para u_bk_tipo_encerramento
+                    closeTypeInput.value = 'Remoto';  // Valor mockado para u_bk_tipo_encerramento
                 }
 
                 const solutionClass = modal.querySelector('#snow-solution-class');
                 if (solutionClass) {
-                    solutionClass.value = 'Hardware';  // Valor mockado para u_bk_ic_impactado
+                    solutionClass.value = 'Aplicação (Software)';  // Valor mockado para u_bk_ic_impactado
                 }
 
                 console.log('edeploysnowclient Modal: Campos mockados preenchidos com sucesso');

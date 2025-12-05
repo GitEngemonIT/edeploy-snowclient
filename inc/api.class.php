@@ -310,8 +310,9 @@ class PluginEdeploysnowclientApi
             $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id");
             
             if (empty($searchResult['result'])) {
+                // Log como DEBUG - pode ser ticket criado manualmente no GLPI
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow");
+                    Toolbox::logDebug("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow (pode ser ticket local do GLPI)");
                 }
                 return false;
             }
@@ -410,8 +411,9 @@ class PluginEdeploysnowclientApi
             $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id");
             
             if (empty($searchResult['result'])) {
+                // Log como DEBUG ao invés de ERROR - pode ser ticket criado manualmente no GLPI
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para followup");
+                    Toolbox::logDebug("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para adicionar followup (pode ser ticket local do GLPI)");
                 }
                 return false;
             }
@@ -506,8 +508,9 @@ class PluginEdeploysnowclientApi
             $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id");
             
             if (empty($searchResult['result'])) {
+                // Log como DEBUG - pode ser ticket criado manualmente no GLPI
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para solução");
+                    Toolbox::logDebug("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para adicionar solução (pode ser ticket local do GLPI)");
                 }
                 return false;
             }
@@ -667,8 +670,9 @@ class PluginEdeploysnowclientApi
             $searchResult = $this->makeRequest("api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id");
             
             if (empty($searchResult['result'])) {
+                // Log como DEBUG - pode ser ticket criado manualmente no GLPI
                 if ($this->debug_mode) {
-                    Toolbox::logError("Incidente $cleanSnowId não encontrado no ServiceNow para exclusão");
+                    Toolbox::logDebug("eDeploySnowClient: Incidente $cleanSnowId não encontrado no ServiceNow para exclusão (pode ser ticket local do GLPI)");
                 }
                 return false;
             }
