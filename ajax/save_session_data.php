@@ -4,36 +4,39 @@ include ('../../../inc/includes.php');
 header('Content-Type: application/json');
 
 // Log para debug
-error_log('eDeployeDeploySnowClient: save_session_data.php chamado');
-error_log('eDeployeDeploySnowClient: POST data: ' . print_r($_POST, true));
+error_log('eDeploySnowClient: save_session_data.php chamado');
+error_log('eDeploySnowClient: POST data: ' . print_r($_POST, true));
 
 // Verificar se os dados foram enviados
-if (!isset($_POST['ticketId']) || !isset($_POST['solutionCode'])) {
-    error_log('eDeployeDeploySnowClient: Erro - Missing required fields');
+if (!isset($_POST['ticketId']) || !isset($_POST['u_bk_type_of_failure'])) {
+    error_log('eDeploySnowClient: Erro - Missing required fields');
     http_response_code(400);
-    die(json_encode(['success' => false, 'message' => 'Missing required fields (ticketId or solutionCode)']));
+    die(json_encode(['success' => false, 'message' => 'Missing required fields (ticketId or u_bk_type_of_failure)']));
 }
 
 try {
-    // Coletar dados direto do POST
+    // Coletar todos os campos necessários para o ServiceNow
     $data = [
         'ticketId' => $_POST['ticketId'],
-        'solutionCode' => $_POST['solutionCode'],
+        'close_code' => $_POST['close_code'] ?? 'Definitiva',
+        'u_bk_tipo_encerramento' => $_POST['u_bk_tipo_encerramento'] ?? 'Remoto',
+        'u_bk_ic_impactado' => $_POST['u_bk_ic_impactado'] ?? 'Aplicação (Software)',
+        'u_bk_type_of_failure' => $_POST['u_bk_type_of_failure'],
         'timestamp' => isset($_POST['timestamp']) ? $_POST['timestamp'] : time()
     ];
     
-    error_log('eDeployeDeploySnowClient: Data coletada: ' . print_r($data, true));
+    error_log('eDeploySnowClient: Data coletada: ' . print_r($data, true));
 
     // Salvar na sessão PHP
     $_SESSION['edeploysnowclient_solution_data'] = $data;
     
-    error_log('eDeployeDeploySnowClient: Dados salvos na sessão com sucesso');
-    error_log('eDeployeDeploySnowClient: Session data: ' . print_r($_SESSION['edeploysnowclient_solution_data'], true));
+    error_log('eDeploySnowClient: Dados salvos na sessão com sucesso');
+    error_log('eDeploySnowClient: Session data: ' . print_r($_SESSION['edeploysnowclient_solution_data'], true));
 
-    echo json_encode(['success' => true, 'message' => 'Data saved successfully']);
+    echo json_encode(['success' => true, 'message' => 'Data saved successfully', 'data' => $data]);
     
 } catch (Exception $e) {
-    error_log('eDeployeDeploySnowClient: Exception: ' . $e->getMessage());
+    error_log('eDeploySnowClient: Exception: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

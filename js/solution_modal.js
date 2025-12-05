@@ -347,16 +347,25 @@ class SolutionModal {
 
             console.log('edeploysnowclient Modal: Formulário e botão encontrados');
 
-            // 3. Coletar dados do formulário
+            // 3. Coletar dados do formulário modal
             const ticketId = this.ticketId || 'unknown';
-            const solutionCodeValue = solutionCode.value || '';
+            const closeCode = modal.querySelector('#snow-close-code');
+            const closeType = modal.querySelector('#snow-close-type');
+            const solutionClass = modal.querySelector('#snow-solution-class');
+            const solutionCodeSelect = modal.querySelector('#snow-solution-code');
             
             console.log('edeploysnowclient Modal: ticketId:', ticketId);
-            console.log('edeploysnowclient Modal: solutionCode:', solutionCodeValue);
+            console.log('edeploysnowclient Modal: close_code:', closeCode?.value);
+            console.log('edeploysnowclient Modal: u_bk_tipo_encerramento:', closeType?.value);
+            console.log('edeploysnowclient Modal: u_bk_ic_impactado:', solutionClass?.value);
+            console.log('edeploysnowclient Modal: u_bk_type_of_failure:', solutionCodeSelect?.value);
             
             const formData = {
                 ticketId: String(ticketId),
-                solutionCode: String(solutionCodeValue),
+                close_code: closeCode?.value || 'Definitiva',
+                u_bk_tipo_encerramento: closeType?.value || 'Remoto',
+                u_bk_ic_impactado: solutionClass?.value || 'Aplicação (Software)',
+                u_bk_type_of_failure: solutionCodeSelect?.value || '',
                 timestamp: Date.now()
             };
 
@@ -379,7 +388,10 @@ class SolutionModal {
                     method: 'POST',
                     data: { 
                         ticketId: formData.ticketId,
-                        solutionCode: formData.solutionCode,
+                        close_code: formData.close_code,
+                        u_bk_tipo_encerramento: formData.u_bk_tipo_encerramento,
+                        u_bk_ic_impactado: formData.u_bk_ic_impactado,
+                        u_bk_type_of_failure: formData.u_bk_type_of_failure,
                         timestamp: formData.timestamp
                     },
                     dataType: 'json'
