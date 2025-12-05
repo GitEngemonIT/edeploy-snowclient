@@ -291,8 +291,8 @@ class SolutionModal {
         console.log('edeploysnowclient Modal: Preenchendo campos readonly');
         try {
             // Preencher campos mockados
-            document.querySelector('#snow-close-type').value = 'Presencial';
-            document.querySelector('#snow-solution-class').value = 'Hardware';
+            document.querySelector('#snow-close-type').value = 'Remoto';
+            document.querySelector('#snow-solution-class').value = 'Aplicação (Software)';
             
             console.log('edeploysnowclient Modal: Campos preenchidos');
         } catch (error) {
