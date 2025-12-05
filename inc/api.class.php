@@ -583,62 +583,44 @@ class PluginEdeploysnowclientApi
             // Aguardar processamento
             sleep(1);
             
-            // ETAPA 2: Enviar dados mockados adicionais
-            $additionalMockedData = [
-                'close_code' => 'Definitiva',
-                'u_bk_tipo_encerramento' => 'Presencial',
-                'u_bk_ic_impactado' => 'Hardware'
+            // ETAPA 2: Enviar dados customizados do eDeploy ServiceNow
+            // Pegar dados da sessão (salvos pela modal de solução)
+            $sessionData = $_SESSION['edeploysnowclient_solution_data'] ?? [];
+            
+            $customFieldsData = [
+                'close_code' => $sessionData['close_code'] ?? 'Definitiva',
+                'u_bk_tipo_encerramento' => $sessionData['u_bk_tipo_encerramento'] ?? 'Remoto',
+                'u_bk_ic_impactado' => $sessionData['u_bk_ic_impactado'] ?? 'Aplicação (Software)',
+                'u_bk_type_of_failure' => $sessionData['u_bk_type_of_failure'] ?? ''
             ];
             
             if ($this->debug_mode) {
-                Toolbox::logDebug("eDeploySnowClient: ETAPA 2 - Enviando dados mockados adicionais");
-                Toolbox::logDebug("eDeploySnowClient: Dados mockados: " . json_encode($additionalMockedData));
+                Toolbox::logDebug("eDeploySnowClient: ETAPA 2 - Enviando dados customizados do eDeploy");
+                Toolbox::logDebug("eDeploySnowClient: Session data: " . json_encode($sessionData));
+                Toolbox::logDebug("eDeploySnowClient: Dados a enviar: " . json_encode($customFieldsData));
             }
             
             try {
-                $mockedResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $additionalMockedData);
+                $customResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $customFieldsData);
                 
                 if ($this->debug_mode) {
-                    Toolbox::logDebug("eDeploySnowClient: ETAPA 2 - Dados mockados enviados com sucesso");
+                    Toolbox::logDebug("eDeploySnowClient: ETAPA 2 - Dados customizados enviados com sucesso");
                 }
+                
+                // Limpar dados da sessão após uso
+                unset($_SESSION['edeploysnowclient_solution_data']);
+                
             } catch (Exception $e) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: ETAPA 2 - Erro ao enviar dados mockados (não crítico): " . $e->getMessage());
+                    Toolbox::logError("eDeploySnowClient: ETAPA 2 - Erro ao enviar dados customizados (não crítico): " . $e->getMessage());
                 }
             }
             
             // Aguardar processamento
             sleep(1);
             
-            // ETAPA 3: Enviar type_of_failure da modal (se fornecido)
-            if (!empty($additionalData) && isset($additionalData['solutionCode'])) {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("eDeploySnowClient: ETAPA 3 - Enviando type_of_failure da modal");
-                }
-                
-                $typeOfFailureData = [
-                    'u_bk_type_of_failure' => $additionalData['solutionCode']
-                ];
-                
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("eDeploySnowClient: Type of failure: " . json_encode($typeOfFailureData));
-                }
-                
-                try {
-                    $failureResult = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $typeOfFailureData);
-                    
-                    if ($this->debug_mode) {
-                        Toolbox::logDebug("eDeploySnowClient: ETAPA 3 - Type of failure enviado com sucesso");
-                    }
-                } catch (Exception $e) {
-                    if ($this->debug_mode) {
-                        Toolbox::logError("eDeploySnowClient: ETAPA 3 - Erro ao enviar type_of_failure (não crítico): " . $e->getMessage());
-                    }
-                }
-            } else {
-                if ($this->debug_mode) {
-                    Toolbox::logDebug("eDeploySnowClient: ETAPA 3 - Nenhum type_of_failure fornecido pela modal, pulando");
-                }
+            if ($this->debug_mode) {
+                Toolbox::logDebug("eDeploySnowClient: Solução aplicada com sucesso ao incidente $cleanSnowId");
             }
             
             return $result['result'] ?? null;
