@@ -1,27 +1,27 @@
 /* ServiceNow Client Plugin JavaScript */
 
-// Funções globais do Edeployedeploysnowclient
-var Edeployedeploysnowclient = {
+// Funções globais do EdeploySnowClient
+var EdeploySnowClient = {
     
     // Configurações
     config: {
-        debug: false // Desabilitando debug temporariamente
+        debug: true // Habilitando debug para diagnosticar
     },
     
     // Função de log para debug
     log: function(message) {
         if (this.config.debug && console) {
-            console.log('[Edeployedeploysnowclient] ' + message);
+            console.log('[EdeploySnowClient] ' + message);
         }
     },
     
     // Inicializar plugin
     init: function() {
-        this.log('Edeployedeploysnowclient initialized');
+        this.log('EdeploySnowClient initialized');
         
         // Verificar se jQuery está disponível
         if (typeof jQuery === 'undefined') {
-            console.error('Edeployedeploysnowclient requires jQuery');
+            console.error('EdeploySnowClient requires jQuery');
             return;
         }
         
@@ -78,7 +78,7 @@ var Edeployedeploysnowclient = {
         
         // Fazer requisição AJAX para verificar
         $.ajax({
-            url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/Edeployedeploysnowclient/ajax/check_return_button.php',
+            url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/edeploysnowclient/ajax/check_return_button.php',
             method: 'POST',
             data: {
                 ticket_id: ticketId
@@ -87,8 +87,8 @@ var Edeployedeploysnowclient = {
             success: function(response) {
                 if (response.success && response.show_button) {
                     self.log('Deve mostrar botão - adicionando...');
-                    window.Edeployedeployedeploysnowclient_show_return_button = true;
-                    window.Edeployedeployedeploysnowclient_ticket_id = ticketId;
+                    window.edeploysnowclient_show_return_button = true;
+                    window.edeploysnowclient_ticket_id = ticketId;
                     self.addReturnButton();
                 } else {
                     self.log('Não deve mostrar botão: ' + (response.message || 'critérios não atendidos'));
@@ -102,6 +102,7 @@ var Edeployedeploysnowclient = {
             },
             error: function(xhr, status, error) {
                 self.log('Erro ao verificar botão: ' + error);
+                console.error('[EdeploySnowClient] Erro AJAX:', xhr.responseText);
                 // Em caso de erro, não mostrar o botão por segurança
             },
             complete: function() {
@@ -115,14 +116,14 @@ var Edeployedeploysnowclient = {
     addReturnButton: function() {
         var self = this;
         
-        var ticketId = window.Edeployedeployedeploysnowclient_ticket_id || this.getTicketId();
+        var ticketId = window.edeploysnowclient_ticket_id || this.getTicketId();
         if (ticketId <= 0) {
             self.log('ID do ticket inválido');
             return;
         }
         
         // Se já existe, não adicionar novamente
-        if ($('#Edeployedeploysnowclient-return-button').length > 0) {
+        if ($('#edeploysnowclient-return-button').length > 0) {
             self.log('Botão já existe');
             return;
         }
@@ -144,7 +145,7 @@ var Edeployedeploysnowclient = {
                 self.log('Encontrado elemento: ' + targetElements[i]);
                 
                 // Usar o ticket ID já validado
-                var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="Edeployedeploysnowclient-return-button" data-ticket-id="' + ticketId + '">' +
+                var returnButton = '<button type="button" class="btn btn-warning ms-2 me-2" id="edeploysnowclient-return-button" data-ticket-id="' + ticketId + '">' +
                     '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
                     '</button>';
                 
@@ -162,7 +163,7 @@ var Edeployedeploysnowclient = {
             if (ticketId > 0) {
                 var genericLocation = $('.card-header, .page-header, .header-title').first();
                 if (genericLocation.length > 0) {
-                    var returnButton = '<div style="margin: 10px 0;"><button type="button" class="btn btn-warning" id="Edeployedeploysnowclient-return-button" data-ticket-id="' + ticketId + '">' +
+                    var returnButton = '<div style="margin: 10px 0;"><button type="button" class="btn btn-warning" id="edeploysnowclient-return-button" data-ticket-id="' + ticketId + '">' +
                         '<i class="fas fa-undo"></i> Devolver ao ServiceNow' +
                         '</button></div>';
                     
@@ -173,7 +174,7 @@ var Edeployedeploysnowclient = {
         }
         
         // Adicionar event handler se o botão foi criado
-        if ($('#Edeployedeploysnowclient-return-button').length > 0) {
+        if ($('#edeploysnowclient-return-button').length > 0) {
             this.setupReturnButtonHandler();
         }
     },
@@ -297,11 +298,11 @@ var Edeployedeploysnowclient = {
 // Inicializar quando o documento estiver pronto
 if (typeof jQuery !== 'undefined') {
     jQuery(document).ready(function() {
-        Edeployedeploysnowclient.init();
+        EdeploySnowClient.init();
     });
 } else {
     // Fallback para quando jQuery não estiver disponível
     document.addEventListener('DOMContentLoaded', function() {
-        Edeployedeploysnowclient.init();
+        EdeploySnowClient.init();
     });
 }
