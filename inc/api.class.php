@@ -910,58 +910,58 @@ class PluginEdeploysnowclientApi
     }
 
     /**
-     * Mapear prioridade do GLPI para ServiceNow
-     * GLPI: 1=Muito baixa, 2=Baixa, 3=Média, 4=Alta, 5=Muito alta, 6=Crítica
-     * ServiceNow: 1=Crítico, 2=Alto, 3=Moderado, 4=Baixo
+     * Mapear prioridade do GLPI para ServiceNow (eDeploy)
+     * GLPI: 2=Baixa, 3=Média, 4=Alta, 5=Muito alta
+     * ServiceNow: 1=Crítico, 2=Alta, 3=Média, 4=Baixa
      */
     private function mapGlpiPriorityToServiceNow($glpiPriority)
     {
         $mapping = [
-            1 => 4,    // Muito baixa -> Baixo
-            2 => 4,    // Baixa -> Baixo
-            3 => 3,    // Média -> Moderado
-            4 => 2,    // Alta -> Alto
-            5 => 1,    // Muito alta -> Crítico
-            6 => 1     // Crítica -> Crítico
+            1 => 4,    // Muito baixa -> Baixa (4)
+            2 => 4,    // Baixa -> Baixa (4)
+            3 => 3,    // Média -> Média (3)
+            4 => 2,    // Alta -> Alta (2)
+            5 => 1,    // Muito alta -> Crítico (1)
+            6 => 1     // Crítica -> Crítico (1)
         ];
         
-        return $mapping[$glpiPriority] ?? 3; // Default: Moderado
+        return $mapping[$glpiPriority] ?? 3; // Default: Média
     }
 
     /**
-     * Mapear urgência do GLPI para ServiceNow
-     * GLPI: 1=Muito baixa, 2=Baixa, 3=Média, 4=Alta, 5=Muito alta
-     * ServiceNow: 1=High, 2=Medium, 3=Low
+     * Mapear urgência do GLPI para ServiceNow (eDeploy)
+     * GLPI: 2=Baixa, 3=Média, 4=Alta, 5=Muito alta
+     * ServiceNow: 1=Crítico, 2=Alta, 3=Média, 4=Baixa
      */
     private function mapGlpiUrgencyToServiceNow($glpiUrgency)
     {
         $mapping = [
-            1 => 3,    // Muito baixa -> Low
-            2 => 3,    // Baixa -> Low
-            3 => 2,    // Média -> Medium
-            4 => 1,    // Alta -> High
-            5 => 1     // Muito alta -> High
+            1 => 4,    // Muito baixa -> Baixa (4)
+            2 => 4,    // Baixa -> Baixa (4)
+            3 => 3,    // Média -> Média (3)
+            4 => 2,    // Alta -> Alta (2)
+            5 => 1     // Muito alta -> Crítico (1)
         ];
         
-        return $mapping[$glpiUrgency] ?? 2; // Default: Medium
+        return $mapping[$glpiUrgency] ?? 3; // Default: Média
     }
 
     /**
-     * Mapear impacto do GLPI para ServiceNow
-     * GLPI: 1=Muito baixo, 2=Baixo, 3=Médio, 4=Alto, 5=Muito alto
-     * ServiceNow: 1=High, 2=Medium, 3=Low
+     * Mapear impacto do GLPI para ServiceNow (eDeploy)
+     * GLPI: 2=Baixo, 3=Médio, 4=Alto, 5=Muito alto
+     * ServiceNow: 1=Crítico, 2=Alto, 3=Médio, 4=Baixo
      */
     private function mapGlpiImpactToServiceNow($glpiImpact)
     {
         $mapping = [
-            1 => 3,    // Muito baixo -> Low
-            2 => 3,    // Baixo -> Low
-            3 => 2,    // Médio -> Medium
-            4 => 1,    // Alto -> High
-            5 => 1     // Muito alto -> High
+            1 => 4,    // Muito baixo -> Baixo (4)
+            2 => 4,    // Baixo -> Baixo (4)
+            3 => 3,    // Médio -> Médio (3)
+            4 => 2,    // Alto -> Alto (2)
+            5 => 1     // Muito alto -> Crítico (1)
         ];
         
-        return $mapping[$glpiImpact] ?? 2; // Default: Medium
+        return $mapping[$glpiImpact] ?? 3; // Default: Média
     }
 
     /**
