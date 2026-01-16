@@ -203,7 +203,7 @@ var EdeploySnowClient = {
     setupReturnButtonHandler: function() {
         var self = this;
         
-        $(document).off('click', '#Edeployedeploysnowclient-return-button').on('click', '#Edeployedeploysnowclient-return-button', function(e) {
+        $(document).off('click', '#edeploysnowclient-return-button').on('click', '#edeploysnowclient-return-button', function(e) {
             e.preventDefault();
             var ticketId = $(this).data('ticket-id');
             self.log('Botão clicado para ticket: ' + ticketId);
@@ -214,7 +214,7 @@ var EdeploySnowClient = {
     // Mostrar modal de devolução
     showReturnModal: function(ticketId) {
         var self = this;
-        var modalHtml = '<div class="modal fade" id="EdeployedeploysnowclientReturnModal" tabindex="-1">' +
+        var modalHtml = '<div class="modal fade" id="edeploysnowclient-return-modal" tabindex="-1">' +
             '<div class="modal-dialog modal-lg">' +
                 '<div class="modal-content">' +
                     '<div class="modal-header bg-warning text-white">' +
@@ -222,7 +222,7 @@ var EdeploySnowClient = {
                         '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>' +
                     '</div>' +
                     '<div class="modal-body">' +
-                        '<form id="Edeployedeploysnowclient-return-form">' +
+                        '<form id="edeploysnowclient-return-form">' +
                             '<input type="hidden" name="ticket_id" value="' + ticketId + '">' +
                             '<div class="mb-3">' +
                                 '<label for="return_reason" class="form-label">Motivo da Devolução *</label>' +
@@ -243,13 +243,13 @@ var EdeploySnowClient = {
         '</div>';
         
         // Remover modal existente se houver
-        $('#EdeployedeploysnowclientReturnModal').remove();
+        $('#edeploysnowclient-return-modal').remove();
         
         // Adicionar modal ao body
         $('body').append(modalHtml);
         
         // Mostrar modal
-        $('#EdeployedeploysnowclientReturnModal').modal('show');
+        $('#edeploysnowclient-return-modal').modal('show');
         
         // Handler para confirmação
         $('#confirm-return').click(function() {
@@ -263,7 +263,7 @@ var EdeploySnowClient = {
             
             // AJAX para processar a devolução
             $.ajax({
-                url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/Edeployedeploysnowclient/ajax/return_ticket.php',
+                url: (typeof CFG_GLPI !== 'undefined' ? CFG_GLPI.root_doc : '') + '/plugins/edeploysnowclient/ajax/return_ticket.php',
                 method: 'POST',
                 data: {
                     ticket_id: ticketId,
@@ -273,7 +273,7 @@ var EdeploySnowClient = {
                 success: function(response) {
                     if (response.success) {
                         alert('Chamado devolvido com sucesso ao ServiceNow!');
-                        $('#EdeployedeploysnowclientReturnModal').modal('hide');
+                        $('#edeploysnowclient-return-modal').modal('hide');
                         location.reload(); // Recarregar página para mostrar status atualizado
                     } else {
                         alert('Erro ao devolver chamado: ' + response.message);
