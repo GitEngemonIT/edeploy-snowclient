@@ -5,7 +5,7 @@ var EdeploySnowClient = {
     
     // Configurações
     config: {
-        debug: true // Habilitando debug para diagnosticar
+        debug: false // Desabilitando debug temporariamente
     },
     
     // Função de log para debug
@@ -102,7 +102,6 @@ var EdeploySnowClient = {
             },
             error: function(xhr, status, error) {
                 self.log('Erro ao verificar botão: ' + error);
-                console.error('[EdeploySnowClient] Erro AJAX:', xhr.responseText);
                 // Em caso de erro, não mostrar o botão por segurança
             },
             complete: function() {
@@ -214,7 +213,7 @@ var EdeploySnowClient = {
     // Mostrar modal de devolução
     showReturnModal: function(ticketId) {
         var self = this;
-        var modalHtml = '<div class="modal fade" id="edeploysnowclient-return-modal" tabindex="-1">' +
+        var modalHtml = '<div class="modal fade" id="edeploysnowclientReturnModal" tabindex="-1">' +
             '<div class="modal-dialog modal-lg">' +
                 '<div class="modal-content">' +
                     '<div class="modal-header bg-warning text-white">' +
@@ -243,13 +242,13 @@ var EdeploySnowClient = {
         '</div>';
         
         // Remover modal existente se houver
-        $('#edeploysnowclient-return-modal').remove();
+        $('#edeploysnowclientReturnModal').remove();
         
         // Adicionar modal ao body
         $('body').append(modalHtml);
         
         // Mostrar modal
-        $('#edeploysnowclient-return-modal').modal('show');
+        $('#edeploysnowclientReturnModal').modal('show');
         
         // Handler para confirmação
         $('#confirm-return').click(function() {
@@ -273,7 +272,7 @@ var EdeploySnowClient = {
                 success: function(response) {
                     if (response.success) {
                         alert('Chamado devolvido com sucesso ao ServiceNow!');
-                        $('#edeploysnowclient-return-modal').modal('hide');
+                        $('#edeploysnowclientReturnModal').modal('hide');
                         location.reload(); // Recarregar página para mostrar status atualizado
                     } else {
                         alert('Erro ao devolver chamado: ' + response.message);
