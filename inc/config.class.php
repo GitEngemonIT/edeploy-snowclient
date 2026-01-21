@@ -658,6 +658,10 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             
             if ($result) {
                 error_log("eDeploySnowClient: Followup enviado com sucesso para ServiceNow");
+                
+                // Sincronizar anexos do followup
+                error_log("eDeploySnowClient: Verificando anexos do followup...");
+                self::syncFollowupAttachments($followup, $ticket);
             } else {
                 error_log("eDeploySnowClient: ERRO - Falha ao enviar followup para ServiceNow");
             }
@@ -853,6 +857,10 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             
             if ($result) {
                 error_log("eDeploySnowClient: Solução enviada com sucesso para ServiceNow");
+                
+                // Sincronizar anexos da solução
+                error_log("eDeploySnowClient: Verificando anexos da solução...");
+                self::syncSolutionAttachments($solution, $ticket);
             } else {
                 error_log("eDeploySnowClient: ERRO - Falha ao enviar solução para ServiceNow");
             }
@@ -1175,5 +1183,139 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
                 'message' => 'Erro ao processar devolução: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Sincroniza anexos de um followup específico com o ServiceNow
+     */
+    static function syncFollowupAttachments($followup, $ticket)
+    {
+        global $DB;
+        
+        $config = self::getInstance();
+        
+        if (!$config->fields['sync_documents']) {
+            error_log("eDeploySnowClient: Sincronização de documentos está desabilitada");
+            return false;
+        }
+        
+        $followup_id = $followup->getID();
+        error_log("eDeploySnowClient: Buscando anexos do followup #$followup_id");
+        
+        // Buscar documentos vinculados ao followup
+        $docs = $DB->request([
+            'SELECT' => ['glpi_documents.*'],
+            'FROM' => 'glpi_documents_items',
+            'INNER JOIN' => [
+                'glpi_documents' => [
+                    'FKEY' => [
+                        'glpi_documents_items' => 'documents_id',
+                        'glpi_documents' => 'id'
+                    ]
+                ]
+            ],
+            'WHERE' => [
+                'glpi_documents_items.items_id' => $followup_id,
+                'glpi_documents_items.itemtype' => 'ITILFollowup'
+            ]
+        ]);
+        
+        $synced = 0;
+        $total = 0;
+        
+        foreach ($docs as $doc) {
+            $total++;
+            
+            // Obter sys_id do ServiceNow
+            $snowSysId = self::getSnowSysIdFromTicket($ticket->getID());
+            
+            if (!$snowSysId) {
+                error_log("eDeploySnowClient: ERRO - sys_id não encontrado para ticket " . $ticket->getID());
+                continue;
+            }
+            
+            $document = new Document();
+            if ($document->getFromDB($doc['id'])) {
+                $api = new PluginEdeploysnowclientApi();
+                $result = $api->attachDocument($document, $snowSysId);
+                
+                if ($result) {
+                    $synced++;
+                    error_log("eDeploySnowClient: ✅ Anexo do followup '{$doc['filename']}' sincronizado");
+                } else {
+                    error_log("eDeploySnowClient: ❌ ERRO ao sincronizar anexo do followup '{$doc['filename']}'");
+                }
+            }
+        }
+        
+        error_log("eDeploySnowClient: Total de anexos do followup sincronizados: $synced de $total");
+        return $synced > 0;
+    }
+
+    /**
+     * Sincroniza anexos de uma solução específica com o ServiceNow
+     */
+    static function syncSolutionAttachments($solution, $ticket)
+    {
+        global $DB;
+        
+        $config = self::getInstance();
+        
+        if (!$config->fields['sync_documents']) {
+            error_log("eDeploySnowClient: Sincronização de documentos está desabilitada");
+            return false;
+        }
+        
+        $solution_id = $solution->getID();
+        error_log("eDeploySnowClient: Buscando anexos da solução #$solution_id");
+        
+        // Buscar documentos vinculados à solução
+        $docs = $DB->request([
+            'SELECT' => ['glpi_documents.*'],
+            'FROM' => 'glpi_documents_items',
+            'INNER JOIN' => [
+                'glpi_documents' => [
+                    'FKEY' => [
+                        'glpi_documents_items' => 'documents_id',
+                        'glpi_documents' => 'id'
+                    ]
+                ]
+            ],
+            'WHERE' => [
+                'glpi_documents_items.items_id' => $solution_id,
+                'glpi_documents_items.itemtype' => 'ITILSolution'
+            ]
+        ]);
+        
+        $synced = 0;
+        $total = 0;
+        
+        foreach ($docs as $doc) {
+            $total++;
+            
+            // Obter sys_id do ServiceNow
+            $snowSysId = self::getSnowSysIdFromTicket($ticket->getID());
+            
+            if (!$snowSysId) {
+                error_log("eDeploySnowClient: ERRO - sys_id não encontrado para ticket " . $ticket->getID());
+                continue;
+            }
+            
+            $document = new Document();
+            if ($document->getFromDB($doc['id'])) {
+                $api = new PluginEdeploysnowclientApi();
+                $result = $api->attachDocument($document, $snowSysId);
+                
+                if ($result) {
+                    $synced++;
+                    error_log("eDeploySnowClient: ✅ Anexo da solução '{$doc['filename']}' sincronizado");
+                } else {
+                    error_log("eDeploySnowClient: ❌ ERRO ao sincronizar anexo da solução '{$doc['filename']}'");
+                }
+            }
+        }
+        
+        error_log("eDeploySnowClient: Total de anexos da solução sincronizados: $synced de $total");
+        return $synced > 0;
     }
 }
