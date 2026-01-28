@@ -262,6 +262,24 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "</td>";
         echo "</tr>";
 
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Default Technician for Auto-Assignment', 'edeploysnowclient') . "</td>";
+        echo "<td>";
+        User::dropdown([
+            'name' => 'default_technician_id',
+            'value' => $this->fields['default_technician_id'],
+            'comments' => false,
+            'entity' => -1,
+            'entity_sons' => true,
+            'right' => 'all',
+            'width' => '80%',
+            'emptylabel' => __('Select a technician...', 'edeploysnowclient'),
+            'display_emptychoice' => true
+        ]);
+        echo "<br><span class='small'>" . __('Technician to be assigned automatically when solving tickets without assignment', 'edeploysnowclient') . "</span>";
+        echo "</td>";
+        echo "</tr>";
+
         // Sync options
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='2' class='center tab_bg_2'>";
@@ -403,6 +421,7 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
               `password` text DEFAULT NULL,
               `assignment_group` varchar(255) DEFAULT NULL,
               `return_queue_group` varchar(255) DEFAULT NULL,
+              `default_technician_id` int NOT NULL DEFAULT '0',
               `entities_id` int NOT NULL DEFAULT '0',
               `request_type` int NOT NULL DEFAULT '0',
               `api_user` int NOT NULL DEFAULT '0',
@@ -427,6 +446,7 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
                 'password' => '',
                 'assignment_group' => '',
                 'return_queue_group' => '',
+                'default_technician_id' => 0,
                 'entities_id' => 0,
                 'request_type' => 0,
                 'api_user' => 0,

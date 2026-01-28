@@ -455,6 +455,16 @@ function plugin_edeploysnowclient_upgrade($migrations)
             
             case '1.1.6':
             case '1.2.0':
+                // Adicionar campo default_technician_id para atribuição automática
+                if ($DB->tableExists($table)) {
+                    if (!$DB->fieldExists($table, 'default_technician_id')) {
+                        $migration->displayMessage("Adding default_technician_id field for auto-assignment");
+                        $migration->addField($table, 'default_technician_id', 'int NOT NULL DEFAULT 0', ['after' => 'return_queue_group']);
+                        $migration->migrationOneTable($table);
+                        $migration->displayMessage("default_technician_id field added successfully");
+                    }
+                }
+                
                 // Garantir que os campos customizados do ServiceNow existem
                 if ($DB->tableExists($table)) {
                     $migration->displayMessage("Updating to 1.2.0 - Adding eDeploy ServiceNow custom fields");
