@@ -280,6 +280,74 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "</td>";
         echo "</tr>";
 
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Default Group for Auto-Assignment', 'edeploysnowclient') . "</td>";
+        echo "<td>";
+        Group::dropdown([
+            'name' => 'default_group_id',
+            'value' => $this->fields['default_group_id'],
+            'comments' => false,
+            'entity' => -1,
+            'entity_sons' => true,
+            'width' => '80%',
+            'emptylabel' => __('Select a group...', 'edeploysnowclient'),
+            'display_emptychoice' => true
+        ]);
+        echo "<br><span class='small'>" . __('Group to be assigned automatically when solving tickets without group assignment', 'edeploysnowclient') . "</span>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Default Solution Type', 'edeploysnowclient') . "</td>";
+        echo "<td>";
+        SolutionType::dropdown([
+            'name' => 'default_solutiontype_id',
+            'value' => $this->fields['default_solutiontype_id'],
+            'comments' => false,
+            'entity' => -1,
+            'entity_sons' => true,
+            'width' => '80%',
+            'emptylabel' => __('Select a solution type...', 'edeploysnowclient'),
+            'display_emptychoice' => true
+        ]);
+        echo "<br><span class='small'>" . __('Solution type to be used when solving tickets', 'edeploysnowclient') . "</span>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Default Solution Template', 'edeploysnowclient') . "</td>";
+        echo "<td>";
+        SolutionTemplate::dropdown([
+            'name' => 'default_solutiontemplate_id',
+            'value' => $this->fields['default_solutiontemplate_id'],
+            'comments' => false,
+            'entity' => -1,
+            'entity_sons' => true,
+            'width' => '80%',
+            'emptylabel' => __('Select a solution template...', 'edeploysnowclient'),
+            'display_emptychoice' => true
+        ]);
+        echo "<br><span class='small'>" . __('Solution template to be used when solving tickets', 'edeploysnowclient') . "</span>";
+        echo "</td>";
+        echo "</tr>";
+
+        echo "<tr class='tab_bg_1'>";
+        echo "<td>" . __('Default Ticket Category', 'edeploysnowclient') . "</td>";
+        echo "<td>";
+        ITILCategory::dropdown([
+            'name' => 'default_itilcategory_id',
+            'value' => $this->fields['default_itilcategory_id'],
+            'comments' => false,
+            'entity' => $this->fields['entities_id'],
+            'entity_sons' => true,
+            'width' => '80%',
+            'emptylabel' => __('Select a category...', 'edeploysnowclient'),
+            'display_emptychoice' => true
+        ]);
+        echo "<br><span class='small'>" . __('Category to be assigned automatically when solving tickets without category', 'edeploysnowclient') . "</span>";
+        echo "</td>";
+        echo "</tr>";
+
         // Sync options
         echo "<tr class='tab_bg_1'>";
         echo "<td colspan='2' class='center tab_bg_2'>";
@@ -422,6 +490,10 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
               `assignment_group` varchar(255) DEFAULT NULL,
               `return_queue_group` varchar(255) DEFAULT NULL,
               `default_technician_id` int NOT NULL DEFAULT '0',
+              `default_group_id` int NOT NULL DEFAULT '0',
+              `default_solutiontype_id` int NOT NULL DEFAULT '0',
+              `default_solutiontemplate_id` int NOT NULL DEFAULT '0',
+              `default_itilcategory_id` int NOT NULL DEFAULT '0',
               `entities_id` int NOT NULL DEFAULT '0',
               `request_type` int NOT NULL DEFAULT '0',
               `api_user` int NOT NULL DEFAULT '0',
@@ -447,6 +519,10 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
                 'assignment_group' => '',
                 'return_queue_group' => '',
                 'default_technician_id' => 0,
+                'default_group_id' => 0,
+                'default_solutiontype_id' => 0,
+                'default_solutiontemplate_id' => 0,
+                'default_itilcategory_id' => 0,
                 'entities_id' => 0,
                 'request_type' => 0,
                 'api_user' => 0,
@@ -946,6 +1022,30 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         return $hasAssigned;
     }
 
+    /**
+     * Check if ticket has an assigned group
+     *
+     * @param int $ticketId Ticket ID
+     * @return bool True if ticket has at least one assigned group
+     */
+    static function hasAssignedGroup($ticketId)
+    {
+        global $DB;
+        
+        $result = $DB->request([
+            'FROM' => 'glpi_groups_tickets',
+            'WHERE' => [
+                'tickets_id' => $ticketId,
+                'type' => CommonITILActor::ASSIGN
+            ]
+        ]);
+        
+        $hasAssigned = count($result) > 0;
+        error_log("eDeploySnowClient: hasAssignedGroup - ticket $ticketId has assigned: " . ($hasAssigned ? 'yes' : 'no'));
+        
+        return $hasAssigned;
+    }
+
     static function isTicketFromServiceNow($ticket)
     {
         $snowId = self::extractServiceNowId($ticket);
@@ -1122,13 +1222,14 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             // CRÍTICO: Ativar flag para evitar hooks de sincronização
             self::setSkipSyncHooks(true);
             
-            // 1. VERIFICAR E ATRIBUIR TÉCNICO SE NECESSÁRIO (antes de resolver)
+            // 1. VERIFICAR E ATRIBUIR CAMPOS OBRIGATÓRIOS (antes de resolver)
+            
+            // 1.1. Verificar e atribuir técnico
             $hasAssignedTechnician = self::hasAssignedTechnician($ticket->getID());
             
             if (!$hasAssignedTechnician && !empty($config->fields['default_technician_id'])) {
                 error_log("eDeploySnowClient RETURN: Ticket sem técnico atribuído. Atribuindo técnico padrão ID: " . $config->fields['default_technician_id']);
                 
-                // Atribuir o técnico padrão
                 $ticketUser = new Ticket_User();
                 $assigned = $ticketUser->add([
                     'tickets_id' => $ticket->getID(),
@@ -1145,6 +1246,46 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
                 error_log("eDeploySnowClient RETURN: AVISO - Ticket sem técnico atribuído e nenhum técnico padrão configurado");
             } else {
                 error_log("eDeploySnowClient RETURN: Ticket já possui técnico atribuído");
+            }
+            
+            // 1.2. Verificar e atribuir grupo
+            $hasAssignedGroup = self::hasAssignedGroup($ticket->getID());
+            
+            if (!$hasAssignedGroup && !empty($config->fields['default_group_id'])) {
+                error_log("eDeploySnowClient RETURN: Ticket sem grupo atribuído. Atribuindo grupo padrão ID: " . $config->fields['default_group_id']);
+                
+                $groupTicket = new Group_Ticket();
+                $assigned = $groupTicket->add([
+                    'tickets_id' => $ticket->getID(),
+                    'groups_id' => $config->fields['default_group_id'],
+                    'type' => CommonITILActor::ASSIGN
+                ]);
+                
+                if ($assigned) {
+                    error_log("eDeploySnowClient RETURN: Grupo padrão atribuído com sucesso ao ticket " . $ticket->getID());
+                } else {
+                    error_log("eDeploySnowClient RETURN: ERRO ao atribuir grupo padrão ao ticket " . $ticket->getID());
+                }
+            } elseif (!$hasAssignedGroup) {
+                error_log("eDeploySnowClient RETURN: AVISO - Ticket sem grupo atribuído e nenhum grupo padrão configurado");
+            } else {
+                error_log("eDeploySnowClient RETURN: Ticket já possui grupo atribuído");
+            }
+            
+            // 1.3. Verificar e atribuir categoria
+            if (empty($ticket->fields['itilcategories_id']) && !empty($config->fields['default_itilcategory_id'])) {
+                error_log("eDeploySnowClient RETURN: Ticket sem categoria. Atribuindo categoria padrão ID: " . $config->fields['default_itilcategory_id']);
+                
+                $ticket->update([
+                    'id' => $ticket->getID(),
+                    'itilcategories_id' => $config->fields['default_itilcategory_id']
+                ]);
+                
+                error_log("eDeploySnowClient RETURN: Categoria padrão atribuída ao ticket " . $ticket->getID());
+            } elseif (empty($ticket->fields['itilcategories_id'])) {
+                error_log("eDeploySnowClient RETURN: AVISO - Ticket sem categoria e nenhuma categoria padrão configurada");
+            } else {
+                error_log("eDeploySnowClient RETURN: Ticket já possui categoria");
             }
             
             // Desativar flag temporariamente para permitir sincronização do followup
@@ -1175,17 +1316,39 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             // Reativar flag para evitar sincronização da resolução
             self::setSkipSyncHooks(true);
             
-            // 3. Fechar o ticket no GLPI diretamente (sem solução)
-            $ticketUpdate = [
-                'id' => $ticket->getID(),
-                'status' => Ticket::SOLVED,
+            // 3. Criar solução no ticket com tipo e template configurados
+            $solution = new ITILSolution();
+            $solutionData = [
+                'itemtype' => 'Ticket',
+                'items_id' => $ticket->getID(),
+                'users_id' => Session::getLoginUserID(),
+                'content' => "Chamado devolvido ao ServiceNow.\n\nMotivo: " . $reason,
+                'status' => CommonITILValidation::ACCEPTED,
+                'date_creation' => $_SESSION['glpi_currenttime'],
                 'date_mod' => $_SESSION['glpi_currenttime']
             ];
             
-            if (!$ticket->update($ticketUpdate)) {
-                self::setSkipSyncHooks(false);
-                throw new Exception('Erro ao fechar ticket no GLPI');
+            // Adicionar tipo de solução se configurado
+            if (!empty($config->fields['default_solutiontype_id'])) {
+                $solutionData['solutiontypes_id'] = $config->fields['default_solutiontype_id'];
+                error_log("eDeploySnowClient RETURN: Usando tipo de solução ID: " . $config->fields['default_solutiontype_id']);
+            } else {
+                error_log("eDeploySnowClient RETURN: AVISO - Nenhum tipo de solução padrão configurado");
             }
+            
+            // Adicionar template de solução se configurado
+            if (!empty($config->fields['default_solutiontemplate_id'])) {
+                $solutionData['solutiontemplate_id'] = $config->fields['default_solutiontemplate_id'];
+                error_log("eDeploySnowClient RETURN: Usando template de solução ID: " . $config->fields['default_solutiontemplate_id']);
+            }
+            
+            $solutionId = $solution->add($solutionData);
+            if (!$solutionId) {
+                self::setSkipSyncHooks(false);
+                throw new Exception('Erro ao adicionar solução ao ticket');
+            }
+            
+            error_log("eDeploySnowClient RETURN: Solução adicionada com sucesso ao ticket " . $ticket->getID());
             
             // MANTER flag ativa para evitar sincronização de status para o ServiceNow
             // Apenas a mudança de fila será enviada pela API
