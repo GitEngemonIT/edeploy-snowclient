@@ -1095,9 +1095,7 @@ class PluginEdeploysnowclientApi
                 $updateData['work_notes'] .= "\n\nNota: Nenhuma fila específica configurada para devolução.";
             }
             
-            // Definir estado como "In Progress" para garantir que não está resolvido
-            $updateData['state'] = '2'; // In Progress
-            
+            // NÃO alterar status no ServiceNow - apenas mudar fila
             // Limpar assigned_to para forçar redistribuição
             $updateData['assigned_to'] = '';
             

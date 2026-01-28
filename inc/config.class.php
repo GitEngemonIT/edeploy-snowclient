@@ -900,6 +900,32 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         return $inDescendants;
     }
 
+    /**
+     * Check if ticket has an assigned technician (individual user only, not groups)
+     *
+     * @param int $ticketId Ticket ID
+     * @return bool True if ticket has at least one assigned user
+     */
+    static function hasAssignedTechnician($ticketId)
+    {
+        global $DB;
+        
+        // Verifica apenas usuários individuais atribuídos (glpi_tickets_users)
+        // NÃO considera grupos (glpi_groups_tickets)
+        $result = $DB->request([
+            'FROM' => 'glpi_tickets_users',
+            'WHERE' => [
+                'tickets_id' => $ticketId,
+                'type' => CommonITILActor::ASSIGN
+            ]
+        ]);
+        
+        $hasAssigned = count($result) > 0;
+        error_log("eDeploySnowClient: hasAssignedTechnician - ticket $ticketId has assigned: " . ($hasAssigned ? 'yes' : 'no'));
+        
+        return $hasAssigned;
+    }
+
     static function isTicketFromServiceNow($ticket)
     {
         $snowId = self::extractServiceNowId($ticket);
@@ -1076,7 +1102,35 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             // CRÍTICO: Ativar flag para evitar hooks de sincronização
             self::setSkipSyncHooks(true);
             
-            // 1. Adicionar followup explicando a devolução
+            // 1. VERIFICAR E ATRIBUIR TÉCNICO SE NECESSÁRIO (antes de resolver)
+            $hasAssignedTechnician = self::hasAssignedTechnician($ticket->getID());
+            
+            if (!$hasAssignedTechnician && !empty($config->fields['default_technician_id'])) {
+                error_log("eDeploySnowClient RETURN: Ticket sem técnico atribuído. Atribuindo técnico padrão ID: " . $config->fields['default_technician_id']);
+                
+                // Atribuir o técnico padrão
+                $ticketUser = new Ticket_User();
+                $assigned = $ticketUser->add([
+                    'tickets_id' => $ticket->getID(),
+                    'users_id' => $config->fields['default_technician_id'],
+                    'type' => CommonITILActor::ASSIGN
+                ]);
+                
+                if ($assigned) {
+                    error_log("eDeploySnowClient RETURN: Técnico padrão atribuído com sucesso ao ticket " . $ticket->getID());
+                } else {
+                    error_log("eDeploySnowClient RETURN: ERRO ao atribuir técnico padrão ao ticket " . $ticket->getID());
+                }
+            } elseif (!$hasAssignedTechnician) {
+                error_log("eDeploySnowClient RETURN: AVISO - Ticket sem técnico atribuído e nenhum técnico padrão configurado");
+            } else {
+                error_log("eDeploySnowClient RETURN: Ticket já possui técnico atribuído");
+            }
+            
+            // Desativar flag temporariamente para permitir sincronização do followup
+            self::setSkipSyncHooks(false);
+            
+            // 2. Adicionar followup explicando a devolução (SERÁ sincronizado com ServiceNow)
             $followup = new ITILFollowup();
             $followupData = [
                 'items_id' => $ticket->getID(),
@@ -1091,26 +1145,32 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             
             $followupId = $followup->add($followupData);
             if (!$followupId) {
+                self::setSkipSyncHooks(false);
                 throw new Exception('Erro ao adicionar acompanhamento de devolução');
             }
             
-            // 2. Resolver o ticket no GLPI
+            // Aguardar um momento para garantir que o followup foi sincronizado
+            sleep(1);
+            
+            // Reativar flag para evitar sincronização da resolução
+            self::setSkipSyncHooks(true);
+            
+            // 3. Fechar o ticket no GLPI diretamente (sem solução)
             $ticketUpdate = [
                 'id' => $ticket->getID(),
                 'status' => Ticket::SOLVED,
-                'solution' => "Chamado devolvido ao ServiceNow.\n\nMotivo: " . $reason,
-                'solutiontypes_id' => 0, // Tipo de solução padrão
                 'date_mod' => $_SESSION['glpi_currenttime']
             ];
             
             if (!$ticket->update($ticketUpdate)) {
-                throw new Exception('Erro ao resolver ticket no GLPI');
+                self::setSkipSyncHooks(false);
+                throw new Exception('Erro ao fechar ticket no GLPI');
             }
             
-            // 3. Desativar flag antes de chamar API
-            self::setSkipSyncHooks(false);
+            // MANTER flag ativa para evitar sincronização de status para o ServiceNow
+            // Apenas a mudança de fila será enviada pela API
             
-            // 4. Enviar alteração para o ServiceNow (sem resolver lá)
+            // 4. Enviar alteração para o ServiceNow (APENAS mudança de fila, SEM status)
             $api = new PluginEdeploysnowclientApi();
             error_log("eDeploySnowClient RETURN: Chamando API para devolver ticket {$ticket->getID()} ao ServiceNow");
             
@@ -1166,6 +1226,9 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             } else {
                 error_log("eDeploySnowClient RETURN: SUCESSO - Ticket devolvido com sucesso ao ServiceNow");
             }
+            
+            // Desativar flag após concluir todo o processo
+            self::setSkipSyncHooks(false);
             
             return [
                 'success' => true, 
