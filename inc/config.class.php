@@ -893,6 +893,12 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         
         error_log("eDeploySnowClient: afterTicketSolution chamado para solution ID: " . $solution->fields['id']);
         
+        // Verificar se deve pular sincronização (ex: devolução)
+        if (self::shouldSkipSyncHooks()) {
+            error_log("eDeploySnowClient: Pulando sincronização de solução (flag ativa) - Solução NÃO será enviada ao ServiceNow");
+            return false;
+        }
+        
         if (!$config->fields['sync_followups']) {
             error_log("eDeploySnowClient: Sincronização de followups está desabilitada (soluções usam a mesma configuração)");
             return false;
