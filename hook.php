@@ -27,11 +27,17 @@
 function plugin_edeploysnowclient_pre_item_add($item) 
 {
     if ($item::getType() === ITILSolution::getType()) {
+        // Verificar se items_id está definido no input
+        if (!isset($item->input['items_id'])) {
+            error_log("eDeploySnowClient: pre_item_add - AVISO: items_id não definido no input");
+            return true;
+        }
+        
         // Verificar se é um ticket do ServiceNow
         $ticket = new Ticket();
         if ($ticket->getFromDB($item->input['items_id'])) {
             if (PluginEdeploysnowclientConfig::isTicketFromServiceNow($ticket)) {
-                error_log("eDeployeDeploySnowClient: pre_item_add - Solução sendo adicionada ao ticket ServiceNow: " . $ticket->fields['id']);
+                error_log("eDeploySnowClient: pre_item_add - Solução sendo adicionada ao ticket ServiceNow: " . $ticket->getID());
                 
                 // Verificar se tem os dados adicionais do ServiceNow na sessão
                 if (isset($_SESSION['edeploysnowclient_solution_data'])) {
@@ -39,20 +45,22 @@ function plugin_edeploysnowclient_pre_item_add($item)
                         $_SESSION['edeploysnowclient_solution_data'] : 
                         json_decode($_SESSION['edeploysnowclient_solution_data'], true);
                     
-                    error_log("eDeployeDeploySnowClient: pre_item_add - Dados da sessão encontrados: " . print_r($snowData, true));
+                    error_log("eDeploySnowClient: pre_item_add - Dados da sessão encontrados: " . print_r($snowData, true));
                     
                     // Verificar se os dados são para este ticket específico
                     if ($snowData && isset($snowData['ticketId']) && $snowData['ticketId'] == $item->input['items_id']) {
-                        error_log("eDeployeDeploySnowClient: pre_item_add - Dados validados para o ticket correto");
+                        error_log("eDeploySnowClient: pre_item_add - Dados validados para o ticket correto");
                     } else {
-                        error_log("eDeployeDeploySnowClient: pre_item_add - AVISO: Dados da sessão não correspondem ao ticket atual");
+                        error_log("eDeploySnowClient: pre_item_add - AVISO: Dados da sessão não correspondem ao ticket atual");
                     }
                 } else {
-                    error_log("eDeployeDeploySnowClient: pre_item_add - AVISO: Dados adicionais do ServiceNow não encontrados na sessão");
+                    error_log("eDeploySnowClient: pre_item_add - AVISO: Dados adicionais do ServiceNow não encontrados na sessão");
                     // NÃO bloquear - permitir que a solução seja salva de qualquer forma
                     // O hook item_add irá usar dados padrão se necessário
                 }
             }
+        } else {
+            error_log("eDeploySnowClient: pre_item_add - ERRO: Não foi possível carregar o ticket ID: " . $item->input['items_id']);
         }
     }
     return true; // Sempre permitir a adição
