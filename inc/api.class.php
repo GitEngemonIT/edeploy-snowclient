@@ -1099,6 +1099,9 @@ class PluginEdeploysnowclientApi
             // Limpar assigned_to para forçar redistribuição
             $updateData['assigned_to'] = '';
             
+            // Limpar correlation_id para desassociar o incidente do GLPI
+            $updateData['correlation_id'] = '';
+            
             error_log("eDeploySnowClient RETURN: Dados para envio: " . json_encode($updateData));
             
             // Fazer a requisição de atualização
