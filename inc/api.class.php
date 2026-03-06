@@ -974,32 +974,42 @@ class PluginEdeploysnowclientApi
             return '';
         }
 
-        // 1. Converter quebras de linha HTML para texto
-        $content = str_replace(['<br>', '<br/>', '<br />', '<p>', '</p>', '<div>', '</div>'], "\n", $htmlContent);
-        
-        // 2. Remover todas as tags HTML
+        // 1. Converter tags de bloco HTML em quebras de linha
+        $content = str_replace(['<br>', '<br/>', '<br />'], "\n", $htmlContent);
+        $content = str_replace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>'], "\n", $content);
+        $content = str_replace(['<p>', '<div>', '<li>', '<h1>', '<h2>', '<h3>', '<h4>'], '', $content);
+
+        // 2. Remover todas as tags HTML restantes
         $content = strip_tags($content);
-        
+
         // 3. Decodificar entidades HTML
         $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        
-        // 4. Remover caracteres de controle e espaços desnecessários
-        $content = preg_replace('/[\x00-\x1F\x7F]/', '', $content);
-        
-        // 5. Normalizar espaços em branco
-        $content = preg_replace('/\s+/', ' ', $content);
-        
-        // 6. Normalizar quebras de linha múltiplas
-        $content = preg_replace('/\n\s*\n/', "\n\n", $content);
-        
-        // 7. Remover espaços no início e fim
+
+        // 4. Normalizar quebras de linha Windows (\r\n) e Mac antigo (\r) para \n
+        $content = str_replace(["\r\n", "\r"], "\n", $content);
+
+        // 5. Remover caracteres de controle EXCETO \n (0x0A)
+        //    Antes era [\x00-\x1F] o que removía o próprio \n (0x0A) — bug corrigido
+        $content = preg_replace('/[\x00-\x09\x0B-\x1F\x7F]/', '', $content);
+
+        // 6. Normalizar apenas espaços horizontais (espaços/tabs) — NÃO newlines
+        //    Antes era /\s+/ que colapsava os \n em espaço — bug corrigido
+        $content = preg_replace('/[ \t]+/', ' ', $content);
+
+        // 7. Remover espaços antes/depois de cada quebra de linha
+        $content = preg_replace('/ *\n */', "\n", $content);
+
+        // 8. Normalizar quebras de linha múltiplas (máx. 2 consecutivas)
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        // 9. Remover espaços no início e fim
         $content = trim($content);
-        
-        // 8. Limitar o tamanho se necessário (ServiceNow tem limites)
+
+        // 10. Limitar o tamanho se necessário (ServiceNow tem limites)
         if (strlen($content) > 4000) {
             $content = substr($content, 0, 3997) . '...';
         }
-        
+
         return $content;
     }
 
