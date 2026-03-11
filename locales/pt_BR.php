@@ -120,4 +120,18 @@ $LANG['edeploysnowclient'] = [
     'Describe why this ticket is being returned to ServiceNow...' => 'Descreva o motivo pelo qual este chamado está sendo devolvido ao ServiceNow...',
     'Ex: Service Desk L1 (optional)' => 'Ex: Service Desk L1 (opcional)',
     'This ticket will be resolved in GLPI and transferred back to ServiceNow using the configured return queue, WITHOUT being resolved there.' => 'Este chamado será resolvido no GLPI e transferido de volta ao ServiceNow usando a fila de devolução configurada, SEM ser resolvido lá.',
+
+    // Mapeamento de Grupos
+    'Group Mapping (GLPI → ServiceNow)'                                    => 'Mapeamento de Grupos (GLPI → ServiceNow)',
+    'When a group is assigned to a ticket in GLPI, the corresponding assignment group in ServiceNow will be updated automatically.' => 'Quando um grupo for atribuído a um chamado no GLPI, o grupo de atribuição correspondente no ServiceNow será atualizado automaticamente.',
+    'GLPI Group'                                                           => 'Grupo no GLPI',
+    'ServiceNow Group (name or sys_id)'                                    => 'Grupo no ServiceNow (nome ou sys_id)',
+    'Select a group to add...'                                             => 'Selecione um grupo para adicionar...',
+    'ServiceNow group name or sys_id'                                      => 'Nome do grupo no ServiceNow ou sys_id',
+    'e.g. Service Desk or sys_id'                                         => 'ex: Service Desk ou sys_id de 32 caracteres',
+    'Add'                                                                  => 'Adicionar',
+    'Remove this group mapping?'                                           => 'Remover este mapeamento de grupo?',
+    'Please select a GLPI group.'                                          => 'Por favor, selecione um grupo do GLPI.',
+    'Please enter the ServiceNow group name or sys_id.'                    => 'Por favor, informe o nome ou sys_id do grupo no ServiceNow.',
 ];
+

@@ -88,6 +88,11 @@ function plugin_edeploysnowclient_item_add($item)
     if ($item::getType() === Document_Item::getType()) {
         PluginEdeploysnowclientConfig::afterDocumentItemAdd($item);
     }
+
+    // Sincronizar grupo de atribuição com ServiceNow quando um grupo é atribuído ao ticket
+    if ($item::getType() === Group_Ticket::getType()) {
+        PluginEdeploysnowclientConfig::afterGroupAssigned($item);
+    }
 }
 
 function plugin_edeploysnowclient_item_update($item)

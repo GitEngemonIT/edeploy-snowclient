@@ -1157,4 +1157,82 @@ class PluginEdeploysnowclientApi
             return null;
         }
     }
+
+    /**
+     * Atualiza o assignment_group de um incidente no ServiceNow
+     * quando o grupo atribuído ao ticket GLPI muda.
+     *
+     * @param Ticket $ticket       Objeto do ticket GLPI
+     * @param string $snowGroup    Nome do grupo no ServiceNow OU seu sys_id (32 hex chars)
+     * @return mixed               Resultado da API ou false em caso de erro
+     */
+    public function updateAssignmentGroup($ticket, $snowGroup)
+    {
+        $snowId = PluginEdeploysnowclientConfig::extractServiceNowId($ticket);
+        if (!$snowId) {
+            if ($this->debug_mode) {
+                error_log("eDeploySnowClient: updateAssignmentGroup - ticket sem ID ServiceNow");
+            }
+            return false;
+        }
+
+        $cleanSnowId = ltrim($snowId, '#');
+
+        try {
+            // Buscar sys_id do incidente pelo número
+            $searchResult = $this->makeRequest(
+                "api/now/table/incident?sysparm_query=number=$cleanSnowId&sysparm_fields=sys_id"
+            );
+
+            if (empty($searchResult['result'])) {
+                if ($this->debug_mode) {
+                    error_log("eDeploySnowClient: updateAssignmentGroup - incidente $cleanSnowId não encontrado");
+                }
+                return false;
+            }
+
+            $sysId = $searchResult['result'][0]['sys_id'];
+
+            // Resolver o sys_id do grupo no ServiceNow.
+            // Se snowGroup tem 32 caracteres hexadecimais é já um sys_id; senão busca por nome.
+            if (strlen($snowGroup) === 32 && ctype_xdigit($snowGroup)) {
+                $groupSysId = $snowGroup;
+            } else {
+                $groupSysId = $this->findAssignmentGroupByName($snowGroup);
+                if (!$groupSysId) {
+                    if ($this->debug_mode) {
+                        error_log("eDeploySnowClient: updateAssignmentGroup - grupo '$snowGroup' não encontrado no ServiceNow");
+                    }
+                    return false;
+                }
+            }
+
+            $updateData = [
+                'assignment_group' => $groupSysId,
+                'work_notes'       => sprintf(
+                    '[GLPI] Grupo de atribuição atualizado para "%s" em %s',
+                    $snowGroup,
+                    date('Y-m-d H:i:s')
+                ),
+            ];
+
+            if ($this->debug_mode) {
+                error_log("eDeploySnowClient: updateAssignmentGroup - atualizando assignment_group do incidente $cleanSnowId para '$snowGroup' ($groupSysId)");
+            }
+
+            $result = $this->makeRequest("api/now/table/incident/$sysId", 'PATCH', $updateData);
+
+            if ($this->debug_mode) {
+                error_log("eDeploySnowClient: updateAssignmentGroup - atualização concluída para $cleanSnowId");
+            }
+
+            return $result['result'] ?? null;
+
+        } catch (Exception $e) {
+            if ($this->debug_mode) {
+                error_log("eDeploySnowClient: updateAssignmentGroup - erro: " . $e->getMessage());
+            }
+            return false;
+        }
+    }
 }

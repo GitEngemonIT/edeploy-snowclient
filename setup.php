@@ -75,11 +75,12 @@ function plugin_init_edeploysnowclient()
         ];
 
         $PLUGIN_HOOKS['item_add']['edeploysnowclient'] = [
-            'Ticket' => 'plugin_edeploysnowclient_item_add',
+            'Ticket'       => 'plugin_edeploysnowclient_item_add',
             'ITILFollowup' => 'plugin_edeploysnowclient_item_add',
             'ITILSolution' => 'plugin_edeploysnowclient_item_add',
-            'Document' => 'plugin_edeploysnowclient_item_add',
-            'Document_Item' => 'plugin_edeploysnowclient_item_add',
+            'Document'     => 'plugin_edeploysnowclient_item_add',
+            'Document_Item'=> 'plugin_edeploysnowclient_item_add',
+            'Group_Ticket' => 'plugin_edeploysnowclient_item_add',
         ];
 
         $PLUGIN_HOOKS['item_update']['edeploysnowclient'] = [

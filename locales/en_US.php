@@ -106,4 +106,18 @@ $LANG['edeploysnowclient'] = [
     'Describe why this ticket is being returned to ServiceNow...' => 'Describe why this ticket is being returned to ServiceNow...',
     'Ex: Service Desk L1 (optional)' => 'Ex: Service Desk L1 (optional)',
     'This ticket will be resolved in GLPI and transferred back to ServiceNow using the configured return queue, WITHOUT being resolved there.' => 'This ticket will be resolved in GLPI and transferred back to ServiceNow using the configured return queue, WITHOUT being resolved there.',
+
+    // Group Mapping
+    'Group Mapping (GLPI → ServiceNow)'                                    => 'Group Mapping (GLPI → ServiceNow)',
+    'When a group is assigned to a ticket in GLPI, the corresponding assignment group in ServiceNow will be updated automatically.' => 'When a group is assigned to a ticket in GLPI, the corresponding assignment group in ServiceNow will be updated automatically.',
+    'GLPI Group'                                                           => 'GLPI Group',
+    'ServiceNow Group (name or sys_id)'                                    => 'ServiceNow Group (name or sys_id)',
+    'Select a group to add...'                                             => 'Select a group to add...',
+    'ServiceNow group name or sys_id'                                      => 'ServiceNow group name or sys_id',
+    'e.g. Service Desk or sys_id'                                         => 'e.g. Service Desk or sys_id (32 hex chars)',
+    'Add'                                                                  => 'Add',
+    'Remove this group mapping?'                                           => 'Remove this group mapping?',
+    'Please select a GLPI group.'                                          => 'Please select a GLPI group.',
+    'Please enter the ServiceNow group name or sys_id.'                    => 'Please enter the ServiceNow group name or sys_id.',
 ];
+
