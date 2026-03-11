@@ -417,11 +417,6 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "</p>";
 
         $currentGroupMappings = self::getGroupMappings();
-        // JSON atual para popular o JS (escapado para uso em atributo JS)
-        $currentMappingsJson = htmlspecialchars(json_encode($currentGroupMappings), ENT_QUOTES, 'UTF-8');
-
-        // Campo hidden que carrega o JSON final no submit — nome sem colchetes para o GLPI não filtrar
-        echo "<input type='hidden' name='group_mappings_json' id='group_mappings_json' value='$currentMappingsJson' />";
 
         // Grid header
         echo "<div style='display:grid; grid-template-columns:2fr 2fr 1fr; gap:8px; align-items:center; margin-bottom:6px; font-weight:bold; font-size:12px; color:#555;'>";
@@ -430,15 +425,30 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "<div></div>";
         echo "</div>";
 
-        // Lista de rows (renderizada pelo JS a partir do JSON)
-        echo "<div id='group-mappings-list'></div>";
+        // Linhas existentes — nota: POST usa "gm[N][...]", coluna no banco é "group_mappings" (padrão snowclient)
+        echo "<div id='group-mappings-list'>";
+        foreach ($currentGroupMappings as $idx => $gm) {
+            $glpiGroupId   = (int)($gm['glpi_group_id'] ?? 0);
+            $glpiGroupName = htmlspecialchars($gm['glpi_group_name'] ?? '');
+            $snowGroup     = htmlspecialchars($gm['snow_group'] ?? '');
+            echo "<div class='group-mapping-row' style='display:grid; grid-template-columns:2fr 2fr 1fr; gap:8px; align-items:center; margin-bottom:8px; background:#fff; padding:8px; border-radius:5px; border:1px solid #d5dde8;'>";
+            echo "<div style='font-weight:500; padding:4px 2px;'>$glpiGroupName";
+            echo "<input type='hidden' name='gm[{$idx}][glpi_group_id]' value='$glpiGroupId' />";
+            echo "<input type='hidden' name='gm[{$idx}][glpi_group_name]' value='$glpiGroupName' />";
+            echo "</div>";
+            echo "<div><input type='text' name='gm[{$idx}][snow_group]' value='$snowGroup' class='form-control' placeholder='" . __('e.g. Service Desk or sys_id', 'edeploysnowclient') . "' style='width:100%;' /></div>";
+            echo "<div style='text-align:center;'><button type='button' onclick='edsncRemoveRow(this)' style='background:#dc3545;color:#fff;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;'>🗑️ " . __('Remove', 'edeploysnowclient') . "</button></div>";
+            echo "</div>";
+        }
+        echo "</div>";
 
-        // Linha "adicionar novo"
+        // Linha para adicionar novo mapeamento
+        $nextIdx = count($currentGroupMappings);
         echo "<div style='display:grid; grid-template-columns:2fr 2fr 1fr; gap:8px; align-items:center; margin-top:10px; background:#e9ecef; padding:8px; border-radius:5px;'>";
         echo "<div>";
         Group::dropdown([
-            'name'                => 'new_group_mapping_glpi_id',
-            'id'                  => 'new_group_mapping_glpi_id',
+            'name'                => 'new_gm_glpi_id',
+            'id'                  => 'new_gm_glpi_id',
             'value'               => 0,
             'comments'            => false,
             'entity'              => -1,
@@ -448,113 +458,57 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             'display_emptychoice' => true,
         ]);
         echo "</div>";
-        echo "<div><input type='text' id='new_group_mapping_snow' class='form-control' placeholder='" . __('ServiceNow group name or sys_id', 'edeploysnowclient') . "' style='width:100%;' /></div>";
-        echo "<div style='text-align:center;'><button type='button' id='add-group-mapping-btn' style='background:#28a745;color:#fff;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;width:100%;'>";
-        echo "➕ " . __('Add', 'edeploysnowclient');
-        echo "</button></div>";
+        echo "<div><input type='text' id='new_gm_snow' class='form-control' placeholder='" . __('ServiceNow group name or sys_id', 'edeploysnowclient') . "' style='width:100%;' /></div>";
+        echo "<div style='text-align:center;'><button type='button' id='add-gm-btn' style='background:#28a745;color:#fff;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;width:100%;'>➕ " . __('Add', 'edeploysnowclient') . "</button></div>";
         echo "</div>";
 
         echo "</div>"; // inner container
         echo "</td>";
         echo "</tr>";
 
-        // ---- JavaScript do mapeamento de grupos ----
-        $msgSelectGroup  = addslashes(__('Please select a GLPI group.', 'edeploysnowclient'));
-        $msgEnterSnow    = addslashes(__('Please enter the ServiceNow group name or sys_id.', 'edeploysnowclient'));
+        $msgSelectGroup   = addslashes(__('Please select a GLPI group.', 'edeploysnowclient'));
+        $msgEnterSnow     = addslashes(__('Please enter the ServiceNow group name or sys_id.', 'edeploysnowclient'));
         $msgRemoveConfirm = addslashes(__('Remove this group mapping?', 'edeploysnowclient'));
-        $lblRemove       = addslashes(__('Remove', 'edeploysnowclient'));
-        $placeholderSnow = addslashes(__('e.g. Service Desk or sys_id', 'edeploysnowclient'));
-
+        $lblRemove        = addslashes(__('Remove', 'edeploysnowclient'));
+        $phSnow           = addslashes(__('e.g. Service Desk or sys_id', 'edeploysnowclient'));
         echo "<script type='text/javascript'>
-(function() {
-    // Estado em memória — único source of truth
-    var gMappings = $currentMappingsJson || [];
+(function(){
+    var gmIdx = $nextIdx;
 
-    // Cache de nomes de grupos GLPI (id → name) vindos do servidor
-    var gGroupNameCache = {};
-    gMappings.forEach(function(m) {
-        if (m.glpi_group_id && m.glpi_group_name) {
-            gGroupNameCache[m.glpi_group_id] = m.glpi_group_name;
-        }
-    });
+    document.getElementById('add-gm-btn').addEventListener('click', function(){
+        var sel   = document.getElementById('new_gm_glpi_id');
+        var snow  = document.getElementById('new_gm_snow');
+        if (!sel || !sel.value || sel.value === '0') { alert('$msgSelectGroup'); return; }
+        if (!snow || !snow.value.trim())              { alert('$msgEnterSnow');   return; }
 
-    function saveToHidden() {
-        document.getElementById('group_mappings_json').value = JSON.stringify(gMappings);
-    }
+        var id   = sel.value;
+        var name = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : id;
+        var sg   = snow.value.trim();
 
-    function edsncEsc(s) {
-        return String(s)
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
-    }
-
-    function renderRows() {
         var list = document.getElementById('group-mappings-list');
-        list.innerHTML = '';
-        gMappings.forEach(function(m, idx) {
-            var groupName = m.glpi_group_name || ('#' + m.glpi_group_id);
-            var row = document.createElement('div');
-            row.className = 'group-mapping-row';
-            row.style.cssText = 'display:grid;grid-template-columns:2fr 2fr 1fr;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:8px;border-radius:5px;border:1px solid #d5dde8;';
-            row.innerHTML =
-                '<div style=\"font-weight:500;padding:6px 4px;\">' + edsncEsc(groupName) + '</div>' +
-                '<div><input type=\"text\" class=\"form-control edsnc-snow-group\" data-idx=\"' + idx + '\" value=\"' + edsncEsc(m.snow_group) + '\" placeholder=\"$placeholderSnow\" style=\"width:100%;\" /></div>' +
-                '<div style=\"text-align:center;\"><button type=\"button\" class=\"edsnc-remove-btn\" data-idx=\"' + idx + '\" style=\"background:#dc3545;color:#fff;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;\">🗑️ $lblRemove</button></div>';
-            list.appendChild(row);
-        });
-
-        // Listeners para edição inline do campo snow_group
-        list.querySelectorAll('.edsnc-snow-group').forEach(function(inp) {
-            inp.addEventListener('input', function() {
-                gMappings[parseInt(this.dataset.idx)].snow_group = this.value;
-                saveToHidden();
-            });
-        });
-
-        // Listeners para remoção
-        list.querySelectorAll('.edsnc-remove-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                if (confirm('$msgRemoveConfirm')) {
-                    gMappings.splice(parseInt(this.dataset.idx), 1);
-                    renderRows();
-                    saveToHidden();
-                }
-            });
-        });
-    }
-
-    // Render inicial
-    renderRows();
-
-    // Botão Adicionar
-    document.getElementById('add-group-mapping-btn').addEventListener('click', function() {
-        var glpiSel = document.getElementById('new_group_mapping_glpi_id');
-        var snowInp = document.getElementById('new_group_mapping_snow');
-        if (!glpiSel || !glpiSel.value || glpiSel.value === '0') {
-            alert('$msgSelectGroup');
-            return;
-        }
-        if (!snowInp || !snowInp.value.trim()) {
-            alert('$msgEnterSnow');
-            return;
-        }
-        var glpiId   = glpiSel.value;
-        var glpiName = glpiSel.options[glpiSel.selectedIndex] ? glpiSel.options[glpiSel.selectedIndex].text : ('#' + glpiId);
-        var snow     = snowInp.value.trim();
-
-        gMappings.push({ glpi_group_id: glpiId, glpi_group_name: glpiName, snow_group: snow });
-        saveToHidden();
-        renderRows();
-        glpiSel.value = '0';
-        snowInp.value = '';
+        var row  = document.createElement('div');
+        row.className = 'group-mapping-row';
+        row.style.cssText = 'display:grid;grid-template-columns:2fr 2fr 1fr;gap:8px;align-items:center;margin-bottom:8px;background:#fff;padding:8px;border-radius:5px;border:1px solid #d5dde8;';
+        row.innerHTML =
+            '<div style=\"font-weight:500;padding:4px 2px;\">' + edsncE(name) +
+                '<input type=\"hidden\" name=\"gm[' + gmIdx + '][glpi_group_id]\" value=\"' + edsncE(id) + '\" />' +
+                '<input type=\"hidden\" name=\"gm[' + gmIdx + '][glpi_group_name]\" value=\"' + edsncE(name) + '\" />' +
+            '</div>' +
+            '<div><input type=\"text\" name=\"gm[' + gmIdx + '][snow_group]\" value=\"' + edsncE(sg) + '\" class=\"form-control\" placeholder=\"$phSnow\" style=\"width:100%;\" /></div>' +
+            '<div style=\"text-align:center;\"><button type=\"button\" onclick=\"edsncRemoveRow(this)\" style=\"background:#dc3545;color:#fff;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;\">🗑️ $lblRemove</button></div>';
+        list.appendChild(row);
+        gmIdx++;
+        sel.value = '0';
+        if (typeof \$ !== 'undefined') { \$('#new_gm_glpi_id').trigger('change'); }
+        snow.value = '';
     });
 
-    // Garantir que o JSON está atualizado ao submeter o form
-    var form = document.getElementById('group_mappings_json').closest('form');
-    if (form) {
-        form.addEventListener('submit', function() { saveToHidden(); });
-    }
+    function edsncE(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;'); }
 })();
+
+function edsncRemoveRow(btn){
+    if(confirm('$msgRemoveConfirm')){ btn.closest('.group-mapping-row').remove(); }
+}
 </script>";
 
         // ---- Fim Mapeamento de Grupos ----
@@ -604,44 +558,29 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             unset($input['password']);
         }
 
-        // Process group mappings — recebidos como JSON string do campo hidden group_mappings_json
-        $rawJson = $input['group_mappings_json'] ?? ($input['group_mappings'] ?? '[]');
-        unset($input['group_mappings_json']); // remover campo auxiliar do input
-
-        error_log("eDeploySnowClient: prepareInputForUpdate group_mappings_json raw = " . var_export($rawJson, true));
-
-        // GLPI 10 sanitiza o POST com html_entity_encode → desfazer antes de json_decode
-        if (is_string($rawJson)) {
-            $rawJson = html_entity_decode($rawJson, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            // Compatibilidade com versões que usam addslashes
-            if (method_exists('Toolbox', 'stripslashes_deep')) {
-                $rawJson = Toolbox::stripslashes_deep($rawJson);
-            }
-        }
-
-        error_log("eDeploySnowClient: prepareInputForUpdate group_mappings_json decoded = " . var_export($rawJson, true));
-
-        $decoded = is_string($rawJson) ? json_decode($rawJson, true) : (is_array($rawJson) ? $rawJson : []);
-        error_log("eDeploySnowClient: prepareInputForUpdate decoded mappings = " . var_export($decoded, true));
-        $groupMappings = [];
-        if (is_array($decoded)) {
-            foreach ($decoded as $gm) {
+        // Process group mappings — recebidos como array PHP via gm[N][campo] (padrão snowclient)
+        // O GLPI passa arrays intactos; apenas strings sofrem html_entity_encode
+        if (isset($input['gm']) && is_array($input['gm'])) {
+            $groupMappings = [];
+            foreach ($input['gm'] as $gm) {
                 $glpiGroupId = isset($gm['glpi_group_id']) ? (int)$gm['glpi_group_id'] : 0;
                 $snowGroup   = isset($gm['snow_group']) ? trim($gm['snow_group']) : '';
                 if ($glpiGroupId <= 0 || $snowGroup === '') {
                     continue;
                 }
-                // Resolve group name from DB to keep it up to date
                 $group = new Group();
-                $glpiGroupName = ($group->getFromDB($glpiGroupId)) ? $group->getName() : ($gm['glpi_group_name'] ?? '');
+                $glpiGroupName = ($group->getFromDB($glpiGroupId))
+                    ? $group->getName()
+                    : ($gm['glpi_group_name'] ?? '');
                 $groupMappings[] = [
                     'glpi_group_id'   => $glpiGroupId,
                     'glpi_group_name' => $glpiGroupName,
                     'snow_group'      => $snowGroup,
                 ];
             }
+            $input['group_mappings'] = json_encode($groupMappings);
+            unset($input['gm']);
         }
-        $input['group_mappings'] = json_encode($groupMappings);
 
         // Set default values for boolean fields
         $boolFields = ['sync_tickets', 'sync_followups', 'sync_status', 'sync_documents', 'debug_mode'];
