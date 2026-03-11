@@ -10,9 +10,20 @@
  */
 
 // Bootstrap GLPI
-$glpiPath = '/var/www/html';
+// O plugin está em <glpi_root>/plugins/edeploysnowclient/, portanto 2 níveis acima
+$glpiPath = dirname(__DIR__, 2);
 if (!file_exists($glpiPath . '/inc/includes.php')) {
-    $glpiPath = dirname(__DIR__, 4); // tentativa de localização relativa
+    // Fallback: tentar caminhos comuns
+    foreach (['/var/www/html/glpi', '/var/www/glpi', '/var/www/html'] as $candidate) {
+        if (file_exists($candidate . '/inc/includes.php')) {
+            $glpiPath = $candidate;
+            break;
+        }
+    }
+}
+if (!file_exists($glpiPath . '/inc/includes.php')) {
+    echo "ERRO: Não foi possível localizar o GLPI. Edite o caminho \$glpiPath direto no script.\n";
+    exit(1);
 }
 include($glpiPath . '/inc/includes.php');
 
