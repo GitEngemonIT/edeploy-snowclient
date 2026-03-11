@@ -607,7 +607,22 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         // Process group mappings — recebidos como JSON string do campo hidden group_mappings_json
         $rawJson = $input['group_mappings_json'] ?? ($input['group_mappings'] ?? '[]');
         unset($input['group_mappings_json']); // remover campo auxiliar do input
+
+        error_log("eDeploySnowClient: prepareInputForUpdate group_mappings_json raw = " . var_export($rawJson, true));
+
+        // GLPI 10 sanitiza o POST com html_entity_encode → desfazer antes de json_decode
+        if (is_string($rawJson)) {
+            $rawJson = html_entity_decode($rawJson, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            // Compatibilidade com versões que usam addslashes
+            if (method_exists('Toolbox', 'stripslashes_deep')) {
+                $rawJson = Toolbox::stripslashes_deep($rawJson);
+            }
+        }
+
+        error_log("eDeploySnowClient: prepareInputForUpdate group_mappings_json decoded = " . var_export($rawJson, true));
+
         $decoded = is_string($rawJson) ? json_decode($rawJson, true) : (is_array($rawJson) ? $rawJson : []);
+        error_log("eDeploySnowClient: prepareInputForUpdate decoded mappings = " . var_export($decoded, true));
         $groupMappings = [];
         if (is_array($decoded)) {
             foreach ($decoded as $gm) {
