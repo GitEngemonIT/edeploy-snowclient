@@ -476,7 +476,7 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
     var gmIdx = $nextIdx;
 
     document.getElementById('add-gm-btn').addEventListener('click', function(){
-        var sel   = document.getElementById('new_gm_glpi_id');
+        var sel   = document.querySelector('[name=\'new_gm_glpi_id\']');
         var snow  = document.getElementById('new_gm_snow');
         if (!sel || !sel.value || sel.value === '0') { alert('$msgSelectGroup'); return; }
         if (!snow || !snow.value.trim())              { alert('$msgEnterSnow');   return; }
