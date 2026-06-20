@@ -888,7 +888,13 @@ function edsncRemoveRow(btn){
                 error_log("eDeploySnowClient: Followup é do usuário API, ignorando para evitar loop");
                 return false;
             }
-            
+
+            // Skip private followups
+            if ($followup->fields['is_private']) {
+                error_log("eDeploySnowClient: Followup é privado, não será enviado ao ServiceNow");
+                return false;
+            }
+
             error_log("eDeploySnowClient: Enviando followup para ServiceNow...");
             
             $api = new PluginEdeploysnowclientApi();
