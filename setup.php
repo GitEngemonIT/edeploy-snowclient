@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '2.0.0');
+define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '2.0.1');
 // Minimal GLPI version
 define('PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version - branch v2.0.x estende suporte pra GLPI 11 (testado
