@@ -23,11 +23,14 @@
  */
 
 //plugin version
-define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '1.2.4');
+define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '2.0.0-dev');
 // Minimal GLPI version
 define('PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI', '9.4');
-// Maximum GLPI version
-define('PLUGIN_EDEPLOYSNOWCLIENT_MAX_GLPI', '10.1.1');
+// Maximum GLPI version - branch v2.0.x estende suporte pra GLPI 11 (testado
+// contra 11.0.7 em edeploy11.engemonit.com.br/172.27.13.111). Versão 1.x
+// desta mesma branch continua travada em 10.1.1 (produção real hoje é
+// GLPI 10.0.22, ver infra.md).
+define('PLUGIN_EDEPLOYSNOWCLIENT_MAX_GLPI', '11.0.99');
 
 define('PLUGIN_EDEPLOYSNOWCLIENT_NAME', 'eDeploy ServiceNow Client');
 
