@@ -37,6 +37,22 @@ class PluginEdeploysnowclientApi
     private $password;
     private $debug_mode;
 
+    /**
+     * Toolbox::logError()/logWarning() foram removidos no GLPI 11 (só
+     * logDebug()/logInfo() continuam públicos, chamando um self::log()
+     * privado). error_log() nativo do PHP (vai pro log do Apache/servidor)
+     * é o fallback mais confiável entre versões - preserva o nível de
+     * severidade que Toolbox::logDebug() sozinho não deixaria claro.
+     */
+    private static function logError(string $message): void
+    {
+        if (method_exists('Toolbox', 'logError')) {
+            Toolbox::logError($message);
+            return;
+        }
+        error_log('eDeploySnowClient ERROR: ' . $message);
+    }
+
     public function __construct()
     {
         $this->config = PluginEdeploysnowclientConfig::getInstance();
@@ -266,7 +282,7 @@ class PluginEdeploysnowclientApi
             return $result['result'] ?? [];
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("Erro ao buscar incidentes: " . $e->getMessage());
+                self::logError("Erro ao buscar incidentes: " . $e->getMessage());
             }
             return [];
         }
@@ -282,7 +298,7 @@ class PluginEdeploysnowclientApi
             return $result['result'] ?? null;
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("Erro ao criar incidente: " . $e->getMessage());
+                self::logError("Erro ao criar incidente: " . $e->getMessage());
             }
             throw $e;
         }
@@ -322,7 +338,7 @@ class PluginEdeploysnowclientApi
             // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
             if (!$this->canUpdateIncident($ticket, $sysId)) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a atualizar incidente $sysId devido ao correlation_id");
+                    self::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a atualizar incidente $sysId devido ao correlation_id");
                 }
                 return false;
             }
@@ -376,7 +392,7 @@ class PluginEdeploysnowclientApi
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("eDeploySnowClient: Erro ao atualizar incidente $cleanSnowId: " . $e->getMessage());
+                self::logError("eDeploySnowClient: Erro ao atualizar incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -390,7 +406,7 @@ class PluginEdeploysnowclientApi
         $ticket = new Ticket();
         if (!$ticket->getFromDB($followup->fields['items_id'])) {
             if ($this->debug_mode) {
-                Toolbox::logError("eDeploySnowClient: Ticket {$followup->fields['items_id']} não encontrado para followup");
+                self::logError("eDeploySnowClient: Ticket {$followup->fields['items_id']} não encontrado para followup");
             }
             return false;
         }
@@ -423,7 +439,7 @@ class PluginEdeploysnowclientApi
             // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
             if (!$this->canUpdateIncident($ticket, $sysId)) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar followup ao incidente $sysId devido ao correlation_id");
+                    self::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar followup ao incidente $sysId devido ao correlation_id");
                 }
                 return false;
             }
@@ -473,7 +489,7 @@ class PluginEdeploysnowclientApi
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("eDeploySnowClient: Erro ao adicionar nota de trabalho ao incidente $cleanSnowId: " . $e->getMessage());
+                self::logError("eDeploySnowClient: Erro ao adicionar nota de trabalho ao incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -487,7 +503,7 @@ class PluginEdeploysnowclientApi
         $ticket = new Ticket();
         if (!$ticket->getFromDB($solution->fields['items_id'])) {
             if ($this->debug_mode) {
-                Toolbox::logError("eDeploySnowClient: Ticket {$solution->fields['items_id']} não encontrado para solução");
+                self::logError("eDeploySnowClient: Ticket {$solution->fields['items_id']} não encontrado para solução");
             }
             return false;
         }
@@ -520,7 +536,7 @@ class PluginEdeploysnowclientApi
             // VERIFICAÇÃO: Confirmar se este ticket GLPI pode atualizar este incidente ServiceNow
             if (!$this->canUpdateIncident($ticket, $sysId)) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar solução ao incidente $sysId devido ao correlation_id");
+                    self::logError("eDeploySnowClient: Ticket GLPI {$ticket->fields['id']} não autorizado a adicionar solução ao incidente $sysId devido ao correlation_id");
                 }
                 return false;
             }
@@ -612,7 +628,7 @@ class PluginEdeploysnowclientApi
                 
             } catch (Exception $e) {
                 if ($this->debug_mode) {
-                    Toolbox::logError("eDeploySnowClient: ETAPA 2 - Erro ao enviar dados customizados (não crítico): " . $e->getMessage());
+                    self::logError("eDeploySnowClient: ETAPA 2 - Erro ao enviar dados customizados (não crítico): " . $e->getMessage());
                 }
             }
             
@@ -627,7 +643,7 @@ class PluginEdeploysnowclientApi
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("eDeploySnowClient: Erro ao adicionar solução ao incidente $cleanSnowId: " . $e->getMessage());
+                self::logError("eDeploySnowClient: Erro ao adicionar solução ao incidente $cleanSnowId: " . $e->getMessage());
             }
             return false;
         }
@@ -673,7 +689,7 @@ class PluginEdeploysnowclientApi
             
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("Erro ao cancelar incidente: " . $e->getMessage());
+                self::logError("Erro ao cancelar incidente: " . $e->getMessage());
             }
             return false;
         }
@@ -856,7 +872,7 @@ class PluginEdeploysnowclientApi
             }
         } catch (Exception $e) {
             if ($this->debug_mode) {
-                Toolbox::logError("eDeploySnowClient: Erro ao verificar correlation_id para incidente $sysId: " . $e->getMessage());
+                self::logError("eDeploySnowClient: Erro ao verificar correlation_id para incidente $sysId: " . $e->getMessage());
             }
             // Em caso de erro, permitir atualização para não quebrar funcionalidade existente
             return true;
