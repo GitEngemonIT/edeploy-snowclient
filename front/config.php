@@ -15,7 +15,7 @@ $config = new PluginEdeploysnowclientConfig();
 if (isset($_POST["add"])) {
    $config->check(-1, CREATE, $_POST);
    if ($config->add($_POST)) {
-      Event::log($_POST['id'], "edeploysnowclientconfig", 4, "setup",
+      \Glpi\Event::log($_POST['id'], "edeploysnowclientconfig", 4, "setup",
                  sprintf(__('%1$s adds the item %2$s'), $_SESSION["glpiname"], $_POST["name"]));
    }
    Html::back();
@@ -39,7 +39,7 @@ if (isset($_POST["add"])) {
    } else {
       Session::addMessageAfterRedirect(__('Error updating configuration. Check logs.', 'edeploysnowclient'), false, ERROR);
    }
-   Event::log($_POST['id'], "edeploysnowclientconfig", 4, "setup",
+   \Glpi\Event::log($_POST['id'], "edeploysnowclientconfig", 4, "setup",
               sprintf(__('%1$s updates the item %2$s'), $_SESSION["glpiname"],
                       $config->fields["name"]));
    Html::back();

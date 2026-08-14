@@ -122,10 +122,15 @@ class PluginEdeploysnowclientProfile extends CommonDBTM
         echo "<td width='20%'>$label</td>";
         echo "<td>";
 
+        // Profile::dropdownNoneReadWrite()/getRightValue() foram removidos no
+        // GLPI 11 - dropdownRight() é o substituto pro modo edição (já
+        // desenha o <select> sozinho), e o modo somente-leitura precisa do
+        // rótulo montado à mão (não há mais um helper equivalente).
         if ($canedit) {
-            Profile::dropdownNoneReadWrite($name, $value, 1, 1);
+            Profile::dropdownRight($name, ['value' => $value, 'display' => true]);
         } else {
-            echo Profile::getRightValue($value);
+            $labels = [0 => __('No access'), READ => __('Read'), CREATE => __('Write')];
+            echo $labels[(int) $value] ?? $labels[0];
         }
 
         echo "</td>";
