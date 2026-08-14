@@ -20,27 +20,27 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         return __('ServiceNow Configuration', 'edeploysnowclient');
     }
 
-    static function canCreate()
+    static function canCreate(): bool
     {
         return Session::haveRight('config', UPDATE);
     }
 
-    static function canView()
+    static function canView(): bool
     {
         return Session::haveRight('config', READ);
     }
 
-    static function canUpdate()
+    static function canUpdate(): bool
     {
         return Session::haveRight('config', UPDATE);
     }
 
-    static function canDelete()
+    static function canDelete(): bool
     {
         return Session::haveRight('config', UPDATE);
     }
 
-    static function canPurge()
+    static function canPurge(): bool
     {
         return Session::haveRight('config', UPDATE);
     }
@@ -103,6 +103,9 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
             return '';
         }
 
+        // Toolbox::sodiumEncrypt()/sodiumDecrypt() foram removidos no GLPI 11
+        // (existiam até o 10.x, com aviso de depreciação a favor de GLPIKey) -
+        // GLPIKey::encrypt()/decrypt() é o substituto direto desde então.
         if (method_exists('Toolbox', 'sodiumDecrypt')) {
             try {
                 $decrypted = Toolbox::sodiumDecrypt($this->fields['password']);
@@ -113,9 +116,18 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
                 }
                 return base64_decode($this->fields['password']);
             }
+        } elseif (class_exists('GLPIKey')) {
+            try {
+                return (new GLPIKey())->decrypt($this->fields['password']) ?? '';
+            } catch (Exception $e) {
+                if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
+                    error_log("eDeploySnowClient DEBUG: Falha na descriptografia GLPIKey, usando fallback base64");
+                }
+                return base64_decode($this->fields['password']);
+            }
         } else {
             if (isset($this->fields['debug_mode']) && $this->fields['debug_mode']) {
-                error_log("eDeploySnowClient DEBUG: Sodium não disponível, usando base64");
+                error_log("eDeploySnowClient DEBUG: Sodium/GLPIKey não disponíveis, usando base64");
             }
             return base64_decode($this->fields['password']);
         }
@@ -551,6 +563,8 @@ function edsncRemoveRow(btn){
             
             if (method_exists('Toolbox', 'sodiumEncrypt')) {
                 $input['password'] = Toolbox::sodiumEncrypt($input['password']);
+            } elseif (class_exists('GLPIKey')) {
+                $input['password'] = (new GLPIKey())->encrypt($input['password']);
             } else {
                 $input['password'] = base64_encode($input['password']);
             }
