@@ -188,8 +188,9 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('ServiceNow Instance URL', 'edeploysnowclient') . "</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'instance_url', [
-            'placeholder' => 'https://your-instance.service-now.com'
+        echo Html::input('instance_url', [
+            'value'       => $this->fields['instance_url'],
+            'placeholder' => 'https://your-instance.service-now.com',
         ]);
         echo "</td>";
         echo "</tr>";
@@ -197,7 +198,7 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Username', 'edeploysnowclient') . "</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'username');
+        echo Html::input('username', ['value' => $this->fields['username']]);
         echo "</td>";
         echo "</tr>";
 
@@ -211,15 +212,16 @@ class PluginEdeploysnowclientConfig extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Default Assignment Group', 'edeploysnowclient') . "</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'assignment_group');
+        echo Html::input('assignment_group', ['value' => $this->fields['assignment_group']]);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Return Queue Group ID', 'edeploysnowclient') . "</td>";
         echo "<td>";
-        Html::autocompletionTextField($this, 'return_queue_group', [
-            'placeholder' => __('sys_id of the group for returned tickets', 'edeploysnowclient')
+        echo Html::input('return_queue_group', [
+            'value'       => $this->fields['return_queue_group'],
+            'placeholder' => __('sys_id of the group for returned tickets', 'edeploysnowclient'),
         ]);
         echo "<br><span class='small'>" . __('ServiceNow sys_id of the group that will receive returned tickets', 'edeploysnowclient') . "</span>";
         echo "</td>";
