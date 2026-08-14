@@ -985,6 +985,10 @@ class PluginEdeploysnowclientApi
         // 3. Decodificar entidades HTML
         $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
+        // 3b. Corrigir sequências de escape literais (texto "\r\n", "\r", "\n" com
+        //     barra invertida) que chegam de conteúdo criado via API sem quebra real
+        $content = str_replace(['\r\n', '\r', '\n'], "\n", $content);
+
         // 4. Normalizar quebras de linha Windows (\r\n) e Mac antigo (\r) para \n
         $content = str_replace(["\r\n", "\r"], "\n", $content);
 
