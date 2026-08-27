@@ -23,7 +23,7 @@
  */
 
 //plugin version
-define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '2.0.1');
+define('PLUGIN_EDEPLOYSNOWCLIENT_VERSION', '2.0.2');
 // Minimal GLPI version
 define('PLUGIN_EDEPLOYSNOWCLIENT_MIN_GLPI', '9.4');
 // Maximum GLPI version - branch v2.0.x estende suporte pra GLPI 11 (testado
@@ -112,7 +112,7 @@ function plugin_init_edeploysnowclient()
         // Hook para debug de modal de solução
         include_once __DIR__ . '/inc/solution_resources.php';
         $PLUGIN_HOOKS['post_item_form']['edeploysnowclient'] = [
-            'Ticket' => 'plugin_edeploysnowclient_add_solution_resources',
+            'Ticket' => 'plugin_edeploysnowclient_post_item_form_combined',
         ];
     }
 }

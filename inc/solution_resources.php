@@ -18,7 +18,7 @@ function plugin_edeploysnowclient_add_solution_resources($hook_params = [])
     error_log("edeployeDeploySnowClient: Verificando ticket " . $hook_params['item']->getID() . " para modal de solução");
     
     // Verificar se é um ticket do ServiceNow
-    if (PluginEdeployedeploysnowclientConfig::isTicketFromServiceNow($hook_params['item'])) {
+    if (PluginEdeploysnowclientConfig::isTicketFromServiceNow($hook_params['item'])) {
         error_log("edeployeDeploySnowClient: Ticket é do ServiceNow, modal deve ser ativado");
         echo "<script>console.log('edeployeDeploySnowClient: Ticket do ServiceNow detectado (ID: " . $hook_params['item']->getID() . ")');</script>";
     } else {

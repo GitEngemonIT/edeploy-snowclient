@@ -137,6 +137,14 @@ function plugin_edeploysnowclient_post_item_form($params)
             error_log("eDeployeDeploySnowClient: Should NOT show button");
         }
     }
-    
+
+    return true;
+}
+
+function plugin_edeploysnowclient_post_item_form_combined($params)
+{
+    plugin_edeploysnowclient_post_item_form($params);
+    plugin_edeploysnowclient_add_solution_resources($params);
+
     return true;
 }
