@@ -28,3 +28,6 @@ config/local.php
 *.bak
 *.backup
 *.orig
+
+# Ambientes Postman com tokens reais ficam fora do git
+*.postman_environment.json
