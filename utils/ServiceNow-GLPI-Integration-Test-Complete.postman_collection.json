@@ -1184,13 +1184,13 @@
 		},
 		{
 			"key": "glpi_app_token",
-			"value": "rm5PiEyoLsJ2saTw8ej4HLbQurLn4zEQvNGRgdtU",
+			"value": "",
 			"type": "string",
 			"description": "App Token do GLPI para API REST"
 		},
 		{
 			"key": "user_token",
-			"value": "TqzH2rZx241f1i6pXiw9bJOC3CSzEvOi7BuGxBwg",
+			"value": "",
 			"type": "string",
 			"description": "User Token do usuário para autenticação"
 		},
